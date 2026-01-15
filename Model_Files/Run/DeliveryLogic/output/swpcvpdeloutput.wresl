@@ -1,0 +1,106 @@
+! Output of Results
+
+include 'deliv_short_cvp_n.wresl'
+include 'deliv_short_cvp_s.wresl'
+include 'deliv_short_swp.wresl'
+
+
+
+define SwpTotalDel {
+	alias 
+	! Deliveries to Oak Flat
+	D_CAA046_71_PA7
+	! Deliveries to Empire, Kings, Tulare, Dudley, and Kern, updated to CASP network
+	+ D_CAA185_EMPIRE + D_CAA185_KINGS + D_CAA185_TULARE + D_CAA185_DUDLEY  ! Pool 22 deliveries (PA, IN, CO)
+	+ D_CAA197_16 + D_CAA208_16 + D_CAA217_16 + D_CAA225_16  ! Pools 23 - 30 Kern Co AG Deliveries (PA, CO)
+	+ D_CAA232_16 + D_CAA238_16 + D_CAA244_16 + D_CAA251_16  
+	+ D_CAA197_15 + D_CAA208_15 + D_CAA217_15 + D_CAA225_15  ! Pools 23 - 30 kern Co M&I Deliveries (M&I)
+	+ D_CAA232_15 + D_CAA238_15 + D_CAA244_15 + D_CAA251_15  
+	+ D_CAA244_22 									 	     ! MWD M&I Pool 29 Delivery
+	! CLEANUP: 2024-04-08 describe below section
+	+ D_CSB015_KERN_BMWD
+	+ D_CSB009_CLRTA1_DDWD
+	! CLEANUP: 2024-04-08 describe below section
+	+ D_ESB413_MWDSC + D_ESB433_MWDSC + D_ESB324_AVEK + D_ESB347_PLMDL 
+	+ D_ESB355_LROCK + D_ESB403_MOJVE + D_ESB407_CCHLA + D_ESB408_DESRT
+	+ D_ESB414_BRDNO + D_ESB415_GABRL + D_ESB420_GRGNO
+	+ D_WSB031_MWDSC + D_WSB032_CLRTA2
+	+ D_PRRIS_MWDSC
+	+ D_SVRWD_CSTLN
+	+ D_PYRMD_VNTRA
+	+ D_CSTIC_VNTRA
+	+ D_BKR004_NBA009_PRJ
+	+ D_CSB038_OBISPO + D_CSB103_BRBRA
+	+ D_SBA009_ACFC + D_SBA020_ACFC + D_SBA029_ACWD + D_SBA036_SCVWD
+	! CLEANUP: 2024-04-08 describe below section
+	+ SG_R1R2_SWP + SG_R3_SWP + SG_R4_SWP + SG_R5_SWP
+	+ SG_R6_SWP + SG_R7_SWP
+	! Losses
+	+ D_CAA220_CAALOS + D_CAA278_CAALOS + D_CAA280_CAALOS + D_ESB361_ESBLOS
+	+ D_ESB406_ESBLOS + D_ESB425_ESBLOS + D_WSB006_WSBLOS + D_WSB026_WSBLOS
+	+ D_WSB027_WSBLOS + D_SBA042_SBALOS
+                          
+    kind 'FLOW-DELIVERY' units 'CFS' 
+}
+
+define CvpTotalDel {
+	alias del_cvp_pag_s + D_CAA238_CVPCV ! AG
+	+ del_cvp_pex_s  ! EX
+	+ del_cvp_pmi_s  ! MI
+	+ del_cvp_prf_s  ! RF
+	+ del_cvp_pls_s  ! losses
+	kind 'FLOW-DELIVERY' units 'CFS' 
+}
+
+! Summary of Deliveries out of CAA Pools 13 to 21
+define D_CAA087_CVP_PAG {alias D_CAA087_73_PA1   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA087_CVP_PLS {alias D_CAA087_CAALOS_CVP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA087_SWP_PLS {alias D_CAA087_CAALOS_SWP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA087_CVP     {alias D_CAA087_CVP_PAG + D_CAA087_CVP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+define D_CAA087_SWP     {alias D_CAA087_SWP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !losses
+
+define D_CAA095_CVP_PAG {alias D_CAA095_73_PA3 + D_CAA095_90_PA1 + D_CAA095_90_PA2   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA095_CVP_PLS {alias D_CAA095_CAALOS_CVP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA095_SWP_PLS {alias D_CAA095_CAALOS_SWP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA095_CVP     {alias D_CAA095_CVP_PAG + D_CAA095_CVP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+define D_CAA095_SWP     {alias D_CAA095_SWP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !losses
+
+define D_CAA109_CVP_PAG {alias D_CAA109_73_PA3 + D_CAA109_90_PA1 + D_CAA109_90_PA2   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA109_CVP_PLS {alias D_CAA109_CAALOS_CVP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA109_SWP_PLS {alias D_CAA109_CAALOS_SWP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA109_CVP     {alias D_CAA109_CVP_PAG + D_CAA109_CVP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+define D_CAA109_SWP     {alias D_CAA109_SWP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !losses
+
+define D_CAA122_CVP_PAG {alias D_CAA122_90_PA1 + D_CAA122_90_PA2   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA122_CVP     {alias D_CAA122_CVP_PAG  kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+
+define D_CAA133_CVP_PAG {alias D_CAA133_90_PA1 + D_CAA133_90_PA2   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA133_CVP     {alias D_CAA133_CVP_PAG kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+
+define D_CAA143_CVP_PAG {alias D_CAA143_90_PA1 + D_CAA143_90_PA2   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA143_CVP_PMI {alias D_CAA143_90_PU   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA143_CVP_PLS {alias D_CAA143_CAALOS_CVP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA143_SWP_PLS {alias D_CAA143_CAALOS_SWP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA143_CVP     {alias D_CAA143_CVP_PAG + D_CAA143_CVP_PMI + D_CAA143_CVP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+define D_CAA143_SWP     {alias D_CAA143_SWP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !losses
+
+define D_CAA155_CVP_PAG {alias D_CAA155_90_PA1 + D_CAA155_90_PA2   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA155_CVP_PLS {alias D_CAA155_CAALOS_CVP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA155_SWP_PLS {alias D_CAA155_CAALOS_SWP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA155_CVP     {alias D_CAA155_CVP_PAG + D_CAA155_CVP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+define D_CAA155_SWP     {alias D_CAA155_SWP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !losses
+
+define D_CAA165_CVP_PAG {alias D_CAA165_90_PA1 + D_CAA165_90_PA2   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA165_CVP_PMI {alias D_CAA165_90_PU   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA165_CVP_PLS {alias D_CAA165_CAALOS_CVP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA165_SWP_PLS {alias D_CAA165_CAALOS_SWP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA165_CVP     {alias D_CAA165_CVP_PAG + D_CAA165_CVP_PMI + D_CAA165_CVP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+define D_CAA165_SWP     {alias D_CAA165_SWP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !losses
+
+define D_CAA172_CVP_PAG {alias D_CAA172_90_PA1 + D_CAA172_90_PA2   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA172_CVP_PMI {alias D_CAA172_90_PU   kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA172_CVP_PLS {alias D_CAA172_CAALOS_CVP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA172_SWP_PLS {alias D_CAA172_CAALOS_SWP kind 'FLOW-DELIVERY' units 'cfs'}
+define D_CAA172_CVP     {alias D_CAA172_CVP_PAG + D_CAA172_CVP_PMI + D_CAA172_CVP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !ag+losses
+define D_CAA172_SWP     {alias D_CAA172_SWP_PLS kind 'FLOW-DELIVERY' units 'cfs'} !losses
+

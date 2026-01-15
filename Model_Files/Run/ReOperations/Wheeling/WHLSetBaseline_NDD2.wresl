@@ -1,0 +1,6 @@
+define C_DMC000_Base {value C_DMC000[NDD2]}
+define C_CAA003_Base {value C_CAA003[NDD2]}
+define C_CAA003_TD_Base {value C_CAA003_td[NDD2]}
+define NDOI_ADD_cvp_Base {value NDOI_ADD_cvp[NDD2]}
+define NDOI_ADD_swp_Base {value NDOI_ADD_swp[NDD2]}
+

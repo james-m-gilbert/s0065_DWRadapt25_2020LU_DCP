@@ -1,0 +1,56 @@
+!***************************************************************************************************************************************
+!    Copyright (C) 2017, 2018 State of California, Department of Water Resources. This file is part of the CalSim 3.
+!
+!    The CalSim 3 is free software: !<license>
+!
+!    you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free
+!    Software Foundation, either version 3 of the License, or(at your option) any later version.
+!
+!    CalSim 3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+!    of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+!
+!    You should have received a copy of the GNU General Public License along with CalSim 3.  If not, see <http://www.gnu.org/licenses>.
+!****************************************************************************************************************************************
+
+! Pre-CVPIA minimum flow requirement
+! see *.table for documentation
+! Dustin Jones 11/22/99
+! Revised SRS 12/14/99
+!
+! ==========================================================================
+! American River @ H Street
+
+define HMin {select HStMin
+             from   HSt_base
+             where  month=month, AmerD893=wyt_AMERd893_cvp
+}
+
+goal meet_HStQ {C_AMR006_MIF < HMin}
+
+!Restructured goal SetHSttoMin to eliminate threshold affect of using a specific storage as trigger
+!Penalty is now variable and scales upward when storage in the prior month was between 500 and 250.  TF Stantec 112821
+/*define Hstminpenalty {
+	case penaltyvariable {
+		condition S_FOLSM(-1) < 500. .and. S_FOLSM(-1) > 250.
+		value (500. - S_FOLSM(-1)) / 25.  !Scales from 0 to 10
+	}
+	case fixedpenalty {
+ 	    condition S_FOLSM(-1) <= 250.
+	    value 10.}
+	case nopenalty {
+		condition always
+		value 0.}
+}
+*/
+
+goal setHSttoMin {
+    lhs C_AMR006_ADD
+    case lowfolsom {
+        condition S_FOLSM(-1) < 400.
+        rhs 0.
+! this weight is way too high - it will override COA
+!        lhs>rhs penalty 3000 }
+! this weight causes reservoir balancing to shift to Shasta if possible
+        lhs>rhs penalty  10} !Hstminpenalty }
+!        lhs<rhs penalty 0 }
+}

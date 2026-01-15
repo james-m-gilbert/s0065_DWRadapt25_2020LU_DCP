@@ -1,0 +1,17 @@
+! previous values  
+define pr_cyc_C_SAC041 {value C_SAC041[TRANSFERS_STAGE1]}
+define pr_cyc_EXP_TD {value EXP_TD[TRANSFERS_STAGE1]}
+define pr_cyc_C_SJR070 {value C_SJR070[TRANSFERS_STAGE1]}
+define pr_cyc_DXC {value DXC[TRANSFERS_STAGE1]}
+define pr_cyc_net_DICU {value net_DICU[TRANSFERS_STAGE1]}
+define pr_cyc_sac_oth {value sac_oth[TRANSFERS_STAGE1]}
+define pr_cyc_exp_oth {value exp_oth[TRANSFERS_STAGE1]}
+define pr_cyc_SMSCG_OP  {value SMSCG_OP[TRANSFERS_STAGE1]}
+define pr_cyc_C_SAC048_ISF001 {value C_SAC048_ISF001[TRANSFERS_STAGE1]}
+define pr_cyc_ndddv  {value ndddv[TRANSFERS_STAGE1]}
+
+! Use previous cycle values for flows to inform daily average to disaggretate 
+! The daily values are then used in setting bypass criteria and north TRANSFERS_STAGE1 diversion limits
+define Q_SAC048nospill{value C_SAC048[TRANSFERS_STAGE1]+ SP_SAC083_YBP037[TRANSFERS_STAGE1]+ SP_SAC066_YBP020[TRANSFERS_STAGE1]}
+define Q_SAC097{value C_SAC097[TRANSFERS_STAGE1]}
+define Q_SAC048nospilldv {alias Q_SAC048nospill kind 'debug' units 'cfs'}

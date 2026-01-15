@@ -1,0 +1,157 @@
+define EightRiver_Index{
+	value UNIMP_OROV + UNIMP_FOLS + UNIMP_YUBA + UNIMP_SRBB + UNIMP_ST + UNIMP_TU + UNIMP_ME + UNIMP_SJ
+}
+define EightRiver_Index_dv{alias EightRiver_Index kind 'index' units 'taf'}
+
+!Forecasts to calculate sum of forecasted Eight River Index Oct-Sept
+define C_BB_OctSep{
+	case OctDec_1922 {
+		condition month>=Oct .and. month <=Dec .and. wateryear == BgnWY
+		value 3000.  !Will create avg value for Eight River Index for first 3 months, just so TUCP's won't be triggered in these months.
+	}
+	case JanMay{
+		condition month>=Jan .and. month<=May
+		value (sum(i=Oct-month, -1, 1) UNIMP_SRBB(i))+(sum(i=0, Sep-month, 1) BB_fm_med[Forecast2](i))
+	}
+	case MayDec{
+		condition always
+		value C_BB_OctSep_dv(-1)
+	}
+}
+define C_BB_OctSep_dv {alias C_BB_OctSep kind 'index' units 'taf'}
+
+define I_OROVL_OctSep{
+	case OctDec_1922 {
+		condition month>=Oct .and. month <=Dec .and. wateryear == BgnWY
+		value 3000.  !Will create avg value for Eight River Index for first 3 months, just so TUCP's won't be triggered in these months.
+	}
+	case JanMay{
+		condition month>=Jan .and. month<=May
+		value (sum(i=Oct-month, -1, 1) UNIMP_OROV(i))+(sum(i=0, Sep-month, 1) I_Orovl_fm_med[SWPForecast](i))
+	}
+	case MayDec{
+		condition always
+		value I_OROVL_OctSep_dv(-1)
+	}
+}
+define I_OROVL_OctSep_dv {alias I_OROVL_OctSep kind 'index' units 'taf'}
+
+define I_FOLSM_OctSep{
+	case OctDec_1922 {
+		condition month>=Oct .and. month <=Dec .and. wateryear == BgnWY
+		value 3000.  !Will create avg value for Eight River Index for first 3 months, just so TUCP's won't be triggered in these months.
+	}
+	case JanMay{
+		condition month>=Jan .and. month<=May
+		value (sum(i=Oct-month, -1, 1) UNIMP_Fols(i))+(sum(i=0, Sep-month, 1) I_Folsm_fm_med[Forecast2](i))
+	}
+	case MayDec{
+		condition always
+		value I_FOLSM_OctSep_dv(-1)
+	}
+}
+define I_FOLSM_OctSep_dv {alias I_FOLSM_OctSep kind 'index' units 'taf'}
+
+define Yuba_OctSep{
+	case OctDec_1922 {
+		condition month>=Oct .and. month <=Dec .and. wateryear == BgnWY
+		value 3000.  !Will create avg value for Eight River Index for first 3 months, just so TUCP's won't be triggered in these months.
+	}
+	case JanMay{
+		condition month>=Jan .and. month<=May
+		value (sum(i=Oct-month, -1, 1) UNIMP_YUBA(i))+(sum(i=0, Sep-month, 1) yuba_fm_Med[SWPForecast](i))
+	}
+	case MayDec{
+		condition always
+		value Yuba_OctSep_dv(-1)
+	}
+}
+define Yuba_OctSep_dv {alias Yuba_OctSep kind 'index' units 'taf'}
+
+define I_ST_OctSep{
+	case OctDec_1922 {
+		condition month>=Oct .and. month <=Dec .and. wateryear == BgnWY
+		value 3000.  !Will create avg value for Eight River Index for first 3 months, just so TUCP's won't be triggered in these months.
+	}
+	case JanMay{
+		condition month>=Jan .and. month<=May
+		value (sum(i=Oct-month, -1, 1) UNIMP_ST(i))+(sum(i=0, Sep-month, 1) I_ST_fm_med[Forecast2](i))
+	}
+	case MayDec{
+		condition always
+		value I_ST_OctSep_dv(-1)
+	}
+}
+define I_ST_OctSep_dv {alias I_ST_OctSep kind 'index' units 'taf'}
+
+define I_SJ_OctSep{
+	case OctDec_1922 {
+		condition month>=Oct .and. month <=Dec .and. wateryear == BgnWY
+		value 3000.  !Will create avg value for Eight River Index for first 3 months, just so TUCP's won't be triggered in these months.
+	}
+	case JanMay{
+		condition month>=Jan .and. month<=May
+		value (sum(i=Oct-month, -1, 1) UNIMP_SJ(i))+(sum(i=0, Sep-month, 1) I_SJ_fm_med[Forecast2](i))
+	}
+	case MayDec{
+		condition always
+		value I_SJ_OctSep_dv(-1)
+	}
+}
+define I_SJ_OctSep_dv {alias I_SJ_OctSep kind 'index' units 'taf'}
+
+define I_ME_OctSep{
+	case OctDec_1922 {
+		condition month>=Oct .and. month <=Dec .and. wateryear == BgnWY
+		value 3000.  !Will create avg value for Eight River Index for first 3 months, just so TUCP's won't be triggered in these months.
+	}
+	case JanMay{
+		condition month>=Jan .and. month<=May
+		value (sum(i=Oct-month, -1, 1) UNIMP_ME(i))+(sum(i=0, Sep-month, 1) I_ME_fm_med[Forecast2](i))
+	}
+	case MayDec{
+		condition always
+		value I_ME_OctSep_dv(-1)
+	}
+}
+define I_ME_OctSep_dv {alias I_ME_OctSep kind 'index' units 'taf'}
+
+define I_TU_OctSep{
+	case OctDec_1922 {
+		condition month>=Oct .and. month <=Dec .and. wateryear == BgnWY
+		value 3000.  !Will create avg value for Eight River Index for first 3 months, just so TUCP's won't be triggered in these months.
+	}
+	case JanMay{
+		condition month>=Jan .and. month<=May
+		value (sum(i=Oct-month, -1, 1) UNIMP_TU(i))+(sum(i=0, Sep-month, 1) I_TU_fm_med[Forecast2](i))
+	}
+	case MayDec{
+		condition always
+		value I_TU_OctSep_dv(-1)
+	}
+}
+define I_TU_OctSep_dv {alias I_TU_OctSep kind 'index' units 'taf'}
+
+define EightRiver_Index_for_OctSep{
+	value C_BB_OctSep + I_OROVL_OctSep + I_FOLSM_OctSep + Yuba_OctSep + I_ST_OctSep + I_SJ_OctSep + I_ME_OctSep + I_TU_OctSep
+}
+define EightRiver_Index_for_OctSep_dv{alias EightRiver_Index_for_OctSep kind 'index' units 'taf'}
+define EightRiver_Index_for_OctSep_prv_yr_dv{std kind 'index' units 'taf'}
+
+define EightRiver_Index_for_OctSep_prv_yr {
+	case firstwateryear{
+		condition wateryear==bgnwy 
+		value 20000.
+		}
+	case Oct{
+	condition month == Oct
+	value EightRiver_Index_for_OctSep_dv (prevmay)
+	}
+	case otherwise {
+	condition always
+	value EightRiver_Index_for_OctSep_prv_yr_dv(-1)
+	}
+}
+goal set_EightRiver_Index_for_OctSep_prv_yr_dv{
+	EightRiver_Index_for_OctSep_prv_yr_dv = EightRiver_Index_for_OctSep_prv_yr
+}

@@ -1,0 +1,851 @@
+! North of Delta Ag shortage
+! Include placeholders for SWP settlement contractors with mixed diversion of SWP and WR water - SWP delivery assumes zero shortage
+define del_swp_pag_n {
+    alias perdel_swp_fsc * (CLmon_FTR039_11_SA4 + CLmon_JBC008_11_SA4) * taf_cfs 
+        + perdel_swp_fsc * CLmon_WEC005 * taf_cfs 
+        + perdel_swp_fsc * CLmon_JBC004_11_SA3 * taf_cfs 
+        + perdel_swp_fsc * CLmon_RVC005_11_SA2PR2 * taf_cfs 
+        + perdel_swp_fsc * CLmon_FTR018_15S_SA * taf_cfs 
+        + perdel_swp_fsc * CLmon_FTR014_16_SA * taf_cfs 
+        + perdel_swp_fsc * CLmon_FTR018_16_SA * taf_cfs 
+        + perdel_swp_fsc * CLmon_FTR021_16_SA * taf_cfs 
+    kind  'delivery-swp' 
+    units 'cfs'
+}
+
+!MI Shortage
+! -----> 11_SA1
+! Demand for surface water assuming minimum GW pumping
+define SWdem_11_SA1 { 
+	case WC_open {
+	condition month >= OCT .and. month <= JAN .or. month >= APR .and. month <= SEP
+	value ((AWR_11_SA1 + AWO_11_SA1 + AWW_11_SA1) * (1 + RPF_11_SA1)  !!Applied water demand + Riparian ET
+                       - min(TW_11_SA1, RUFR_11_SA1*AWR_11_SA1 + RUFO_11_SA1*AWO_11_SA1 + RUFW_11_SA1*AWW_11_SA1) !Reuse
+                       - (AWR_11_SA1 *(1 + RPF_11_SA1 - RUFR_11_SA1) + AWO_11_SA1 *(1 + RPF_11_SA1 - RUFO_11_SA1) + AWW_11_SA1 *(1 + RPF_11_SA1 - RUFW_11_SA1)) 
+                            * GPmin_11_SA1) !Minimum GW pumping
+                        * (1 + 1/(1/(EVF_WEC005_11_SA1 + DPF_WEC005_11_SA1 + LFF_WEC005_11_SA1 + OSF_WEC005_11_SA1) - 1))} 
+	case WC_closed {!WC closed for maintenance Feb-Mar
+	condition always
+	value 0. }
+}
+define CLdem_11_SA1 {value CLmon_WEC005* taf_cfs*perdel_cvpsc_sys}  !Contract allocation
+define WRassume_11_SA1 {value D_WEC005_11_SA1[-1] - CLdem_11_SA1}
+define SWdeltarget_11_SA1 {value min (SWdem_11_SA1 - WRassume_11_SA1, CLdem_11_SA1) }!- WRassume_11_SA1,CLdem_11_SA1)}   !Surface water delivery target   
+goal limit_WEC005_11_SA1 {D_WEC005_11_SA1 < max(DLT_WEC005[-1], SWdem_11_SA1)}
+define  X_WEC005_11_SA1 {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short1_WEC005_11_SA1  {
+    lhs  X_WEC005_11_SA1
+    case MAR_OCT {
+    condition month == OCT .or. month >= MAR .and. month <= SEP
+    rhs SWdeltarget_11_SA1 - (D_WEC005_11_SA1 - WRassume_11_SA1)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+define X2_WEC005_11_SA1 {alias SWdeltarget_11_SA1 - (D_WEC005_11_SA1 - WRassume_11_SA1) kind 'delivery-shortage' units 'cfs'}
+define Xwr_WEC005_11_SA1 {alias WRassume_11_SA1 - (D_WEC005_11_SA1 - SWdeltarget_11_SA1) kind 'delivery-shortage' units 'cfs'}
+
+define  Xnf_WEC005_11_SA1 {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short2_WEC005_11_SA1  {
+    lhs  Xnf_WEC005_11_SA1
+    case NovFeb {
+    condition month >= NOV .and. month <= FEB !.and. SWdem_11_SA1*cfs_taf > 1.001
+    rhs SWdem_11_SA1 - D_WEC005_11_SA1}! - WRassume_11_SA1}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+
+!aliases for debugging
+define WRassume_11_SA1dv {alias WRassume_11_SA1 kind 'WR-demand' units 'cfs'}
+define SWdem_11_SA1dv {alias SWdem_11_SA1 kind 'SW-demand' units 'cfs'}
+define CLdem_11_SA1dv {alias CLdem_11_SA1 kind 'CL-demand' units 'cfs'}
+define SWdeltarget_11_SA1dv {alias SWdeltarget_11_SA1 kind 'SW-delivery-target' units 'cfs'}
+
+
+! -----> 11_SA2
+! Demand for surface water assuming minimum GW pumping
+define SWdem_11_SA2 {value ((AWR_11_SA2 + AWO_11_SA2 + AWW_11_SA2) * (1 + RPF_11_SA2)  !!Applied water demand + Riparian ET
+                       - min(TW_11_SA2, RUFR_11_SA2*AWR_11_SA2 + RUFO_11_SA2*AWO_11_SA2 + RUFW_11_SA2*AWW_11_SA2) !Reuse
+                       - (AWR_11_SA2 *(1 + RPF_11_SA2 - RUFR_11_SA2) + AWO_11_SA2 *(1 + RPF_11_SA2 - RUFO_11_SA2) + AWW_11_SA2 *(1 + RPF_11_SA2 - RUFW_11_SA2)) 
+                            * GPmin_11_SA2) !Minimum GW pumping
+                        * (1 + 1/(1/(EVF_RVC005_11_SA2 + DPF_RVC005_11_SA2 + LFF_RVC005_11_SA2 + OSF_RVC005_11_SA2) - 1))} !Last line a
+
+define CLdem_11_SA2 {value CLmon_RVC005_11_SA2PR2* taf_cfs*perdel_cvpsc_sys}  !Contract allocation
+define WRassume_11_SA2 {value D_RVC005_11_SA2[-1] /*+ D_RVC005_11_PR[-1]*/ - CLdem_11_SA2}
+define SWdeltarget_11_SA2 {value min(SWdem_11_SA2 - D_LDC007_11_SA2[-1] - WRassume_11_SA2, CLdem_11_SA2) }!- WRassume_11_SA2,CLdem_11_SA2)}   !Surface water delivery target   
+
+define  X_RVC005_11_SA2 {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short1_RVC005_11_SA2  {
+    lhs  X_RVC005_11_SA2
+    case APR_OCT {
+    condition month == OCT .or. month >= APR .and. month <= SEP
+    rhs SWdeltarget_11_SA2 - (D_RVC005_11_SA2 /*+ D_RVC005_11_PR*/ - WRassume_11_SA2)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+define X2_RVC005_11_SA2 {alias SWdeltarget_11_SA2 - (D_RVC005_11_SA2 - WRassume_11_SA2) kind 'delivery-shortage' units 'cfs'}
+define Xwr_RVC005_11_SA2 {alias WRassume_11_SA2 - (D_RVC005_11_SA2 - SWdeltarget_11_SA2) kind 'delivery-shortage' units 'cfs'}
+
+define  Xnm_RVC005_11_SA2 {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short2_RVC005_11_SA2  {
+    lhs  Xnm_RVC005_11_SA2
+    case NovMar {
+    condition month >= NOV .and. month <= MAR
+    rhs SWdem_11_SA2 - (D_RVC005_11_SA2)}! /* D_RVC005_11_PR*/ - WRassume_11_SA2)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+   
+!aliases for debugging
+define SWdem_11_SA2dv {alias SWdem_11_SA2 kind 'SW-demand' units 'cfs'}
+define CLdem_11_SA2dv {alias CLdem_11_SA2 kind 'CL-demand' units 'cfs'}
+define WRassume_11_SA2dv {alias WRassume_11_SA2 kind 'WR-demand' units 'cfs'}
+define SWdeltarget_11_SA2dv {alias SWdeltarget_11_SA2 kind 'SW-delivery-target' units 'cfs'}
+
+
+! -----> 11_SA3
+! Demand for surface water assuming minimum GW pumping
+define SWdem_11_SA3 {value ((AWR_11_SA3 + AWO_11_SA3 + AWW_11_SA3) * (1 + RPF_11_SA3)  !!Applied water demand + Riparian ET
+                       - min(TW_11_SA3, RUFR_11_SA3*AWR_11_SA3 + RUFO_11_SA3*AWO_11_SA3 + RUFW_11_SA3*AWW_11_SA3) !Reuse
+                       - (AWR_11_SA3 *(1 + RPF_11_SA3 - RUFR_11_SA3) + AWO_11_SA3 *(1 + RPF_11_SA3 - RUFO_11_SA3) + AWW_11_SA3 *(1 + RPF_11_SA3 - RUFW_11_SA3)) 
+                            * GPmin_11_SA3) !Minimum GW pumping
+                        * (1 + 1/(1/(EVF_JBC004_11_SA3 + DPF_JBC004_11_SA3 + LFF_JBC004_11_SA3 + OSF_JBC004_11_SA3) - 1))} !Last line a
+
+define CLdem_11_SA3 {value CLmon_JBC004_11_SA3 * taf_cfs*perdel_cvpsc_sys }  !Contract allocation
+define WRassume_11_SA3 {value D_JBC004_11_SA3[-1] - CLdem_11_SA3}
+define SWdeltarget_11_SA3 {value min(SWdem_11_SA3 - WRassume_11_SA3,CLdem_11_SA3)}   !Surface water delivery target   
+
+define  X_JBC004_11_SA3 {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short1_JBC004_11_SA3  {
+    lhs  X_JBC004_11_SA3
+    case APR_OCT {
+    condition month == OCT .or. month >= APR .and. month <= SEP
+    rhs SWdeltarget_11_SA3 - (D_JBC004_11_SA3 - WRassume_11_SA3)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define X2_JBC004_11_SA3 {alias SWdeltarget_11_SA3 - (D_JBC004_11_SA3 - WRassume_11_SA3) kind 'delivery-shortage' units 'cfs'}
+define Xwr_JBC004_11_SA3 {alias WRassume_11_SA3 - (D_JBC004_11_SA3 - SWdeltarget_11_SA3) kind 'delivery-shortage' units 'cfs'}
+
+define  Xnm_JBC004_11_SA3 {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short2_JBC004_11_SA3  {
+    lhs  Xnm_JBC004_11_SA3
+    case NovMar {
+    condition month >= NOV .and. month <= MAR
+    rhs SWdem_11_SA3 - (D_JBC004_11_SA3)}! - WRassume_11_SA3)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+  
+!aliases for debugging
+define SWdem_11_SA3dv {alias SWdem_11_SA3 kind 'SW-demand' units 'cfs'}
+define CLdem_11_SA3dv {alias CLdem_11_SA3 kind 'CL-demand' units 'cfs'}
+define WRassume_11_SA3dv {alias WRassume_11_SA3 kind 'WR-demand' units 'cfs'}
+define SWdeltarget_11_SA3dv {alias SWdeltarget_11_SA3 kind 'SW-delivery-target' units 'cfs'}
+
+! -----> 11_SA4
+! Demand for surface water assuming minimum GW pumping
+define SWdem_11_SA4 {value ((AWR_11_SA4 + AWO_11_SA4 + AWW_11_SA4) * (1 + RPF_11_SA4)  !!Applied water demand + Riparian ET
+                       - min(TW_11_SA4, RUFR_11_SA4*AWR_11_SA4 + RUFO_11_SA4*AWO_11_SA4 + RUFW_11_SA4*AWW_11_SA4) !Reuse
+                       - (AWR_11_SA4 *(1 + RPF_11_SA4 - RUFR_11_SA4) + AWO_11_SA4 *(1 + RPF_11_SA4 - RUFO_11_SA4) + AWW_11_SA4 *(1 + RPF_11_SA4 - RUFW_11_SA4)) 
+                            * GPmin_11_SA4) !Minimum GW pumping
+                        * (1 + 1/(1/(EVF_SEC009_11_SA4 + DPF_SEC009_11_SA4 + LFF_SEC009_11_SA4 + OSF_SEC009_11_SA4) - 1))} !Last line a
+
+define CLdem_11_SA4 {value (CLmon_FTR039_11_SA4 + CLmon_JBC008_11_SA4)*taf_cfs*perdel_cvpsc_sys }  !Contract allocation
+define WRassume_11_SA4 {value D_SEC009_11_SA4[-1] - CLdem_11_SA4}
+define SWdeltarget_11_SA4 {value min(SWdem_11_SA4 - WRassume_11_SA4,CLdem_11_SA4)}   !Surface water delivery target   
+
+define  X_SEC009_11_SA4 {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short1_SEC009_11_SA4  {
+    lhs  X_SEC009_11_SA4
+    case APR_OCT {
+    condition month == OCT .or. month >= APR .and. month <= SEP
+    rhs SWdeltarget_11_SA4 - (D_SEC009_11_SA4 - WRassume_11_SA4)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define X2_SEC009_11_SA4 {alias SWdeltarget_11_SA4 - (D_SEC009_11_SA4 - WRassume_11_SA4) kind 'delivery-shortage' units 'cfs'}
+define Xwr_SEC009_11_SA4 {alias WRassume_11_SA4 - (D_SEC009_11_SA4 - SWdeltarget_11_SA4) kind 'delivery-shortage' units 'cfs'}
+
+define  Xnm_SEC009_11_SA4 {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short2_SEC009_11_SA4  {
+    lhs  Xnm_SEC009_11_SA4
+    case NovMar {
+    condition month >= NOV .and. month <= MAR
+    rhs SWdem_11_SA4 - (D_SEC009_11_SA4)}! - WRassume_11_SA4)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+
+!aliases for debugging
+define SWdem_11_SA4dv {alias SWdem_11_SA4 kind 'SW-demand' units 'cfs'}
+define CLdem_11_SA4dv {alias CLdem_11_SA4 kind 'CL-demand' units 'cfs'}
+define WRassume_11_SA4dv {alias WRassume_11_SA4 kind 'WR-demand' units 'cfs'}
+define SWdeltarget_11_SA4dv {alias SWdeltarget_11_SA4 kind 'SW-delivery-target' units 'cfs'}
+
+
+
+define totaloss {alias EVF_SAC121_08S_SA3 +DPF_SAC121_08S_SA3 + LFF_SAC121_08S_SA3 + OSF_SAC121_08S_SA3 kind 'test' units 'none'}
+define testloss {alias (1 + 1/(1/(EVF_SAC121_08S_SA3 +DPF_SAC121_08S_SA3 + LFF_SAC121_08S_SA3 + OSF_SAC121_08S_SA3) - 1)) kind 'test' units 'none'}
+
+! -----> 16_SA
+! Demand for surface water assuming minimum GW pumping
+define SWdem_16_SA {value ((AWR_16_SA + AWO_16_SA) * (1 + RPF_16_SA)  !!Applied water demand + Riparian ET
+                       - min(TW_16_SA, RUFR_16_SA*AWR_16_SA + RUFO_16_SA*AWO_16_SA) !Reuse
+                       - (AWR_16_SA *(1 + RPF_16_SA - RUFR_16_SA) + AWO_16_SA *(1 + RPF_16_SA - RUFO_16_SA)) 
+                            * GPmin_16_SA) !Minimum GW pumping
+                        * (1 + 1/(1/(EVF_FTR021_16_SA + DPF_FTR021_16_SA + LFF_FTR021_16_SA + OSF_FTR021_16_SA) - 1))} !Last line addresses loss
+
+define CLdem_16_SA {value (CLmon_FTR021_16_SA + CLmon_FTR018_16_SA + CLmon_FTR014_16_SA)*taf_cfs*perdel_cvpsc_sys }  !Contract allocation
+define WRassume_16_SA {value max(0.,(D_FTR021_16_SA[-1] + D_FTR018_16_SA[-1] + D_FTR014_16_SA[-1] + D_FTR008_16_SA[-1] - CLdem_16_SA))} 
+define SWdeltarget_16_SA {value min(SWdem_16_SA - D_FTR008_16_SA[-1],CLdem_16_SA)}   !Surface water delivery target   
+
+define  X_Total_16_SA {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short1_Total_16_SA  {
+    lhs  X_Total_16_SA
+    case OCT_SEP {
+    condition month == OCT .or. month >= APR .and. month <= SEP
+    rhs SWdeltarget_16_SA - (D_FTR021_16_SA + D_FTR018_16_SA + D_FTR014_16_SA + D_FTR008_16_SA - WRassume_16_SA)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define  Xnm_Total_16_SA {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short2_Total_16_SA  {
+    lhs  Xnm_Total_16_SA
+    case NovMar {
+    condition month >= NOV .and. month <= MAR
+    rhs SWdem_16_SA - (D_FTR021_16_SA + D_FTR018_16_SA + D_FTR014_16_SA + D_FTR008_16_SA)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define  CLmon_total_16_SA {value CLmon_FTR021_16_SA + CLmon_FTR018_16_SA + CLmon_FTR014_16_SA} 
+
+define  X_FTR021_16_SA  {alias X_Total_16_SA * ((CLmon_FTR021_16_SA) / (CLmon_total_16_SA + 0.00001)) kind 'delivery-shortage' units 'cfs'}
+define  X_FTR018_16_SA  {alias X_Total_16_SA * ((CLmon_FTR018_16_SA) / (CLmon_total_16_SA + 0.00001)) kind 'delivery-shortage' units 'cfs'}
+define  X_FTR014_16_SA  {alias X_Total_16_SA * ((CLmon_FTR014_16_SA) / (CLmon_total_16_SA + 0.00001)) kind 'delivery-shortage' units 'cfs'}
+
+!aliases for debugging
+define SWdem_16_SAdv {alias SWdem_16_SA kind 'SW-demand' units 'cfs'}
+define CLdem_16_SAdv {alias CLdem_16_SA kind 'CL-demand' units 'cfs'}
+define WRassume_16_SAdv {alias WRassume_16_SA kind 'WR-demand' units 'cfs'}
+define SWdeltarget_16_SAdv {alias SWdeltarget_16_SA kind 'SW-delivery-target' units 'cfs'}
+
+! -----> 15S_SA
+! Demand for surface water assuming minimum GW pumping
+define SWdem_15S_SA {value ((AWR_15S_SA + AWO_15S_SA) * (1 + RPF_15S_SA)  !!Applied water demand + Riparian ET
+                       - min(TW_15S_SA, RUFR_15S_SA*AWR_15S_SA + RUFO_15S_SA*AWO_15S_SA) !Reuse
+                       - (AWR_15S_SA *(1 + RPF_15S_SA - RUFR_15S_SA) + AWO_15S_SA *(1 + RPF_15S_SA - RUFO_15S_SA)) 
+                            * GPmin_15S_SA) !Minimum GW pumping
+                        * (1 + 1/(1/(EVF_FTR018_15S_SA + DPF_FTR018_15S_SA + LFF_FTR018_15S_SA + OSF_FTR018_15S_SA) - 1))} !Last line a
+
+define CLdem_15S_SA {value CLmon_FTR018_15S_SA * taf_cfs*perdel_cvpsc_sys }  !Contract allocation
+define WRassume_15S_SA {value max (0.,D_FTR018_15S_SA[-1] - CLdem_15S_SA)}
+define SWdeltarget_15S_SA {value min(SWdem_15S_SA - D_FTR028_15S_SA[-1] - WRassume_15S_SA,CLdem_15S_SA)}   !Surface water delivery target   
+
+define  X_FTR018_15S_SA {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short1_FTR018_15S_SA  {
+    lhs  X_FTR018_15S_SA
+    case APR_OCT {
+    condition month == OCT .or. month >= APR .and. month <= SEP
+    rhs SWdeltarget_15S_SA - (D_FTR018_15S_SA - WRassume_15S_SA)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define  Xnm_FTR018_15S_SA {lower unbounded upper unbounded kind 'delivery-shortage' units 'cfs'}
+goal short2_FTR018_15S_SA  {
+    lhs  Xnm_FTR018_15S_SA
+    case NovMar {
+    condition month >= NOV .and. month <= MAR
+    rhs SWdem_15S_SA - (D_FTR018_15S_SA + D_FTR028_15S_SA)}!- WRassume_15S_SA)}
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+
+!aliases for debugging
+define SWdem_15S_SAdv {alias SWdem_15S_SA kind 'SW-demand' units 'cfs'}
+define CLdem_15S_SAdv {alias CLdem_15S_SA kind 'CL-demand' units 'cfs'}
+define WRassume_15S_SAdv {alias WRassume_15S_SA kind 'WR-demand' units 'cfs'}
+define SWdeltarget_15S_SAdv {alias SWdeltarget_15S_SA kind 'SW-delivery-target' units 'cfs'}
+
+define short_swp_pag_n {alias X_WEC005_11_SA1 + X_RVC005_11_SA2 + X_JBC004_11_SA3 + X_SEC009_11_SA4 + X_FTR021_16_SA +
+				X_FTR018_16_SA + X_FTR014_16_SA + X_FTR018_15S_SA kind 'delivery-shortage-swp' units 'cfs'}
+		
+define short_swp_pwr {alias Xnf_WEC005_11_SA1 + Xnm_RVC005_11_SA2 + Xnm_JBC004_11_SA3 + Xnm_SEC009_11_SA4 + Xnm_Total_16_SA + Xnm_FTR018_15S_SA kind 'delivery-shortage-swp' units 'cfs'}
+
+
+define Y_WEC005_11_SA1 {lower unbounded upper unbounded kind 'delivery-cvp' units 'cfs'}
+goal Dnm_WEC005_11_SA1  {
+    lhs Y_WEC005_11_SA1
+    case NOV_MAR {
+    condition month >= NOV .and. month <= MAR
+    rhs D_WEC005_11_SA1 }
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }   
+				
+define Y_RVC005_11_SA2 {lower unbounded upper unbounded kind 'delivery-cvp' units 'cfs'}
+goal Dnm_RVC005_11_SA2  {
+    lhs Y_RVC005_11_SA2
+    case NOV_MAR {
+    condition month >= NOV .and. month <= MAR
+    rhs D_RVC005_11_SA2 }
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define Y_JBC004_11_SA3 {lower unbounded upper unbounded kind 'delivery-cvp' units 'cfs'}
+goal Dnm_JBC004_11_SA3  {
+    lhs Y_JBC004_11_SA3
+    case NOV_MAR {
+    condition month >= NOV .and. month <= MAR
+    rhs D_JBC004_11_SA3 }
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define Y_SEC009_11_SA4 {lower unbounded upper unbounded kind 'delivery-cvp' units 'cfs'}
+goal Dnm_SEC009_11_SA4  {
+    lhs Y_SEC009_11_SA4
+    case NOV_MAR {
+    condition month >= NOV .and. month <= MAR
+    rhs D_SEC009_11_SA4 }
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define Y_FTR021_16_SA {lower unbounded upper unbounded kind 'delivery-cvp' units 'cfs'}
+goal Dnm_FTR021_16_SA  {
+    lhs Y_FTR021_16_SA
+    case NOV_MAR {
+    condition month >= NOV .and. month <= MAR
+    rhs D_FTR021_16_SA }
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define Y_FTR018_16_SA {lower unbounded upper unbounded kind 'delivery-cvp' units 'cfs'}
+goal Dnm_FTR018_16_SA  {
+    lhs Y_FTR018_16_SA
+    case NOV_MAR {
+    condition month >= NOV .and. month <= MAR
+    rhs D_FTR018_16_SA }
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define Y_FTR014_16_SA {lower unbounded upper unbounded kind 'delivery-cvp' units 'cfs'}
+goal Dnm_FTR014_16_SA  {
+    lhs Y_FTR014_16_SA
+    case NOV_MAR {
+    condition month >= NOV .and. month <= MAR
+    rhs D_FTR014_16_SA }
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+    
+define Y_FTR018_15S_SA {lower unbounded upper unbounded kind 'delivery-cvp' units 'cfs'}
+goal Dnm_FTR018_15S_SA  {
+    lhs Y_FTR018_15S_SA
+    case NOV_MAR {
+    condition month >= NOV .and. month <= MAR
+    rhs D_FTR018_15S_SA }
+    
+    case otherwise {
+    condition always
+    rhs 0. }
+    }
+
+
+			  
+!define del_swp_pag_n {alias D_WEC005_11_SA1 + D_RVC005_11_SA2 + D_JBC004_11_SA3 + D_SEC009_11_SA4 + D_FTR021_16_SA			  
+!			  + D_FTR018_16_SA + D_FTR014_16_SA + D_FTR018_15S_SA + D_FTR003_22_SA2 + D_FTR003_17S_SA
+!			  + D_FTR045_15N_SA + D_FTR059_12_SA + D_WEC005_11_PR + D_WEC005_BTC032 kind 'delivery-swp' units 'cfs'}			  
+
+define del_swp_pwr   {alias Y_WEC005_11_SA1 + Y_RVC005_11_SA2 + Y_JBC004_11_SA3 + Y_SEC009_11_SA4 + Y_FTR021_16_SA
+			  + Y_FTR018_16_SA + Y_FTR014_16_SA + Y_FTR018_15S_SA + D_FTR003_22_SA2 + D_FTR003_17S_SA
+			  + D_FTR045_15N_SA + D_FTR059_12_SA kind 'delivery-swp' units 'cfs'}
+
+		  
+
+! North of Delta MI
+! Placeholders for Butte Co and Yuba City shortages due to mixed diversion of SWP and WR water - Butte Co and Yuba City shortages assumed to be zero
+define short_ButteCo {alias CLmon_ButteC_11_NU1*taf_cfs - D_THRMF_11_NU1_PMI /*CLmon_ButteC*perdv_swp_oth1*/ kind 'delivery-shortage' units 'cfs'}
+define short_YubaCity {alias CL1_WTPCYC_16_PU*swp_perdel_yuba*taf_cfs + CL2mon_WTPCYC_16_PU*taf_cfs + WR1mon_WTPCYC_16_PU*taf_cfs + WR2mon_WTPCYC_16_PU*taf_cfs - D_WTPCYC_16_PU /*CL1mon_WTPCYC_16_PU*perdv_swp_oth1*/ kind 'delivery-shortage' units 'cfs'}
+
+define short_swp_pmi_n {alias short_ButteCo + short_YubaCity kind 'delivery-shortage-swp' units 'cfs'}
+
+define del_swp_pmi_n {alias CLmon_ButteC*perdv_swp_oth1 + D_WTPCYC_16_PU kind 'delivery-swp' units 'cfs'}
+
+!*** For the South of Delta *************************************************************
+
+! AG Shortage
+define short_D802A_PAG {alias dem_D802A_PAG*taf_cfs*perdel_28 - D_CAA046_71_PA7_PAG kind 'delivery-shortage' units 'cfs'}
+define short_D_CSB015_KERN_BMWD_PAG  {alias dem_D_CSB015_KERN_BMWD_PAG *taf_cfs*perdel_19 - D_CSB015_KERN_BMWD_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CSB009_CLRTA1_DDWD_PAG  {alias dem_D_CSB009_CLRTA1_DDWD_PAG *taf_cfs*perdel_5  - D_CSB009_CLRTA1_DDWD_PAG  kind 'delivery-shortage' units 'cfs'}
+
+! AG Shortages by Pool
+! Pool 22 AG Shortages
+define short_D_CAA185_EMPIRE_PAG  {alias DEM_14_PA *taf_cfs*perdel_14 - D_CAA185_EMPIRE_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA185_KINGS_PAG  {alias DEM_10_PA *taf_cfs*perdel_10 - D_CAA185_KINGS_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA185_TULARE_PAG  {alias DEM_37_PA *taf_cfs*perdel_37 - D_CAA185_TULARE_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA185_DUDLEY_PAG  {alias DEM_13_PA *taf_cfs*perdel_13 - D_CAA185_DUDLEY_PAG  kind 'delivery-shortage' units 'cfs'}
+
+! Pools 23 - 30 AG Shortages
+define short_D_CAA197_16_PAG  {alias DEM_CAA197_16_PAG *taf_cfs*perdel_16 - D_CAA197_16_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA208_16_PAG  {alias DEM_CAA208_16_PAG *taf_cfs*perdel_16 - D_CAA208_16_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA217_16_PAG  {alias DEM_CAA217_16_PAG *taf_cfs*perdel_16 - D_CAA217_16_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA225_16_PAG  {alias DEM_CAA225_16_PAG *taf_cfs*perdel_16 - D_CAA225_16_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA232_16_PAG  {alias DEM_CAA232_16_PAG *taf_cfs*perdel_16 - D_CAA232_16_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA238_16_PAG  {alias DEM_CAA238_16_PAG *taf_cfs*perdel_16 - D_CAA238_16_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA244_16_PAG  {alias DEM_CAA244_16_PAG *taf_cfs*perdel_16 - D_CAA244_16_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA251_16_PAG  {alias DEM_CAA251_16_PAG *taf_cfs*perdel_16 - D_CAA251_16_PAG  kind 'delivery-shortage' units 'cfs'}
+
+! Pools 31 - 35 AG Shortages
+define short_D_CAA256_17_PAG  {alias DEM_CAA256_17_PAG *taf_cfs*perdel_17 - D_CAA256_17_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA262_17_PAG  {alias DEM_CAA262_17_PAG *taf_cfs*perdel_17 - D_CAA262_17_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA267_17_PAG  {alias DEM_CAA267_17_PAG *taf_cfs*perdel_17 - D_CAA267_17_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA271_17_PAG  {alias DEM_CAA271_17_PAG *taf_cfs*perdel_17 - D_CAA271_17_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA278_17_PAG  {alias DEM_CAA278_17_PAG *taf_cfs*perdel_17 - D_CAA278_17_PAG  kind 'delivery-shortage' units 'cfs'}
+
+! Pools 36 - 40 AG Shortages
+define short_D_CAA280_18_PAG  {alias DEM_CAA280_18_PAG *taf_cfs*perdel_18 - D_CAA280_18_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA283_18_PAG  {alias DEM_CAA283_18_PAG *taf_cfs*perdel_18 - D_CAA283_18_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA287_18_PAG  {alias DEM_CAA287_18_PAG *taf_cfs*perdel_18 - D_CAA287_18_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA291_18_PAG  {alias DEM_CAA291_18_PAG *taf_cfs*perdel_18 - D_CAA291_18_PAG  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA293_18_PAG  {alias DEM_CAA293_18_PAG *taf_cfs*perdel_18 - D_CAA293_18_PAG  kind 'delivery-shortage' units 'cfs'}
+
+define short_swp_pag_s {alias short_D802A_PAG
+							+ short_D_CAA185_EMPIRE_PAG + short_D_CAA185_KINGS_PAG + short_D_CAA185_TULARE_PAG + short_D_CAA185_DUDLEY_PAG !Pool 22 AG Shortages
+							+ short_D_CAA197_16_PAG + short_D_CAA208_16_PAG + short_D_CAA217_16_PAG + short_D_CAA225_16_PAG ! Pools 23 - 30 AG Shortages
+							+ short_D_CAA232_16_PAG + short_D_CAA238_16_PAG + short_D_CAA244_16_PAG + short_D_CAA251_16_PAG + short_D_CSB015_KERN_BMWD_PAG + short_D_CSB009_CLRTA1_DDWD_PAG
+                            + short_D_CAA256_17_PAG + short_D_CAA262_17_PAG + short_D_CAA267_17_PAG + short_D_CAA271_17_PAG + short_D_CAA278_17_PAG ! Pools 31 - 35 AG Shortages
+                            + short_D_CAA280_18_PAG + short_D_CAA283_18_PAG + short_D_CAA287_18_PAG + short_D_CAA291_18_PAG + short_D_CAA293_18_PAG ! Pools 36 - 40 AG Shortages
+                      kind  'delivery-shortage-swp'
+                      units 'cfs'}
+
+define del_swp_pag_s {alias D_CAA046_71_PA7 !+ D846_PAG + D847_PAG + D848_PAG + D849_PAG 
+						  + D_CAA185_EMPIRE_PAG + D_CAA185_KINGS_PAG + D_CAA185_TULARE_PAG + D_CAA185_DUDLEY_PAG !Pool 22 AG Deliveries
+						  + D_CAA197_16_PAG + D_CAA208_16_PAG + D_CAA217_16_PAG + D_CAA225_16_PAG ! Pools 23 - 30 AG Deliveries
+						  + D_CAA232_16_PAG + D_CAA238_16_PAG + D_CAA244_16_PAG + D_CAA251_16_PAG + D_CSB015_KERN_BMWD_PAG + D_CSB009_CLRTA1_DDWD_PAG
+                          + D_CAA256_17_PAG + D_CAA262_17_PAG + D_CAA267_17_PAG + D_CAA271_17_PAG + D_CAA278_17_PAG ! Pools 31 - 35 AG Deliveries 
+                          + D_CAA280_18_PAG + D_CAA283_18_PAG + D_CAA287_18_PAG + D_CAA291_18_PAG + D_CAA293_18_PAG ! Pools 36 - 40 AG Deliveries
+                    kind  'delivery-swp'
+                    units 'cfs'}
+
+
+! MI Shortage
+define short_D_PRRIS_MWDSC_PMI   {alias dem_D_PRRIS_MWDSC_PMI  *taf_cfs*perdel_21 - D_PRRIS_MWDSC_PMI   kind 'delivery-shortage' units 'cfs'}
+define short_D_SVRWD_CSTLN_PMI   {alias dem_D_SVRWD_CSTLN_PMI  *taf_cfs*perdel_11 - D_SVRWD_CSTLN_PMI   kind 'delivery-shortage' units 'cfs'}
+define short_D_PYRMD_VNTRA_PMI   {alias dem_D_PYRMD_VNTRA_PMI  *taf_cfs*perdel_38 - D_PYRMD_VNTRA_PMI   kind 'delivery-shortage' units 'cfs'}
+define short_D_CSTIC_VNTRA_PMI   {alias dem_D_CSTIC_VNTRA_PMI  *taf_cfs*perdel_39 - D_CSTIC_VNTRA_PMI   kind 'delivery-shortage' units 'cfs'}
+define short_NBA_N     {alias dem_D_BKR004_NBA009_NAPA*taf_cfs*perdel_27 - D_BKR004_NBA009_NAPA_PMI kind 'delivery-shortage' units 'cfs'}
+define short_NBA_S     {alias dem_D_BKR004_NBA009_SCWA*taf_cfs*perdel_36 - D_BKR004_NBA009_SCWA_PMI kind 'delivery-shortage' units 'cfs'}
+!define short_D851A_PMI {alias dem_D851A_PMI *taf_cfs*perdel_15 - D851A_PMI  kind 'delivery-shortage' units 'cfs'}
+! Pools 23 - 30 AG Shortages
+define short_D_CAA197_15_PU  {alias DEM_CAA197_15_PU *taf_cfs*perdel_15 - D_CAA197_15_PU  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA208_15_PU  {alias DEM_CAA208_15_PU *taf_cfs*perdel_15 - D_CAA208_15_PU  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA217_15_PU  {alias DEM_CAA217_15_PU *taf_cfs*perdel_15 - D_CAA217_15_PU  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA225_15_PU  {alias DEM_CAA225_15_PU *taf_cfs*perdel_15 - D_CAA225_15_PU  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA232_15_PU  {alias DEM_CAA232_15_PU *taf_cfs*perdel_15 - D_CAA232_15_PU  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA238_15_PU  {alias DEM_CAA238_15_PU *taf_cfs*perdel_15 - D_CAA238_15_PU  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA244_15_PU  {alias DEM_CAA244_15_PU *taf_cfs*perdel_15 - D_CAA244_15_PU  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA251_15_PU  {alias DEM_CAA251_15_PU *taf_cfs*perdel_15 - D_CAA251_15_PU  kind 'delivery-shortage' units 'cfs'}
+!define short_D851B_PMI {alias dem_D851B_PMI *taf_cfs*perdel_22 - D851B_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_CAA244_22_PU  {alias DEM_22_PU *taf_cfs*perdel_22 - D_CAA244_22_PU  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB413_MWDSC_PMI  {alias dem_D_ESB413_MWDSC_PMI *taf_cfs*perdel_23 - D_ESB413_MWDSC_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_WSB031_MWDSC_PMI  {alias dem_D_WSB031_MWDSC_PMI *taf_cfs*perdel_24 - D_WSB031_MWDSC_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB433_MWDSC_PMI  {alias dem_D_ESB433_MWDSC_PMI *taf_cfs*perdel_25 - D_ESB433_MWDSC_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_SBA009_ACFC_PMI  {alias dem_D_SBA009_ACFC_PMI *taf_cfs*perdel_1  - D_SBA009_ACFC_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_SBA020_ACFC_PMI  {alias dem_D_SBA020_ACFC_PMI *taf_cfs*perdel_2  - D_SBA020_ACFC_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_SBA029_ACWD_PMI  {alias dem_D_SBA029_ACWD_PMI *taf_cfs*perdel_3  - D_SBA029_ACWD_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_SBA036_SCVWD_PMI  {alias dem_D_SBA036_SCVWD_PMI *taf_cfs*perdel_35 - D_SBA036_SCVWD_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_CSB038_OBISPO_PMI  {alias dem_D_CSB038_OBISPO_PMI *taf_cfs*perdel_33 - D_CSB038_OBISPO_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_CSB103_BRBRA_PMI  {alias dem_D_CSB103_BRBRA_PMI *taf_cfs*perdel_34 - D_CSB103_BRBRA_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB324_AVEK_PMI  {alias dem_D_ESB324_AVEK_PMI *taf_cfs*perdel_4  - D_ESB324_AVEK_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB347_PLMDL_PMI  {alias dem_D_ESB347_PLMDL_PMI *taf_cfs*perdel_29 - D_ESB347_PLMDL_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB355_LROCK_PMI  {alias dem_D_ESB355_LROCK_PMI *taf_cfs*perdel_20 - D_ESB355_LROCK_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB403_MOJVE_PMI  {alias dem_D_ESB403_MOJVE_PMI *taf_cfs*perdel_26 - D_ESB403_MOJVE_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB407_CCHLA_PMI  {alias dem_D_ESB407_CCHLA_PMI *taf_cfs*perdel_8  - D_ESB407_CCHLA_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB408_DESRT_PMI  {alias dem_D_ESB408_DESRT_PMI *taf_cfs*perdel_12 - D_ESB408_DESRT_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB414_BRDNO_PMI  {alias dem_D_ESB414_BRDNO_PMI *taf_cfs*perdel_30 - D_ESB414_BRDNO_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB415_GABRL_PMI  {alias dem_D_ESB415_GABRL_PMI *taf_cfs*perdel_31 - D_ESB415_GABRL_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB420_GRGNO_PMI  {alias dem_D_ESB420_GRGNO_PMI *taf_cfs*perdel_32 - D_ESB420_GRGNO_PMI  kind 'delivery-shortage' units 'cfs'}
+define short_D_WSB032_CLRTA2_PMI  {alias dem_D_WSB032_CLRTA2_PMI *taf_cfs*perdel_6  - D_WSB032_CLRTA2_PMI  kind 'delivery-shortage' units 'cfs'}
+
+define short_swp_pmi_s {alias short_D_SVRWD_CSTLN_PMI   + short_D_PRRIS_MWDSC_PMI   + short_D_PYRMD_VNTRA_PMI  + short_D_CSTIC_VNTRA_PMI +
+                              short_NBA_N + short_NBA_S + short_D_CSB038_OBISPO_PMI +
+                              short_D_CSB103_BRBRA_PMI +
+							  short_D_CAA197_15_PU + short_D_CAA208_15_PU + short_D_CAA217_15_PU + short_D_CAA225_15_PU +! Pools 23 - 30 M&I Shortages
+							  short_D_CAA232_15_PU + short_D_CAA238_15_PU + short_D_CAA244_15_PU + short_D_CAA251_15_PU +
+							  short_D_CAA244_15_PU + !MWD M&I Shortage                            
+                              short_D_ESB324_AVEK_PMI + short_D_ESB347_PLMDL_PMI + short_D_ESB355_LROCK_PMI +
+                              short_D_ESB403_MOJVE_PMI  + short_D_ESB407_CCHLA_PMI  + short_D_ESB408_DESRT_PMI + short_D_ESB413_MWDSC_PMI +
+                              short_D_ESB414_BRDNO_PMI  + short_D_ESB415_GABRL_PMI  + short_D_ESB420_GRGNO_PMI + short_D_ESB433_MWDSC_PMI +
+                              short_D_WSB031_MWDSC_PMI  + short_D_WSB032_CLRTA2_PMI  + short_D_SBA009_ACFC_PMI + short_D_SBA020_ACFC_PMI +
+                              short_D_SBA029_ACWD_PMI  + short_D_SBA036_SCVWD_PMI
+                     kind  'delivery-shortage-swp'
+                     units 'cfs'}
+
+define del_swp_pmi_s {alias D_SVRWD_CSTLN_PMI  + D_PRRIS_MWDSC_PMI  +
+                            D_PYRMD_VNTRA_PMI  + D_CSTIC_VNTRA_PMI  + D_BKR004_NBA009_NAPA_PMI + D_BKR004_NBA009_SCWA_PMI + D_CSB038_OBISPO_PMI +
+                            D_CSB103_BRBRA_PMI +
+                            D_CAA197_15_PU + D_CAA208_15_PU + D_CAA217_15_PU + D_CAA225_15_PU +! Pools 23 - 30 M&I Deliveries
+							D_CAA232_15_PU + D_CAA238_15_PU + D_CAA244_15_PU + D_CAA251_15_PU +
+							D_CAA244_15_PU + !MWD M&I Deliveries
+                            D_ESB324_AVEK_PMI  + D_ESB347_PLMDL_PMI  + D_ESB355_LROCK_PMI +
+                            D_ESB403_MOJVE_PMI + D_ESB407_CCHLA_PMI + D_ESB408_DESRT_PMI  + D_ESB413_MWDSC_PMI  +
+                            D_ESB414_BRDNO_PMI + D_ESB415_GABRL_PMI + D_ESB420_GRGNO_PMI  + D_ESB433_MWDSC_PMI  +
+                            D_WSB031_MWDSC_PMI + D_WSB032_CLRTA2_PMI + D_SBA009_ACFC_PMI  + D_SBA020_ACFC_PMI  +
+                            D_SBA029_ACWD_PMI + D_SBA036_SCVWD_PMI
+                    kind  'delivery-swp'
+                    units 'cfs'}
+
+define short_swp_mwd {alias short_D_PRRIS_MWDSC_PMI + short_D_CAA244_22_PU + short_D_ESB413_MWDSC_PMI + short_D_ESB433_MWDSC_PMI + short_D_WSB031_MWDSC_PMI
+                      kind  'delivery-shortage-swp'
+                      units 'cfs'}
+
+
+define del_swp_mwd {alias D_PRRIS_MWDSC_PMI + D_CAA244_22_PU + D_ESB413_MWDSC_PMI + D_ESB433_MWDSC_PMI + D_WSB031_MWDSC_PMI
+                    kind  'delivery-swp'
+                    units 'cfs'}
+
+
+define short_swp_oth {alias short_swp_pmi_n + short_swp_pmi_s - short_swp_mwd
+                      kind  'delivery-shortage-swp'
+                      units 'cfs'}
+
+
+define del_swp_oth {alias del_swp_pmi_n + del_swp_pmi_s - del_swp_mwd
+                    kind  'delivery-swp'
+                    units 'cfs'}
+
+! LOSS SHORTAGE
+define short_NBA_loss {alias NBA_Losses - D_BKR004_NBA009_NAPA_PLS kind 'delivery-shortage' units 'cfs'}
+! hard constraints on losses between Banks and CAA172 ensure no shortages
+define short_CAA185_PLS {alias DEM_CAA185_PLS - D_CAA185_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA197_PLS {alias DEM_CAA197_PLS - D_CAA197_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA208_PLS {alias DEM_CAA208_PLS - D_CAA208_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA217_PLS {alias DEM_CAA217_PLS - D_CAA217_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA225_PLS {alias DEM_CAA225_PLS - D_CAA225_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA232_PLS {alias DEM_CAA232_PLS - D_CAA232_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA238_PLS {alias DEM_CAA238_PLS - D_CAA238_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA244_PLS {alias DEM_CAA244_PLS - D_CAA244_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA251_PLS {alias DEM_CAA251_PLS - D_CAA251_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+
+define short_CAA256_PLS {alias DEM_CAA256_PLS - D_CAA256_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA262_PLS {alias DEM_CAA262_PLS - D_CAA262_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA267_PLS {alias DEM_CAA267_PLS - D_CAA267_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA271_PLS {alias DEM_CAA271_PLS - D_CAA271_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA278_PLS {alias DEM_CAA278_PLS - D_CAA278_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+
+define short_CAA280_PLS {alias DEM_CAA280_PLS - D_CAA280_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA283_PLS {alias DEM_CAA283_PLS - D_CAA283_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA287_PLS {alias DEM_CAA287_PLS - D_CAA287_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA291_PLS {alias DEM_CAA291_PLS - D_CAA291_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+define short_CAA293_PLS {alias DEM_CAA293_PLS - D_CAA293_CAALOS_SWP kind 'delivery-shortage' units 'cfs'}
+
+define short_D_ESB361_ESBLOS_PLS {alias dem_D_ESB361_ESBLOS_PLS - D_ESB361_ESBLOS_PLS kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB406_ESBLOS_PLS {alias dem_D_ESB406_ESBLOS_PLS - D_ESB406_ESBLOS_PLS kind 'delivery-shortage' units 'cfs'}
+define short_D_ESB425_ESBLOS_PLS {alias dem_D_ESB425_ESBLOS_PLS - D_ESB425_ESBLOS_PLS kind 'delivery-shortage' units 'cfs'}
+define short_D_WSB006_WSBLOS_PLS {alias dem_D_WSB006_WSBLOS_PLS - D_WSB006_WSBLOS_PLS kind 'delivery-shortage' units 'cfs'}
+define short_D_WSB026_WSBLOS_PLS {alias dem_D_WSB026_WSBLOS_PLS - D_WSB026_WSBLOS_PLS kind 'delivery-shortage' units 'cfs'}
+define short_D_WSB027_WSBLOS_PLS {alias dem_D_WSB027_WSBLOS_PLS - D_WSB027_WSBLOS_PLS kind 'delivery-shortage' units 'cfs'}
+define short_D_SBA042_SBALOS_PLS {alias dem_D_SBA042_SBALOS_PLS - D_SBA042_SBALOS_PLS kind 'delivery-shortage' units 'cfs'}
+
+define short_swp_pls {alias short_NBA_Loss + short_D_SBA042_SBALOS_PLS +
+                            short_CAA185_PLS +
+                            short_CAA197_PLS +
+                            short_CAA208_PLS +
+                            short_CAA217_PLS +
+                            short_CAA225_PLS +
+                            short_CAA232_PLS +
+                            short_CAA238_PLS +
+                            short_CAA244_PLS +
+                            short_CAA251_PLS +
+                            short_CAA256_PLS +
+                            short_CAA262_PLS +
+                            short_CAA267_PLS +
+                            short_CAA271_PLS +
+                            short_CAA278_PLS +
+                            short_CAA280_PLS +
+                            short_CAA283_PLS +
+                            short_CAA287_PLS +
+                            short_CAA291_PLS +
+                            short_CAA293_PLS +
+                            short_D_ESB361_ESBLOS_PLS + short_D_ESB406_ESBLOS_PLS +
+                            short_D_ESB425_ESBLOS_PLS + short_D_WSB006_WSBLOS_PLS + short_D_WSB026_WSBLOS_PLS + short_D_WSB027_WSBLOS_PLS
+                     kind  'delivery-shortage-swp'
+                     units 'cfs'}
+
+
+define del_swp_pls {alias D_BKR004_NBA009_NAPA_PLS + D_CAA005_CAALOS +   
+                          D_CAA006_CAALOS + D_CAA009_CAALOS + D_CAA012_CAALOS +   
+                          D_CAA024_CAALOS + D_CAA046_CAALOS + D_CAA051_CAALOS +   
+                          D_CAA066_CAALOS + D_CAA067_CAALOS + D_CAA069_CAALOS +   
+                          D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP + D_CAA095_CAALOS_SWP +
+                          D_CAA109_CAALOS_SWP + D_CAA143_CAALOS_SWP + D_CAA155_CAALOS_SWP +
+                          D_CAA156_CAALOS_SWP + D_CAA165_CAALOS_SWP + D_CAA172_CAALOS_SWP +
+                          D_CAA185_CAALOS_SWP +
+                          D_CAA197_CAALOS_SWP +
+                          D_CAA208_CAALOS_SWP +
+                          D_CAA217_CAALOS_SWP +
+                          D_CAA225_CAALOS_SWP +
+                          D_CAA232_CAALOS_SWP +
+                          D_CAA238_CAALOS_SWP +
+                          D_CAA244_CAALOS_SWP +
+                          D_CAA251_CAALOS_SWP +
+                          D_CAA256_CAALOS_SWP +
+                          D_CAA262_CAALOS_SWP +
+                          D_CAA267_CAALOS_SWP +
+                          D_CAA271_CAALOS_SWP +
+                          D_CAA278_CAALOS_SWP +
+                          D_CAA280_CAALOS_SWP +
+                          D_CAA283_CAALOS_SWP +
+                          D_CAA287_CAALOS_SWP +
+                          D_CAA291_CAALOS_SWP +
+                          D_CAA293_CAALOS_SWP +
+                          D_ESB361_ESBLOS_PLS + D_ESB406_ESBLOS_PLS +
+                          D_ESB425_ESBLOS_PLS + D_WSB006_WSBLOS_PLS + D_WSB026_WSBLOS_PLS + D_WSB027_WSBLOS_PLS + D_SBA042_SBALOS_PLS
+                    kind  'delivery-swp'
+                    units 'cfs'}
+
+
+
+
+! INTERRRUPTIBLE SHORTAGE
+! Updated and new Article 21 demand patterns 07/2020
+! Added nodes from CASP for Kern (.*_17_PIN), renamed Empire->Dudley 2024-Apr
+define del_swp_pin {
+    ! Added Yuba, Oak Flat, Palmdale,  San Bernardino, San Gorgonio, and San Luis Obispo
+    alias 
+        D_PRRIS_MWDSC_PIN + D_CSTIC_VNTRA_PIN + D_BKR004_NBA009_NAPA_PIN + D_BKR004_NBA009_SCWA_PIN 
+        + D_CAA185_EMPIRE_PIN 
+        + D_CAA185_KINGS_PIN 
+        + D_CAA185_TULARE_PIN 
+        + D_CAA185_DUDLEY_PIN 
+        + D_CSB009_CLRTA1_DDWD_PIN + D_CSB038_OBISPO_PIN 
+        + D_CAA256_17_PIN + D_CAA262_17_PIN + D_CAA267_17_PIN + D_CAA271_17_PIN + D_CAA278_17_PIN 
+        + D_CSB103_BRBRA_PIN + D_ESB324_AVEK_PIN 
+        + D_ESB407_CCHLA_PIN + D_ESB408_DESRT_PIN + D_ESB413_MWDSC_PIN + D_ESB415_GABRL_PIN + D_ESB433_MWDSC_PIN  + D_ESB347_PLMDL_PIN + D_ESB414_BRDNO_PIN + D_ESB420_GRGNO_PIN
+        + D_WSB031_MWDSC_PIN 
+        + D_SBA009_ACFC_PIN + D_SBA029_ACWD_PIN + D_SBA036_SCVWD_PIN 
+        + D_WTPCYC_16_PU_SWP_PIN 
+        + D_CAA046_71_PA7_PIN  
+        + D_ESB355_LROCK_PIN + D_ESB403_MOJVE_PIN
+    kind  'delivery-swp'
+    units 'cfs'
+}
+
+
+
+! TOTAL (Table A amounts without losses)
+define short_swp_tot_n {alias short_swp_pag_n + short_swp_pmi_n kind  'delivery-shortage-swp' units 'cfs'}
+define short_swp_tot_s {alias short_swp_pag_s + short_swp_pmi_s kind  'delivery-shortage-swp' units 'cfs'}
+define short_swp_pag   {alias short_swp_pag_n + short_swp_pag_s kind  'delivery-shortage-swp' units 'cfs'}
+define short_swp_pmi   {alias short_swp_pmi_n + short_swp_pmi_s kind  'delivery-shortage-swp' units 'cfs'}
+define short_swp_totA  {alias short_swp_pag_s + short_swp_pmi   kind  'delivery-shortage-swp' units 'cfs'}
+
+define del_swp_tot_s {alias del_swp_pag_s + del_swp_pmi_s kind  'delivery-swp' units 'cfs'}
+define del_swp_pag   {alias del_swp_pag_n + del_swp_pag_s kind  'delivery-swp' units 'cfs'}
+define del_swp_pmi   {alias del_swp_pmi_n + del_swp_pmi_s kind  'delivery-swp' units 'cfs'}
+define del_swp_totA  {alias del_swp_pag_s + del_swp_pmi   kind  'delivery-swp' units 'cfs'}
+
+! Pool	CVP/SWP/TOT  CHANNEL
+! 14    TOT          CAA087     
+! 14    CVP          CAA087 
+! 14    SWP          CAA087 
+! 15    TOT          CAA095     
+! 15    CVP          CAA095 
+! 15    SWP          CAA095 
+! 16    TOT          CAA109   
+! 16    CVP          CAA109 
+! 16    SWP          CAA109 
+! 17    TOT          CAA122    
+! 17    CVP          CAA122 
+! 17    SWP          CAA122 
+! 18    TOT          CAA133    
+! 18    CVP          CAA133 
+! 18    SWP          CAA133 
+! 19    TOT          CAA143    
+! 19    CVP          CAA143 
+! 19    SWP          CAA143 
+! 20    TOT          CAA155     
+! 20    CVP          CAA155 
+! 20    SWP          CAA155 
+! 21    TOT          CAA165     
+! 21    CVP          CAA165 
+! 21    SWP          CAA165 
+! 22    TOT          CAA184     
+! 23    TOT          CAA194     
+! 24    TOT          CAA207     
+! 25    TOT          CAA210     
+! 26    TOT          CAA220     
+! 27    TOT          CAA225     
+! 28    TOT          CAA232     
+! 29    TOT          CAA242     
+! 30    TOT          CAA245     
+! 31    TOT          CAA251     
+! 32    TOT          CAA256     
+! 33    TOT          CAA262     
+! 34    TOT          CAA267     
+! 35    TOT          CAA271     
+! 36    TOT          CAA279     
+! 37    TOT          CAA280     
+! 38    TOT          CAA283     
+! 39    TOT          CAA287     
+! 40    TOT          CAA291     
+
+
+! Pool Capacity
+define C_CAA087_cap_cvp {alias CAA_P14_CVP_cap kind 'CAPACITY' units 'cfs'} ! Pool 14 - CVP Capacity
+define C_CAA087_cap_swp {alias CAA_P14_SWP_cap kind 'CAPACITY' units 'cfs'} ! Pool 14 - SWP Capacity
+define C_CAA095_cap_cvp {alias CAA_P15_CVP_cap kind 'CAPACITY' units 'cfs'} ! Pool 15 - CVP Capacity
+define C_CAA095_cap_swp {alias CAA_P15_SWP_cap kind 'CAPACITY' units 'cfs'} ! Pool 15 - SWP Capacity
+define C_CAA109_cap_cvp {alias CAA_P16_CVP_cap kind 'CAPACITY' units 'cfs'} ! Pool 16 - CVP Capacity
+define C_CAA109_cap_swp {alias CAA_P16_SWP_cap kind 'CAPACITY' units 'cfs'} ! Pool 16 - SWP Capacity
+define C_CAA122_cap_cvp {alias CAA_P17_CVP_cap kind 'CAPACITY' units 'cfs'} ! Pool 17 - CVP Capacity
+define C_CAA122_cap_swp {alias CAA_P17_SWP_cap kind 'CAPACITY' units 'cfs'} ! Pool 17 - SWP Capacity
+define C_CAA133_cap_cvp {alias CAA_P18_CVP_cap kind 'CAPACITY' units 'cfs'} ! Pool 18 - CVP Capacity
+define C_CAA133_cap_swp {alias CAA_P18_SWP_cap kind 'CAPACITY' units 'cfs'} ! Pool 18 - SWP Capacity
+define C_CAA143_cap_cvp {alias CAA_P19_CVP_cap kind 'CAPACITY' units 'cfs'} ! Pool 19 - CVP Capacity
+define C_CAA143_cap_swp {alias CAA_P19_SWP_cap kind 'CAPACITY' units 'cfs'} ! Pool 19 - SWP Capacity
+define C_CAA155_cap_cvp {alias CAA_P20_CVP_cap kind 'CAPACITY' units 'cfs'} ! Pool 20 - CVP Capacity
+define C_CAA155_cap_swp {alias CAA_P20_SWP_cap kind 'CAPACITY' units 'cfs'} ! Pool 20 - SWP Capacity
+define C_CAA165_cap_cvp {alias CAA_P21_CVP_cap kind 'CAPACITY' units 'cfs'} ! Pool 21 - CVP Capacity
+define C_CAA165_cap_swp {alias CAA_P21_SWP_cap kind 'CAPACITY' units 'cfs'} ! Pool 21 - SWP Capacity
+define C_CAA184_cap     {alias CAA_P22_cap     kind 'CAPACITY' units 'cfs'} ! Pool 22 - Total Capacity
+define C_CAA194_cap     {alias CAA_P23_cap     kind 'CAPACITY' units 'cfs'} ! Pool 23 - Total Capacity
+define C_CAA207_cap     {alias CAA_P24_cap     kind 'CAPACITY' units 'cfs'} ! Pool 24 - Total Capacity
+define C_CAA210_cap     {alias CAA_P25_cap     kind 'CAPACITY' units 'cfs'} ! Pool 25 - Total Capacity
+define C_CAA220_cap     {alias CAA_P26_cap     kind 'CAPACITY' units 'cfs'} ! Pool 26 - Total Capacity
+define C_CAA225_cap     {alias CAA_P27_cap     kind 'CAPACITY' units 'cfs'} ! Pool 27 - Total Capacity
+define C_CAA232_cap     {alias CAA_P28_cap     kind 'CAPACITY' units 'cfs'} ! Pool 28 - Total Capacity
+define C_CAA242_cap     {alias CAA_P29_cap     kind 'CAPACITY' units 'cfs'} ! Pool 29 - Total Capacity
+define C_CAA245_cap     {alias CAA_P30_cap     kind 'CAPACITY' units 'cfs'} ! Pool 30 - Total Capacity
+define C_CAA251_cap     {alias CAA_P31_cap     kind 'CAPACITY' units 'cfs'} ! Pool 31 - Total Capacity
+define C_CAA256_cap     {alias CAA_P32_cap     kind 'CAPACITY' units 'cfs'} ! Pool 32 - Total Capacity
+define C_CAA262_cap     {alias CAA_P33_cap     kind 'CAPACITY' units 'cfs'} ! Pool 33 - Total Capacity
+define C_CAA267_cap     {alias CAA_P34_cap     kind 'CAPACITY' units 'cfs'} ! Pool 34 - Total Capacity
+define C_CAA271_cap     {alias CAA_P35_cap     kind 'CAPACITY' units 'cfs'} ! Pool 35 - Total Capacity
+define C_CAA279_cap     {alias CAA_P36_cap     kind 'CAPACITY' units 'cfs'} ! Pool 36 - Total Capacity
+define C_CAA280_cap     {alias CAA_P37_cap     kind 'CAPACITY' units 'cfs'} ! Pool 37 - Total Capacity
+define C_CAA283_cap     {alias CAA_P38_cap     kind 'CAPACITY' units 'cfs'} ! Pool 38 - Total Capacity
+define C_CAA287_cap     {alias CAA_P39_cap     kind 'CAPACITY' units 'cfs'} ! Pool 39 - Total Capacity
+define C_CAA291_cap     {alias CAA_P40_cap     kind 'CAPACITY' units 'cfs'} ! Pool 40 - Total Capacity
+
+
+! Available Capacities in the San Luis Canal
+define C_CAA087_availcap_cvp { alias max(0.,CAA_P14_CVP_cap - C_CAA087_CVP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 14 - Available CVP Capacity
+define C_CAA087_availcap_swp { alias max(0.,CAA_P14_SWP_cap - C_CAA087_SWP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 14 - Available SWP Capacity
+define C_CAA095_availcap_cvp { alias max(0.,CAA_P15_CVP_cap - C_CAA095_CVP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 15 - Available CVP Capacity
+define C_CAA095_availcap_swp { alias max(0.,CAA_P15_SWP_cap - C_CAA095_SWP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 15 - Available SWP Capacity
+define C_CAA109_availcap_cvp { alias max(0.,CAA_P16_CVP_cap - C_CAA109_CVP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 16 - Available CVP Capacity
+define C_CAA109_availcap_swp { alias max(0.,CAA_P16_SWP_cap - C_CAA109_SWP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 16 - Available SWP Capacity
+define C_CAA122_availcap_cvp { alias max(0.,CAA_P17_CVP_cap - C_CAA122_CVP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 17 - Available CVP Capacity
+define C_CAA122_availcap_swp { alias max(0.,CAA_P17_SWP_cap - C_CAA122_SWP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 17 - Available SWP Capacity
+define C_CAA133_availcap_cvp { alias max(0.,CAA_P18_CVP_cap - C_CAA133_CVP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 18 - Available CVP Capacity
+define C_CAA133_availcap_swp { alias max(0.,CAA_P18_SWP_cap - C_CAA133_SWP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 18 - Available SWP Capacity
+define C_CAA143_availcap_cvp { alias max(0.,CAA_P19_CVP_cap - C_CAA143_CVP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 19 - Available CVP Capacity
+define C_CAA143_availcap_swp { alias max(0.,CAA_P19_SWP_cap - C_CAA143_SWP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 19 - Available SWP Capacity
+define C_CAA155_availcap_cvp { alias max(0.,CAA_P20_CVP_cap - C_CAA155_CVP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 20 - Available CVP Capacity
+define C_CAA155_availcap_swp { alias max(0.,CAA_P20_SWP_cap - C_CAA155_SWP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 20 - Available SWP Capacity
+define C_CAA165_availcap_cvp { alias max(0.,CAA_P21_CVP_cap - C_CAA165_CVP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 21 - Available CVP Capacity
+define C_CAA165_availcap_swp { alias max(0.,CAA_P21_SWP_cap - C_CAA165_SWP) kind 'AVAILABLE-CAPACITY' units 'cfs'}  ! Pool 21 - Available SWP Capacity
+
+! Use of Available Capacity in the San Luis Canal
+define C_CAA087_cvpuseofswp { alias max(0.,C_CAA087_CVP - CAA_P14_CVP_cap) kind 'CVP-USE-OF-SWP' units 'cfs'}  ! Pool 14 - CVP use of SWP Capacity
+define C_CAA087_swpuseofcvp { alias max(0.,C_CAA087_SWP - CAA_P14_SWP_cap) kind 'SWP-USE-OF-CVP' units 'cfs'}  ! Pool 14 - SWP use of CVP Capacity
+define C_CAA095_cvpuseofswp { alias max(0.,C_CAA095_CVP - CAA_P15_CVP_cap) kind 'CVP-USE-OF-SWP' units 'cfs'}  ! Pool 15 - CVP use of SWP Capacity
+define C_CAA095_swpuseofcvp { alias max(0.,C_CAA095_SWP - CAA_P15_SWP_cap) kind 'SWP-USE-OF-CVP' units 'cfs'}  ! Pool 15 - SWP use of CVP Capacity
+define C_CAA109_cvpuseofswp { alias max(0.,C_CAA109_CVP - CAA_P16_CVP_cap) kind 'CVP-USE-OF-SWP' units 'cfs'}  ! Pool 16 - CVP use of SWP Capacity
+define C_CAA109_swpuseofcvp { alias max(0.,C_CAA109_SWP - CAA_P16_SWP_cap) kind 'SWP-USE-OF-CVP' units 'cfs'}  ! Pool 16 - SWP use of CVP Capacity
+define C_CAA122_cvpuseofswp { alias max(0.,C_CAA122_CVP - CAA_P17_CVP_cap) kind 'CVP-USE-OF-SWP' units 'cfs'}  ! Pool 17 - CVP use of SWP Capacity
+define C_CAA122_swpuseofcvp { alias max(0.,C_CAA122_SWP - CAA_P17_SWP_cap) kind 'SWP-USE-OF-CVP' units 'cfs'}  ! Pool 17 - SWP use of CVP Capacity
+define C_CAA133_cvpuseofswp { alias max(0.,C_CAA133_CVP - CAA_P18_CVP_cap) kind 'CVP-USE-OF-SWP' units 'cfs'}  ! Pool 18 - CVP use of SWP Capacity
+define C_CAA133_swpuseofcvp { alias max(0.,C_CAA133_SWP - CAA_P18_SWP_cap) kind 'SWP-USE-OF-CVP' units 'cfs'}  ! Pool 18 - SWP use of CVP Capacity
+define C_CAA143_cvpuseofswp { alias max(0.,C_CAA143_CVP - CAA_P19_CVP_cap) kind 'CVP-USE-OF-SWP' units 'cfs'}  ! Pool 19 - CVP use of SWP Capacity
+define C_CAA143_swpuseofcvp { alias max(0.,C_CAA143_SWP - CAA_P19_SWP_cap) kind 'SWP-USE-OF-CVP' units 'cfs'}  ! Pool 19 - SWP use of CVP Capacity
+define C_CAA155_cvpuseofswp { alias max(0.,C_CAA155_CVP - CAA_P20_CVP_cap) kind 'CVP-USE-OF-SWP' units 'cfs'}  ! Pool 20 - CVP use of SWP Capacity
+define C_CAA155_swpuseofcvp { alias max(0.,C_CAA155_SWP - CAA_P20_SWP_cap) kind 'SWP-USE-OF-CVP' units 'cfs'}  ! Pool 20 - SWP use of CVP Capacity
+define C_CAA165_cvpuseofswp { alias max(0.,C_CAA165_CVP - CAA_P21_CVP_cap) kind 'CVP-USE-OF-SWP' units 'cfs'}  ! Pool 21 - CVP use of SWP Capacity
+define C_CAA165_swpuseofcvp { alias max(0.,C_CAA165_SWP - CAA_P21_SWP_cap) kind 'SWP-USE-OF-CVP' units 'cfs'}  ! Pool 21 - SWP use of CVP Capacity
+
+! Unused Capacities in the San Luis Canal
+define C_CAA087_unusedcap_cvp { alias C_CAA087_availcap_cvp - C_CAA087_swpuseofcvp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 14 - Unused CVP Capacity
+define C_CAA087_unusedcap_swp { alias C_CAA087_availcap_swp - C_CAA087_cvpuseofswp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 14 - Unused SWP Capacity
+define C_CAA095_unusedcap_cvp { alias C_CAA095_availcap_cvp - C_CAA095_swpuseofcvp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 15 - Unused CVP Capacity
+define C_CAA095_unusedcap_swp { alias C_CAA095_availcap_swp - C_CAA095_cvpuseofswp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 15 - Unused SWP Capacity
+define C_CAA109_unusedcap_cvp { alias C_CAA109_availcap_cvp - C_CAA109_swpuseofcvp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 16 - Unused CVP Capacity
+define C_CAA109_unusedcap_swp { alias C_CAA109_availcap_swp - C_CAA109_cvpuseofswp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 16 - Unused SWP Capacity
+define C_CAA122_unusedcap_cvp { alias C_CAA122_availcap_cvp - C_CAA122_swpuseofcvp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 17 - Unused CVP Capacity
+define C_CAA122_unusedcap_swp { alias C_CAA122_availcap_swp - C_CAA122_cvpuseofswp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 17 - Unused SWP Capacity
+define C_CAA133_unusedcap_cvp { alias C_CAA133_availcap_cvp - C_CAA133_swpuseofcvp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 18 - Unused CVP Capacity
+define C_CAA133_unusedcap_swp { alias C_CAA133_availcap_swp - C_CAA133_cvpuseofswp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 18 - Unused SWP Capacity
+define C_CAA143_unusedcap_cvp { alias C_CAA143_availcap_cvp - C_CAA143_swpuseofcvp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 19 - Unused CVP Capacity
+define C_CAA143_unusedcap_swp { alias C_CAA143_availcap_swp - C_CAA143_cvpuseofswp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 19 - Unused SWP Capacity
+define C_CAA155_unusedcap_cvp { alias C_CAA155_availcap_cvp - C_CAA155_swpuseofcvp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 20 - Unused CVP Capacity
+define C_CAA155_unusedcap_swp { alias C_CAA155_availcap_swp - C_CAA155_cvpuseofswp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 20 - Unused SWP Capacity
+define C_CAA165_unusedcap_cvp { alias C_CAA165_availcap_cvp - C_CAA165_swpuseofcvp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 21 - Unused CVP Capacity
+define C_CAA165_unusedcap_swp { alias C_CAA165_availcap_swp - C_CAA165_cvpuseofswp kind 'UNUSED-CAPACITY' units 'cfs'}  ! Pool 21 - Unused SWP Capacity
+
+define C_CAA184_unusedcap     {alias CAA_P22_cap - C_CAA184     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 22 - Unused Capacity
+define C_CAA194_unusedcap     {alias CAA_P23_cap - C_CAA194     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 23 - Unused Capacity
+define C_CAA207_unusedcap     {alias CAA_P24_cap - C_CAA207     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 24 - Unused Capacity
+define C_CAA210_unusedcap     {alias CAA_P25_cap - C_CAA210     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 25 - Unused Capacity
+define C_CAA220_unusedcap     {alias CAA_P26_cap - C_CAA220     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 26 - Unused Capacity
+define C_CAA225_unusedcap     {alias CAA_P27_cap - C_CAA225     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 27 - Unused Capacity
+define C_CAA232_unusedcap     {alias CAA_P28_cap - C_CAA232     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 28 - Unused Capacity
+define C_CAA242_unusedcap     {alias CAA_P29_cap - C_CAA242     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 29 - Unused Capacity
+define C_CAA245_unusedcap     {alias CAA_P30_cap - C_CAA245     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 30 - Unused Capacity
+define C_CAA251_unusedcap     {alias CAA_P31_cap - C_CAA251     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 31 - Unused Capacity
+define C_CAA256_unusedcap     {alias CAA_P32_cap - C_CAA256     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 32 - Unused Capacity
+define C_CAA262_unusedcap     {alias CAA_P33_cap - C_CAA262     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 33 - Unused Capacity
+define C_CAA267_unusedcap     {alias CAA_P34_cap - C_CAA267     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 34 - Unused Capacity
+define C_CAA271_unusedcap     {alias CAA_P35_cap - C_CAA271     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 35 - Unused Capacity
+define C_CAA279_unusedcap     {alias CAA_P36_cap - C_CAA279     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 36 - Unused Capacity
+define C_CAA280_unusedcap     {alias CAA_P37_cap - C_CAA280     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 37 - Unused Capacity
+define C_CAA283_unusedcap     {alias CAA_P38_cap - C_CAA283     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 38 - Unused Capacity
+define C_CAA287_unusedcap     {alias CAA_P39_cap - C_CAA287     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 39 - Unused Capacity
+define C_CAA291_unusedcap     {alias CAA_P40_cap - C_CAA291     kind 'UNUSED-CAPACITY' units 'cfs'}      ! Pool 40 - Unused Capacity

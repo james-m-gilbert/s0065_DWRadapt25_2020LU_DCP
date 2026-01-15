@@ -1,0 +1,206 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! CVP NOD AG Contractors !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Calculated in Feb for use in projecting Shasta conditions - sum of the following Mar-Feb year
+
+!**********************************************************************************
+! Define Annual Applied Water Rice Demand for CVP NOD AG
+!**********************************************************************************
+
+define AWRyear_FebCalc_02_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}
+define AWRyear_FebCalc_02_PA{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWR_02_PA(i)*cfs_taf(i)*(1+ RPF_02_PA - RUFr5_TS(i))}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWR_02_PA(i)*cfs_taf(i)*(1+ RPF_02_PA - RUFr5_TS(i))}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWR_02_PA(i)*cfs_taf(i)*(1+ RPF_02_PA - RUFr5_TS(i))}
+    case Rest { 
+        condition always
+        value AWRyear_FebCalc_02_PAdv(-1) } } 
+goal setAWRyear_FebCalc_02_PAdv {AWRyear_FebCalc_02_PAdv = AWRyear_FebCalc_02_PA}
+
+define AWRyear_FebCalc_03_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}
+define AWRyear_FebCalc_03_PA{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWR_03_PA(i)*cfs_taf(i)*(1+ RPF_03_PA - RUFr5_TS(i))}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWR_03_PA(i)*cfs_taf(i)*(1+ RPF_03_PA - RUFr5_TS(i))}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWR_03_PA(i)*cfs_taf(i)*(1+ RPF_03_PA - RUFr5_TS(i))}
+    case Rest { 
+        condition always
+        value AWRyear_FebCalc_03_PAdv(-1) } }           
+goal setAWRyear_FebCalc_03_PAdv {AWRyear_FebCalc_03_PAdv = AWRyear_FebCalc_03_PA}
+
+define AWRyear_FebCalc_04_PA1dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}                   
+define AWRyear_FebCalc_04_PA1{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWR_04_PA1(i)*cfs_taf(i)*(1+ RPF_04_PA1 - RUFr5_TS(i))}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWR_04_PA1(i)*cfs_taf(i)*(1+ RPF_04_PA1 - RUFr5_TS(i))}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWR_04_PA1(i)*cfs_taf(i)*(1+ RPF_04_PA1 - RUFr5_TS(i))}
+    case Rest { 
+        condition always
+        value AWRyear_FebCalc_04_PA1dv(-1) } }  
+goal setAWRyear_FebCalc_04_PA1dv {AWRyear_FebCalc_04_PA1dv = AWRyear_FebCalc_04_PA1}
+
+define AWRyear_FebCalc_04_PA2dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}                   
+define AWRyear_FebCalc_04_PA2{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWR_04_PA2(i)*cfs_taf(i)*(1+ RPF_04_PA2 - RUFr5_TS(i))}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWR_04_PA2(i)*cfs_taf(i)*(1+ RPF_04_PA2 - RUFr5_TS(i))}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWR_04_PA2(i)*cfs_taf(i)*(1+ RPF_04_PA2 - RUFr5_TS(i))}
+    case Rest { 
+        condition always
+        value AWRyear_FebCalc_04_PA2dv(-1) } }
+goal setAWRyear_FebCalc_04_PA2dv {AWRyear_FebCalc_04_PA2dv = AWRyear_FebCalc_04_PA2}
+
+define AWRyear_FebCalc_07N_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}
+define AWRyear_FebCalc_07N_PA{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWR_07N_PA(i)*cfs_taf(i)*(1+ RPF_07N_PA - RUFr5_TS(i))}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWR_07N_PA(i)*cfs_taf(i)*(1+ RPF_07N_PA - RUFr5_TS(i))}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWR_07N_PA(i)*cfs_taf(i)*(1+ RPF_07N_PA - RUFr5_TS(i))}
+    case Rest { 
+        condition always
+        value AWRyear_FebCalc_07N_PAdv(-1) } }
+goal setAWRyear_FebCalc_07N_PAdv {AWRyear_FebCalc_07N_PAdv = AWRyear_FebCalc_07N_PA}
+
+ define AWRyear_FebCalc_07S_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}
+ define AWRyear_FebCalc_07S_PA{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWR_07S_PA(i)*cfs_taf(i)*(1+ RPF_07S_PA - RUFr5_TS(i))}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWR_07S_PA(i)*cfs_taf(i)*(1+ RPF_07S_PA - RUFr5_TS(i))}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWR_07S_PA(i)*cfs_taf(i)*(1+ RPF_07S_PA - RUFr5_TS(i))}
+    case Rest { 
+        condition always
+        value AWRyear_FebCalc_07S_PAdv(-1) } }
+goal setAWRyear_FebCalc_07S_PAdv {AWRyear_FebCalc_07S_PAdv = AWRyear_FebCalc_07S_PA} 
+
+!****************************************************************************
+!Define Annual Applied Water Demand for crops other than rice for CVP AG
+!****************************************************************************
+define AWOyear_FebCalc_02_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}
+define AWOyear_FebCalc_02_PA{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWO_02_PA(i)*cfs_taf(i)*(1+ RPF_02_PA - RUFo_02_PA)}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWO_02_PA(i)*cfs_taf(i)*(1+ RPF_02_PA - RUFo_02_PA)}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWO_02_PA(i)*cfs_taf(i)*(1+ RPF_02_PA - RUFo_02_PA)}
+    case Rest { 
+        condition always
+        value AWOyear_FebCalc_02_PAdv(-1) } }
+goal setAWOyear_FebCalc_02_PAdv {AWOyear_FebCalc_02_PAdv = AWOyear_FebCalc_02_PA}
+
+define AWOyear_FebCalc_03_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}
+define AWOyear_FebCalc_03_PA{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWO_03_PA(i)*cfs_taf(i)*(1+ RPF_03_PA - RUFo_03_PA)}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWO_03_PA(i)*cfs_taf(i)*(1+ RPF_03_PA - RUFo_03_PA)}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWO_03_PA(i)*cfs_taf(i)*(1+ RPF_03_PA - RUFo_03_PA)}
+    case Rest { 
+        condition always
+        value AWOyear_FebCalc_03_PAdv(-1) } }
+goal setAWOyear_FebCalc_03_PAdv {AWOyear_FebCalc_03_PAdv = AWOyear_FebCalc_03_PA}
+ 
+ 
+define AWOyear_FebCalc_04_PA1dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}                   
+define AWOyear_FebCalc_04_PA1{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWO_04_PA1(i)*cfs_taf(i)*(1+ RPF_04_PA1 - RUFo_04_PA1)}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWO_04_PA1(i)*cfs_taf(i)*(1+ RPF_04_PA1 - RUFo_04_PA1)}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWO_04_PA1(i)*cfs_taf(i)*(1+ RPF_04_PA1 - RUFo_04_PA1)}
+    case Rest { 
+        condition always
+        value AWOyear_FebCalc_04_PA1dv(-1) } }
+goal setAWOyear_FebCalc_04_PA1dv {AWOyear_FebCalc_04_PA1dv = AWOyear_FebCalc_04_PA1}
+
+define AWOyear_FebCalc_04_PA2dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}                   
+define AWOyear_FebCalc_04_PA2{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWO_04_PA2(i)*cfs_taf(i)*(1+ RPF_04_PA2 - RUFo_04_PA2)}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWO_04_PA2(i)*cfs_taf(i)*(1+ RPF_04_PA2 - RUFo_04_PA2)}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWO_04_PA2(i)*cfs_taf(i)*(1+ RPF_04_PA2 - RUFo_04_PA2)}
+    case Rest { 
+        condition always
+        value AWOyear_FebCalc_04_PA2dv(-1) } }
+    
+goal setAWOyear_FebCalc_04_PA2dv {AWOyear_FebCalc_04_PA2dv = AWOyear_FebCalc_04_PA2}
+ 
+define AWOyear_FebCalc_07N_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}
+define AWOyear_FebCalc_07N_PA{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWO_07N_PA(i)*cfs_taf(i)*(1+ RPF_07N_PA - RUFo_07N_PA)}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWO_07N_PA(i)*cfs_taf(i)*(1+ RPF_07N_PA - RUFo_07N_PA)}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWO_07N_PA(i)*cfs_taf(i)*(1+ RPF_07N_PA - RUFo_07N_PA)}
+    case Rest { 
+        condition always
+        value AWOyear_FebCalc_07N_PAdv(-1) } }
+goal setAWOyear_FebCalc_07N_PAdv {AWOyear_FebCalc_07N_PAdv = AWOyear_FebCalc_07N_PA}
+ 
+define AWOyear_FebCalc_07S_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}
+define AWOyear_FebCalc_07S_PA{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  AWO_07S_PA(i)*cfs_taf(i)*(1+ RPF_07S_PA - RUFo_07S_PA)}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) AWO_07S_PA(i)*cfs_taf(i)*(1+ RPF_07S_PA - RUFo_07S_PA)}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  AWO_07S_PA(i)*cfs_taf(i)*(1+ RPF_07S_PA - RUFo_07S_PA)}
+    case Rest { 
+        condition always
+        value AWOyear_FebCalc_07S_PAdv(-1) } }
+goal setAWOyear_FebCalc_07S_PAdv {AWOyear_FebCalc_07S_PAdv = AWOyear_FebCalc_07S_PA}
+

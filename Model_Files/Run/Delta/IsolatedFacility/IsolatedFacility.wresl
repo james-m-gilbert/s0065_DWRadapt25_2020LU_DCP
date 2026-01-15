@@ -1,0 +1,100 @@
+!Isolated Facility Operation
+
+! Isolated Diversion Limits, ready to implement limits in IF diversions as a function of Sac Flows due to fish screens at the IF intake
+define max_IF_cap  {select capacity from IsolatedFacility where month=month}
+define max_IF_cap_SWP  {select SWPcapac from IsolatedFacility where month=month}
+define max_IF_cap_CVP  {select CVPcapac from IsolatedFacility where month=month}
+define IFBypassPerc   {select minbypass from IsolatedFacility where month=month}
+define IFPercentFlow {select perc_flow from IsolatedFacility where month=month}
+define CCWDmaxIF   {select CCWDmax from IsolatedFacility where month=month}
+
+!Switches that turn IF arcs ON and OFF
+define JonesIFSwitch   {select switch from IsolatedFacilityControl where user = 1}
+define BanksIFSwitch   {select switch from IsolatedFacilityControl where user = 2}
+define CCWDIFSwitch    {select switch from IsolatedFacilityControl where user = 3}
+define TDExportsSwitch       {select switch from IsolatedFacilityControl where user = 4}
+
+goal setActivateJonesIF { C_DMC000_IF  < JonesIFSwitch * 99999.}
+goal setActivateBanksIF { C_CAA003_IF  < BanksIFSwitch * 99999.}
+goal setActivateCCWDIF  { D_ISF001_OMR024     < CCWDIFSwitch  * 99999.}
+
+goal MaxHoodDiv   { D_SAC041_ISF001 < max_IF_cap }
+goal MaxHoodSWPDiv   { C_CAA003_IF < max_IF_cap_SWP }
+goal MaxHoodCVPDiv   { C_DMC000_IF < max_IF_cap_CVP }
+goal MaxHoodReq   { D_SAC041_ISF001 < C_SAC048*IFPercentFlow }
+goal BypassReq    { D_SAC041_ISF001 < C_SAC048*(1.-IFBypassPerc) }
+goal MaxCCWDIFDiv { D_ISF001_OMR024 < C_SAC048*IFPercentFlow }
+
+
+!Exports only from IF if TD switch is off
+goal setEXP_TDzero {EXP_TD < TDExportsSwitch * 99999.}
+
+!Accounting of IF flow between CVP and SWP
+goal setexportsIF { D_SAC041_ISF001 = C_CAA003_IF + C_DMC000_IF + D_ISF001_OMR024}
+
+!CCWD Limit
+goal limitD446A_1 { D_ISF001_OMR024 < D408 + D_RSL004_CCC004 } ! D416 = D408_RS
+goal limitD446A_2 { D_ISF001_OMR024 < D_VCT002_ORP000 }
+goal totC_ISF001 {C_ISF001_OMR027 = C_CAA003_IF + C_DMC000_IF}
+
+!OutputVariables
+!Total Exports
+define TOTAL_EXP  {alias C_CAA003 + C_DMC000 kind 'FLOW-DELIVERY' UNITS 'CFS'}  !for output only
+
+!Switches for source of diversion
+define SWPExcessSwitch   {select switch from IsolatedFacilitySourceControl where source = 1}
+define SWPTDShiftSwitch   {select switch from IsolatedFacilitySourceControl where source = 2}
+define SWPStorageSwitch   {select switch from IsolatedFacilitySourceControl where source = 3}
+define CVPExcessSwitch   {select switch from IsolatedFacilitySourceControl where source = 4}
+define CVPTDShiftSwitch   {select switch from IsolatedFacilitySourceControl where source = 5}
+define CVPStorageSwitch   {select switch from IsolatedFacilitySourceControl where source = 6}
+define CVPWheelSwitch   {select switch from IsolatedFacilitySourceControl where source = 7}
+
+! distinguish whether NDD is true excess flow, discretionary 
+! choice of export path, or storage release in balanced conditions 
+define D_SAC041_ISF001_excess {std kind 'flow-delivery' units 'cfs'}
+define D_SAC041_ISF001_elect {std kind 'flow-delivery' units 'cfs'}
+goal NDD_flow_type {D_SAC041_ISF001 = D_SAC041_ISF001_excess + D_SAC041_ISF001_elect}
+
+define D_SAC041_ISF001_elect_tdnd {std kind 'flow-delivery' units 'cfs'}
+define D_SAC041_ISF001_elect_stor {std kind 'flow-delivery' units 'cfs'}
+goal TotalD_SAC041_ISF001_elect {D_SAC041_ISF001_elect = D_SAC041_ISF001_elect_tdnd + D_SAC041_ISF001_elect_stor}
+
+define D_SAC041_ISF001_elect_stor_ops {std kind 'flow-delivery' units 'cfs'}  !Storage releases other then wheeling
+define D_SAC041_ISF001_elect_stor_whl {std kind 'flow-delivery' units 'cfs'}  !CVP wheeling only (CVC and JPOD)
+goal TotalD_SAC041_ISF001_elect_stor {D_SAC041_ISF001_elect_stor = D_SAC041_ISF001_elect_stor_ops + D_SAC041_ISF001_elect_stor_whl}
+
+define C_DMC000_IF_excess {std kind 'flow-delivery' units 'cfs'}
+define C_DMC000_IF_electS {std kind 'flow-delivery' units 'cfs'}
+define C_DMC000_IF_electT {std kind 'flow-delivery' units 'cfs'}
+goal totC_DMC000_IF {C_DMC000_IF = C_DMC000_IF_excess + C_DMC000_IF_electS + C_DMC000_IF_electT}
+
+define C_CAA003_SWP_IF_excess {std kind 'flow-delivery' units 'cfs'}
+define C_CAA003_SWP_IF_electS {std kind 'flow-delivery' units 'cfs'}
+define C_CAA003_SWP_IF_electT {std kind 'flow-delivery' units 'cfs'}
+goal totC_CAA003_SWP_IF {C_CAA003_SWP_IF = C_CAA003_SWP_IF_excess + C_CAA003_SWP_IF_electS + C_CAA003_SWP_IF_electT}
+
+define C_CAA003_CVP_IF_excess {std kind 'flow-delivery' units 'cfs'} 
+define C_CAA003_CVP_IF_electS {std kind 'flow-delivery' units 'cfs'}
+goal totC_CAA003_CVP_IF_excess {C_CAA003_CVP_IF_excess = C_CAA003_WHLSURP_IF + C_CAA003_CVCSURP_IF}
+goal totC_CAA003_CVP_IF {C_CAA003_CVP_IF = C_CAA003_CVP_IF_excess + C_CAA003_CVP_IF_electS}
+
+goal total_D_SAC041_ISF001_excess     {D_SAC041_ISF001_excess = C_DMC000_IF_excess + C_CAA003_SWP_IF_excess + C_CAA003_CVP_IF_excess} !no excess for WTS
+goal total_D_SAC041_ISF001_elect_stor {D_SAC041_ISF001_elect_stor = C_CAA003_SWP_IF_electS + C_DMC000_IF_electS + C_CAA003_CVP_IF_electS}   
+goal total_D_SAC041_ISF001_elect_stor_whl {D_SAC041_ISF001_elect_stor_whl = C_CAA003_CVPWHL_IF - C_CAA003_WHLSURP_IF + C_CAA003_CVC_IF - C_CAA003_CVCSURP_IF}
+goal total_D_SAC041_ISF001_elect_stor_ops {D_SAC041_ISF001_elect_stor_ops = C_CAA003_SWP_IF_electS + C_CAA003_CVP_IF_electS + C_CAA003_CVPDED_IF + C_DMC000_IF_electS - D_SAC041_ISF001_elect_stor_whl} 
+goal total_D_SAC041_ISF001_elect_tdnd {D_SAC041_ISF001_elect_tdnd = C_CAA003_SWP_IF_electT + C_DMC000_IF_electT} 
+
+!Output switches as aliases
+define JonesIFSwitchdv {alias JonesIFSwitch kind 'alias' units 'none'}
+define BanksIFSwitchdv {alias BanksIFSwitch kind 'alias' units 'none'}
+define CCWDIFSwitchdv {alias CCWDIFSwitch kind 'alias' units 'none'}
+define TDExportsSwitchdv {alias TDExportsSwitch kind 'alias' units 'none'}
+define SWPExcessSwitchdv   {alias SWPExcessSwitch kind 'alias' units 'none'}
+define SWPTDShiftSwitchdv   {alias SWPTDShiftSwitch kind 'alias' units 'none'}
+define SWPStorageSwitchdv   {alias SWPStorageSwitch kind 'alias' units 'none'}
+define CVPExcessSwitchdv  {alias CVPExcessSwitch kind 'alias' units 'none'}
+define CVPTDShiftSwitchdv   {alias CVPTDShiftSwitch kind 'alias' units 'none'}
+define CVPStorageSwitchdv   {alias CVPStorageSwitch kind 'alias' units 'none'}
+define CVPWheelSwitchdv   {alias CVPWheelSwitch kind 'alias' units 'none'}
+

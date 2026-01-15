@@ -1,0 +1,48 @@
+! Remove VA flow from ANN-related inputs
+! There are 6 ANN inputs which will be affected by the VA actions
+! The goal is to "Blind" the ANN from seeing the VA increases in outflow
+! C_SJR070, C_SAC041, C_SAC041_ANN, sac_oth, EXP_TD, and NDO will all need to be "blinded" from any VA flow aciton
+
+! If your VA increased C_SAC041 (Hood) flows, subtract your VA arc from C_SAC041_NOVA and C_SAC041_ANN_NoVA
+! If your VA decreased exports, add your VA export cut to EXP_TD_NOVA.
+! Follow this logic for all other VAs ONLY for protected outflow (does not count for reoperated water)
+
+!Comment out terms related to other VAs, keeping only DeltaVA 16 Jan 23
+
+! SJR flow NO VA Defined in ReOpsVarDefine.wresl
+!define C_SJR070_NoVA {alias C_SJR070/* - C_SJR070_VA*/ kind 'CHANNEL' units 'cfs' NoSolver} !Use for Friant VA, DDhillon (DWR), 20210907
+
+! SAC/CACHE SLOUGH FLOW NO VA
+define C_SAC041_NoVA {alias C_SAC041 
+							/*- NDOI_ADD_FeatherVA - SP_OROVL_VAdv*taf_cfs  ! Feather VA outflow contribution. Spill is added (note that spill has negative units) to offset the reduction in NDOI_ADD_SWP in times when spills occur in AN years
+							 - NDOI_ADD_SACVA ! Sac VA Sac flow increase
+							  - ((VA_Contri1_HHOLEdv+VA_Contri4_HHOLEdv+VA2_3_CONTRIDV)*taf_cfs-Hhole_refill)*SimulateVA_Amr_Onoff
+							 							 - Yuba_VA_Add  */
+							
+							kind 'CHANNEL' units 'cfs' NoSolver}   !Sac VA, DDhillon (DWR), 20210907
+define C_SAC041_NoFallow {alias C_SAC041 - fallow_inj kind 'CHANNEL' units 'cfs' NoSolver}
+
+define C_SAC041_ANN_NoVA {alias C_SAC041_ANN
+							/*	- NDOI_ADD_FeatherVA - SP_OROVL_VAdv*taf_cfs ! Feather VA outflow contribution. Spill is added (note that spill has negative units) to offset the reduction in NDOI_ADD_SWP in times when spills occur in AN years
+							 - NDOI_ADD_SACVA ! Sac VA Sac flow increase
+							 - ((VA_Contri1_HHOLEdv+VA_Contri4_HHOLEdv+VA2_3_CONTRIDV)*taf_cfs-Hhole_refill)*SimulateVA_Amr_Onoff
+							 - Yuba_VA_Add */
+							kind 'FLOW-ANN' units 'cfs' NoSolver} !Sac VA, DDhillon (DWR), 20210907
+define C_SAC041_ANN_NoFallow {alias C_SAC041_ANN - fallow_inj kind 'FLOW-ANN' units 'cfs' NoSolver}
+
+define sac_oth_NoVA {alias sac_oth kind 'FLOW-INFLOW' units 'CFS' NoSolver} !Sac VA, DDhillon (DWR), 20210907
+
+! DELTA VA
+define EXP_TD_NoVA {alias EXP_TD /*+ NDOI_ADD_DELTAVA + DeltaRecaptoVA */ kind 'FLOW-DELIVERY' units 'CFS' NoSolver}
+define EXP_TD_NoDeltaVA {alias EXP_TD + NDOI_ADD_DELTAVA kind 'FLOW-DELIVERY' units 'CFS' NoSolver} ! Only one month blinding
+
+! DEFINE NDO WITHOUT VA OUTFLOW FOR ANN BLINDING
+define NDO_NoVA {alias NDO
+						/*- NDOI_ADD_DELTAVA ! Delta VA
+						 - NDOI_ADD_FeatherVA - SP_OROVL_VAdv*taf_cfs ! Feather VA outflow contribution. Spill is added (note that spill has negative units) to offset the reduction in NDOI_ADD_SWP in times when spills occur in AN years
+						- NDOI_ADD_SACVA
+					    - ((VA_Contri1_HHOLEdv+VA_Contri4_HHOLEdv+VA2_3_CONTRIDV)*taf_cfs-Hhole_refill)*SimulateVA_Amr_Onoff
+					    - Yuba_VA_Add
+					    - DeltaRecaptoVA  */
+						kind 'FLOW-NDO' units 'CFS' NoSolver} !Sac VA, DDhillon (DWR), 20210907
+define NDO_NoFallowDeltaVA {alias NDO - fallow_inj - NDOI_ADD_DELTAVA kind 'FLOW-NDO' units 'cfs' NoSolver} ! Only one month blinding

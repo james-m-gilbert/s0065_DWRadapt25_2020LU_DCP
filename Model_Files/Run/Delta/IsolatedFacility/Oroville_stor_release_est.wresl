@@ -1,0 +1,82 @@
+!Oroville_stor_release_est.wresl
+
+! Estimate expected storage releases through the North Delta Diversion
+! Used to balance releases from storage and shifts from the Delta to mimic WaterFix operation.
+define SWPSLspace {value max(0,(SWPRULECV[DELTA] - S_SLUIS_SWP[DELTA])) * taf_cfs}  		!Space below rule curve in SWP San Luis
+define C_FTR059capac {  !Max additional release in order to not flood orchards along Feather River during July-Sept
+	case JulSep {
+	  condition month >= Jul .and. month <= Sep
+	  value max(0, (10000 - C_FTR059[DELTA]))}
+	case otherwise {
+	  condition always
+	  value 99999.}
+}					
+define Orovlmaxrelease {value (4000 - C_OROVL_valve[DELTA]) + (min(7200.,C_OROVL_PP135_max_[DELTA]) - C_OROVL_PP135[DELTA]) + (C_OROVL_rem_max_[DELTA] - C_OROVL_rem[DELTA])}	!Max additional release from Oroville under low storage conditions		
+
+! For SWP, model has a tendency to over release through the NDD in June,
+! Per Aaron Miller at DWR a more realistic operation would be spread storage releases out through Sept
+! For this reason constrain storage releases for June and July to NDD to 50% of the space under the San Luis rule curve
+define Elect_Stor_lim {
+	case JuneJuly {
+	  condition month >= Jun .and. month <= Jul
+	  value max(0.,0.5 * taf_cfs * (SWPRULECV[DELTA] - S_SLUIS_SWP[DELTA]))}
+	case otherwise {
+	  condition always
+	  value 99999.}
+}					
+
+!Analysis to determine whether storage releases through NDD are necessary to support allocation
+!This is applied June-Sept
+!Estimated deliveries through Sept based on allocation (in taf)
+define SWPSODdelfactor {
+	case JuneSept {
+		condition month >= Jun
+		select Delratio from Ests_for_relNDD where monrange=month}
+	case otherwise {
+		condition always
+		value 0.}
+}
+define SWPSODdeliveries {value swp_perdel * SWPSODdelfactor}
+
+!Estimated TD exports through Sept based on WY type (in taf)
+define SWPTDexports {
+	case Wet {
+		condition wyt_Sac == 1 .and. month >= Jun
+		select TDexpW from Ests_for_relNDD where monrange=month}
+	case AN {
+		condition wyt_Sac == 2 .and. month >= Jun
+		select TDexpAN from Ests_for_relNDD where monrange=month}
+	case BN {
+		condition wyt_Sac == 3 .and. month >= Jun
+		select TDexpBN from Ests_for_relNDD where monrange=month}
+	case Dry {
+		condition wyt_Sac == 4 .and. month >= Jun
+		select TDexpD from Ests_for_relNDD where monrange=month}
+	case Crit {
+		condition wyt_Sac == 5 .and. month >= Jun
+		select TDexpC from Ests_for_relNDD where monrange=month}
+	case otherwise {
+		condition always
+		value 0.}
+}
+
+!Estimated needed additional exports
+define Storrel_buffer {value 100.}
+define NDDstorrelease {value max(0., SWPSODdeliveries - (SWPTDexports + S_SLUIS_SWP[NDD]) + Storrel_buffer) * taf_cfs}
+
+!Storage release estimate only used July-Sept
+define Oro_stor_release_est {	
+	case JulSep {
+	  condition month >= Jul .and. month <= Sep
+	  value min(SWPSLspace, C_FTR059capac, Orovlmaxrelease/* Elect_Stor_lim, NDDstorrelease*/)}
+	case otherwise {
+	  condition always
+	  value 0.}
+}					
+
+define SWPSLspacedv {alias SWPSLspace kind 'debug' units 'cfs'}
+define C_FTR059capacdv {alias C_FTR059capac kind 'debug' units 'cfs'}
+define Orovlmaxreleasedv {alias Orovlmaxrelease kind 'debug' units 'cfs'}
+define Elect_Stor_limdv {alias Elect_Stor_lim  kind 'debug' units 'none'}
+define NDDstorreleasedv {alias NDDstorrelease kind 'debug' units 'cfs'}
+define Oro_stor_release_estdv {alias Oro_stor_release_est kind 'debug' units 'cfs'}

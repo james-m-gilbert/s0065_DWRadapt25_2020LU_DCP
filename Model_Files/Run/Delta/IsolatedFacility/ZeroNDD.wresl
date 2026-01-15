@@ -1,0 +1,11 @@
+! ZeroNDD.wresl
+
+!Estimate Daily flow conditions, bypass requirements and bounds on IF Diversion
+include 'IFDiversionCriteria_DailyOps.wresl'
+
+! Zero out the North Delta Diversion until later cycles 
+goal zeroD_SAC041_ISF001 {D_SAC041_ISF001 = 0.}
+
+
+
+

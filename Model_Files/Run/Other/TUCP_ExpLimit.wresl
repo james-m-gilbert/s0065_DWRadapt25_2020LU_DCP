@@ -1,0 +1,74 @@
+! TUCP_ExpLimit.wresl
+
+
+! If TUCP's are engaged and it's after January, limit exports to 1500 cfs if 
+! -- delta outflow is not 7100 cfs or greater in the X2 months 
+! -- delta outflow is not 4000 cfs if SacIndex<8.1 in May and June, per D1641 page 185 footnote [10]
+
+
+! what does NDOI need to be to trigger an export limit?
+define ExpLimitThreshold {
+    case LowSacIndex {condition month>=MAY .and. month<=JUN .and. SacIndex<8100. value 4000.}
+    case otherwise   {condition always value 7100. }
+}
+
+! from PRESETUP cycle results, calculate whether there is excess NDOI
+define PreSetupExcess {
+    case ThruJune {
+        condition month<=JUN
+        value max(0., NDOI[PRESETUP] - ExpLimitThreshold)}
+    case otherwise {
+        condition always
+        value 99999. }
+}
+
+! how much capacity is there for CVP to back off of upstream releases? 
+define CVP_upstrm_pre {value min(max(0.,s_shstalevel5-s_shsta[PRESETUP])*taf_cfs,c_sac120_add[PRESETUP], c_kswck_add[PRESETUP]) 
+                           + min(max(0.,s_folsmlevel5-s_folsm[PRESETUP])*taf_cfs,c_amr004_add[PRESETUP], c_ntoma_add[PRESETUP])}
+
+! Can exports be cut to support some of the reduced delta outflow criteria?
+! if delta inflow is upstream controlled, then reduce exports up to the point needed to support full delta outflow, 
+! but do not reduce below 1500 cfs.  If there is capacity to reduce export and back that into storage, reduce export 
+! to as low as 1100 cfs.
+define FebJun_TUCP_ExpLim {
+    case upstream_ctrl { !tucps with a reduced delta outflow and upstream control
+        condition tucp_trigger>.5 .and. month>JAN .and. month<JUL .and. PreSetupExcess<1. .and. CVP_upstrm_pre<1.
+        value max(1500., max(0.,ExportActualTD[PRESETUP]-(ExpLimitThreshold-NDOI[PRESETUP])))}
+    case preserve_storage { ! tucps with reduced delta outflow but room to back storage up
+        condition always 
+        value 1100.}
+}
+define FebJun_TUCP_ExpLim_ {alias FebJun_TUCP_ExpLim kind 'export-limit' units 'cfs'}
+
+goal Limit_TUCP_Export1 {
+    lhs ExportActualTD 
+    case TUCPsFebJun {
+        condition tucp_trigger>.5 .and. month>JAN .and. month<JUL .and. PreSetupExcess<1.
+        rhs FebJun_TUCP_ExpLim
+        lhs<rhs penalty 0.}
+}  
+
+! If TUCP's are engaged and reduced NDOI standards are controlling while upstream
+! operations control reservoir releases, cut exports to meet original NDOI level,
+! down to 1500 cfs. Valid after the X2 season has passed.
+define PreSetupNDOIShort {
+    case JulSep {
+        condition month>JUN .and. tucp_trigger>.5 .and. (NDOI[PRESETUP] - NDOreqflowstd_orig)<1.
+        value max(0.,NDOreqflowstd_orig-NDOI[PRESETUP]) }
+    case otherwise {
+        condition always
+        value 0. }
+}
+
+! Reduce exports if they can be backed into storage-short reservoirs
+! 500cfs used as a buffer for NDOI_ADD_ANN that might be involved in months like this
+define JulSep_TUCP_ExpLim {value max(max(1100.,1500.-CVP_upstrm_pre), ExportActualTD[PRESETUP] - PreSetupNDOIShort - 500.)}
+define JulSep_TUCP_ExpLim_ {alias JulSep_TUCP_ExpLim kind 'export-limit' units 'cfs'}
+
+goal Limit_TUCP_Export2 {
+    lhs ExportActualTD 
+    case TUCPsJulSep {
+        condition month>JUN .and. tucp_trigger>.5 .and. (NDOI[PRESETUP] - NDOreqflowstd_orig)<1.
+        rhs JulSep_TUCP_ExpLim  
+        lhs<rhs penalty 0.}
+}  

@@ -1,0 +1,111 @@
+! Writes out April-May D-1641 limits for QA-QC, before and after NDD operation
+! Put into this file because if these statements are in the normal april_may_maxexport files the MAXEXP_RPA_CVP etc. variables can't be found
+! EiExpCtrl and PulseExpCtrl use prior cycle values
+
+define AprMayTracyCtrl_preNDDsv {
+        case April {
+            condition     month == APR
+            value           min(MAXEXP_RPA_CVPdv[DELTA],MAXEXP_OMR_CVPdv[DELTA])*14.0/daysin + PulseExpCtrl[DELTA]*CVPExpCapShare_D1641_[DELTA]*16.0/daysin}
+        case May {
+            condition     month == MAY
+            value           min(MAXEXP_RPA_CVPdv[DELTA],MAXEXP_OMR_CVPdv[DELTA])*16.0/daysin + PulseExpCtrl[DELTA]*CVPExpCapShare_D1641_[DELTA]*15.0/daysin}
+        case otherwise {
+        	condition	always
+        	value		99999.}
+}
+
+define AprMayTracyCtrl_EI_preNDDsv {
+        case April {
+            condition     month == APR
+            value           EiExpCtrl[DELTA]*CVPExpCapShare_D1641_[DELTA]*14.0/daysin + PulseExpCtrl[DELTA]*CVPExpCapShare_D1641_[DELTA]*16.0/daysin}
+        case May {
+            condition     month == MAY
+            value           EiExpCtrl[DELTA]*CVPExpCapShare_D1641_[DELTA]*16.0/daysin + PulseExpCtrl[DELTA]*CVPExpCapShare_D1641_[DELTA]*15.0/daysin}
+        case otherwise {
+        	condition	always
+        	value		99999.}
+}
+
+define AprMayBanksCtrl_preNDDsv {
+        case April {
+            condition     month == APR
+            value           min(MAXEXP_RPA_SWPDV[DELTA],MAXEXP_OMR_SWPdv[DELTA])*14.0/daysin + PulseExpCtrl[DELTA]*SWPExpCapShare_D1641_[DELTA]*16.0/daysin}
+        case May {
+            condition     month == MAY
+            value           min(MAXEXP_RPA_SWPdv[DELTA],MAXEXP_OMR_SWPdv[DELTA])*16.0/daysin + PulseExpCtrl[DELTA]*SWPExpCapShare_D1641_[DELTA]*15.0/daysin}
+        case otherwise {
+        	condition	always
+        	value		99999.}
+}
+
+define AprMayBanksCtrl_EI_preNDDsv {
+        case April {
+            condition     month == APR
+            value           EiExpCtrl[DELTA]*SWPExpCapShare_D1641_[DELTA]*14.0/daysin + PulseExpCtrl[DELTA]*SWPExpCapShare_D1641_[DELTA]*16.0/daysin}
+        case May {
+            condition     month == MAY
+            value           EiExpCtrl[DELTA]*SWPExpCapShare_D1641_[DELTA]*16.0/daysin + PulseExpCtrl[DELTA]*SWPExpCapShare_D1641_[DELTA]*15.0/daysin}
+        case otherwise {
+        	condition	always
+        	value		99999.}
+}
+
+define AprMayTracyCtrl_FINAL_preNDD {value min(AprMayTracyCtrl_preNDDsv,AprMayTracyCtrl_EI_preNDDsv)}
+define AprMayBanksCtrl_FINAL_preNDD {value min(AprMayBanksCtrl_preNDDsv,AprMayBanksCtrl_EI_preNDDsv)}
+
+define AprMayTracyCtrl_FINAL_preNDD_ {alias AprMayTracyCtrl_FINAL_preNDD kind 'temp' units 'cfs'}
+define AprMayBanksCtrl_FINAL_preNDD_ {alias AprMayBanksCtrl_FINAL_preNDD kind 'temp' units 'cfs'}
+
+define AprMayTracyCtrlsv {
+        case April {
+            condition     month == APR
+            value           min(MAXEXP_RPA_CVP,MAXEXP_OMR_CVP)*14.0/daysin + PulseExpCtrl[-1]*CVPExpCapShare_D1641*16.0/daysin}
+        case May {
+            condition     month == MAY
+            value           min(MAXEXP_RPA_CVP,MAXEXP_OMR_CVP)*16.0/daysin + PulseExpCtrl[-1]*CVPExpCapShare_D1641*15.0/daysin}
+        case otherwise {
+        	condition	always
+        	value		99999.}
+}
+
+define AprMayTracyCtrl_EIsv {
+        case April {
+            condition     month == APR
+            value           EiExpCtrl[-1]*CVPExpCapShare_D1641*14.0/daysin + PulseExpCtrl[-1]*CVPExpCapShare_D1641*16.0/daysin}
+        case May {
+            condition     month == MAY
+            value           EiExpCtrl[-1]*CVPExpCapShare_D1641*16.0/daysin + PulseExpCtrl[-1]*CVPExpCapShare_D1641*15.0/daysin}
+        case otherwise {
+        	condition	always
+        	value		99999.}
+}
+
+define AprMayBanksCtrlsv {
+        case April {
+            condition     month == APR
+            value           min(MAXEXP_RPA_SWP,MAXEXP_OMR_SWP)*14.0/daysin + PulseExpCtrl[-1]*SWPExpCapShare_D1641*16.0/daysin}
+        case May {
+            condition     month == MAY
+            value           min(MAXEXP_RPA_SWP,MAXEXP_OMR_SWP)*16.0/daysin + PulseExpCtrl[-1]*SWPExpCapShare_D1641*15.0/daysin}
+        case otherwise {
+        	condition	always
+        	value		99999.}
+}
+
+define AprMayBanksCtrl_EIsv {
+        case April {
+            condition     month == APR
+            value           EiExpCtrl[-1]*SWPExpCapShare_D1641*14.0/daysin + PulseExpCtrl[-1]*SWPExpCapShare_D1641*16.0/daysin}
+        case May {
+            condition     month == MAY
+            value           EiExpCtrl[-1]*SWPExpCapShare_D1641*16.0/daysin + PulseExpCtrl[-1]*SWPExpCapShare_D1641*15.0/daysin}
+        case otherwise {
+        	condition	always
+        	value		99999.}
+}
+
+define AprMayTracyCtrl_FINAL {value min(AprMayTracyCtrlsv,AprMayTracyCtrl_EIsv)}
+define AprMayBanksCtrl_FINAL {value min(AprMayBanksCtrlsv,AprMayBanksCtrl_EIsv)}
+
+define AprMayTracyCtrl_FINAL_ {alias AprMayTracyCtrl_FINAL kind 'temp' units 'cfs'}
+define AprMayBanksCtrl_FINAL_ {alias AprMayBanksCtrl_FINAL kind 'temp' units 'cfs'}

@@ -1,0 +1,12 @@
+!SwitchTable
+SwitchTable
+Action	Switch
+1	1	 !	placeholder
+2	1	 !	CASP_(B)
+3	0	 !	SOD Storage_(C)
+4	0	 !	FIRO & WCM_(D)
+5	0	 !	Asset Management_(E)
+6	0	 !	Ops Strategies_(F)
+7	0	 !	TUCP, urban Conservation, CVPSWP export limits_(G)
+8	1	!	SLR
+9	1	!	LODFlag

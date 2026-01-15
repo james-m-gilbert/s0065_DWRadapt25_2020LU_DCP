@@ -1,0 +1,11 @@
+    define NDOI_ADD_SACVAest 	    {value NDOI_ADD_SACVAest[DELTA_SRPLS]}   
+    define C_SAC041_VA_SacPulseest 	{value C_SAC041_VA_SacPulseest[DELTA_SRPLS]}   
+    define FriantVA_estflow 		{value FriantVA_estflow[DELTA_SRPLS]}
+    define NDOI_ADD_FeatherVAest	{value NDOI_ADD_FeatherVAest[DELTA_SRPLS]}
+    define NDOI_ADD_AMERVAsv		{value NDOI_ADD_AMERVA[UPPERAMERICAN_VA]}
+
+	define NDOI_ADD_SACVAest_ {alias NDOI_ADD_SACVAest kind 'PULSE-VA' units 'CFS'}
+	define C_SAC041_VA_SacPulseest_ {alias C_SAC041_VA_SacPulseest kind 'PULSE-VA' units 'CFS'}
+	define FriantVA_estflow_ {alias FriantVA_estflow kind 'PULSE-VA' units 'CFS'}
+	define NDOI_ADD_FeatherVAest_ {alias NDOI_ADD_FeatherVAest kind 'PULSE-VA' units 'CFS'}
+    

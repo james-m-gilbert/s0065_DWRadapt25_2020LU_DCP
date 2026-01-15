@@ -1,0 +1,10 @@
+! VA_Ops.wresl
+
+
+! account for changes to yolo bypass flows due to DSA65 land fallowing action
+!define C_CSL004A_VA {lower -1000. kind 'VA-cfs' units 'cfs'} 
+!goal setC_CSL004A_VA {C_CSL004A_VA = C_CSL004A - C_CSL004A[WHEELJPOD]}
+
+include 'VASacSetBaseline_WHEELJPOD.wresl'
+include 'VA_SacPulse.wresl'
+

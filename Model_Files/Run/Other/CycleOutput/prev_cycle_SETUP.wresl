@@ -1,0 +1,16 @@
+! previous values
+define pr_cyc_C_SAC041 {value C_SAC041[SETUP]}
+define pr_cyc_EXP_TD {value EXP_TD[SETUP]}
+define pr_cyc_C_SJR070 {value C_SJR070[SETUP]}
+define pr_cyc_DXC {value DXC[SETUP]}
+define pr_cyc_net_DICU {value net_DICU[SETUP]}
+define pr_cyc_sac_oth {value sac_oth[SETUP]}
+define pr_cyc_exp_oth {value exp_oth[SETUP]}
+define pr_cyc_SMSCG_OP  {value SMSCG_OP[SETUP]}
+define pr_cyc_C_SAC048_ISF001 {value C_SAC048_ISF001[SETUP]}
+
+! Use previous cycle values for flows to inform daily average to disaggretate 
+! The daily values are then used in setting bypass criteria and north MONTHLYWEIGHTED diversion limits
+define Q_SAC048nospill{value C_SAC048[SETUP]+ SP_SAC083_YBP037[SETUP]+ SP_SAC066_YBP020[SETUP]}
+define Q_SAC097{value C_SAC097[SETUP]}
+define Q_SAC048nospilldv {alias Q_SAC048nospill kind 'debug' units 'cfs'}

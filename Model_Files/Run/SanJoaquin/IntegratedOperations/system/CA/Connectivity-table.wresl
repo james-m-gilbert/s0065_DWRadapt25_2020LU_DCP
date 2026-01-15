@@ -1,0 +1,4 @@
+goal continuityTVC {C_CAA184-D_CAA185_CSB001-C_CAA185=0} !copy of goal continuityCAA183
+goal continuitySW {C_CAA185-C_CAA194_SW-C_CAA194=0} !copy of goal continuityCAA194
+goal continuityLCP {C_CAA207-D_CAA208_LCP-C_CAA208=0} ! copy of goal continuityCAA208
+goal continuityCVC {C_CAA232-D_CAA238_15-D_CAA238_16-D_CAA238_CVPCV-C_CAA238_CVC-C_CAA238=0} !copy of goal continuityCAA238

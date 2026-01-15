@@ -1,0 +1,9 @@
+! Updated as of 08/08/2022
+! Note: These should only be updated once CalSimHydro is rerun with the same VA target assumptions.
+VA_Targ_2022		
+wyt	feather	sac
+1	0	0
+2	60	110
+3	60	110
+4	60	110
+5	0	0

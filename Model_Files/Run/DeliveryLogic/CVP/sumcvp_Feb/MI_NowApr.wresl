@@ -1,0 +1,31 @@
+! MI DEMANDS *********************************************
+
+define NowApr_UD_02_PU {
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        sum(i=0,Apr-month,1) UD_02_PU(i)*cfs_taf(i)}
+    case otherwise {
+        condition always
+        value 0 }
+}
+define NowApr_UD_02_PUdv {alias NowApr_UD_02_PU kind 'ANNUAL-URBAN-DEMAND' units 'taf'}   
+
+define NowApr_UD_03_PU1 {
+    case FebApr { 
+       condition month >= Feb .and. month <= Apr 
+       sum(i=0,Apr-month,1) UD_03_PU1(i)*cfs_taf(i)}
+    case otherwise {
+       condition always
+       value 0 }
+}
+define NowApr_UD_03_PU1dv {alias NowApr_UD_03_PU1 kind 'ANNUAL-URBAN-DEMAND' units 'taf'}  
+
+define NowApr_UD_03_PU2 {
+    case FebApr { 
+       condition month >= Feb .and. month <= Apr 
+       sum(i=0,Apr-month,1) UD_03_PU2(i)*cfs_taf(i)}
+    case otherwise {
+       condition always
+       value 0 }
+}
+define NowApr_UD_03_PU2dv {alias NowApr_UD_03_PU2 kind 'ANNUAL-URBAN-DEMAND' units 'taf'}  

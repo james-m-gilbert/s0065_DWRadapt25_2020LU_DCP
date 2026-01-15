@@ -1,0 +1,16 @@
+!Categories of Delta outflow
+
+!(1)	Required Delta outflow for MRDO and X2: NDOI_MIN
+
+!(2)	True surplus (which could be exported if there was capacity): Min (NDOI_ADD_SWP + NDOI_ADD_CVP, Surplus taking into account EI export cap). 
+define True_Surplus {value min(NDOI_ADD_SWP[WHEELJPOD] + NDOI_ADD_CVP[WHEELJPOD],max(0.,ExpRatio * (DeltaInflowforNDOI[WHEELJPOD] - ((ExportActualTD[WHEELJPOD] + ExportActualIF[WHEELJPOD])/ExpRatio))))}    
+
+define True_Surplus_dv {alias True_Surplus kind 'outflow metric' units 'cfs'}
+
+!(3)	Outflow for salinity/carriage water above NDOI_MIN.  Min of carriage water and flow needed to support exports under EI
+define Salinity_CW_outflow {value min(NDOI_ADD_ANN[WHEELJPOD] + NDOI_ADD_WHLCV[WHEELJPOD] + NDOI_ADD_WHLJP[WHEELJPOD] + NDOI_ADD_WTS[WHEELJPOD],
+	max(0.,((ExportActualTD[WHEELJPOD] + ExportActualIF[WHEELJPOD])/ExpRatio) - NDOI_MIN[WHEELJPOD]))}
+
+define Salinity_CW_outflow_dv {alias Salinity_CW_outflow kind 'outflow metric' units 'cfs'}
+
+!(4) VA outflow: NDOI_ADD_VA	

@@ -1,0 +1,669 @@
+! VA_SacPulse.wresl
+! Foregone delivery to Sac River Settlement Contractors supports add'l Sac River flow.
+
+! ************************************************************************
+define SacVAVol {value SacVAVol_[WHEELJPOD]}
+define SacVAAnn {value SacVAAnn_[WHEELJPOD]}
+
+define SacVAAnn_ {alias SacVAAnn kind 'FLOW-VA' units 'TAF'}
+
+define SC_DelivRed {std kind 'VA-cfs' units 'cfs'}		!
+define SC_LF_Returns {std kind 'VA-cfs' units 'cfs'}		!
+define SC_LF_RtnDiff {std kind 'VA-cfs' units 'cfs'}		!
+define SC_LF_Savings {std kind 'VA-cfs' units 'cfs'}		!
+define totalSacVAflow {std kind 'VA-cfs' units 'cfs'}
+define SacVA_CumRel {lower -100. kind 'VA-taf' units 'TAF'}	!Cumulative monthly reservoir release volume; accounting only
+define SacVA_CumLF_Credit {std kind 'VA-taf' units 'TAF'}	!Cumulative land fallowing/ delivery reduction volume; accounting only
+define SacVA_CumLF_backup {std kind 'VA-taf' units 'TAF'}	!Cumulative land fallowing/ delivery reduction volume; accounting only
+define SacVA_Cum_RtnDiff {std kind 'VA-taf' units 'TAF'}	!Cumulative land fallowing/ delivery reduction volume; accounting only
+define SacVA_CumLF_RtnDiff {std kind 'VA-taf' units 'TAF'}	!Cumulative land fallowing/ delivery reduction volume; accounting only
+
+! ************************************************************************ Should I add AWR_19_SA and AWR_21_SA???
+! Accounting and comparison purposes only. Calculate the non LF and LF applied water demands and actual return flows.
+define SacVA_AWR_Base {value (AWR_08N_SA1 + AWR_08N_SA2 + AWR_08S_SA1 + AWR_08S_SA2 + AWR_08S_SA3 +AWR_19_SA + AWR_21_SA)*cfs_taf} ! What is the applied water in the base case, aka no land fallowing?
+define SacVA_AWR_LF {value (AWR_08N_SA1_LF + AWR_08N_SA2_LF + AWR_08S_SA1_LF + AWR_08S_SA2_LF + AWR_08S_SA3_LF +AWR_19_SA_LF + AWR_21_SA_LF)*cfs_taf} ! What is the applied water in the VA/land fallowing scenario?
+define SacVA_AWR_Diff_LF {value SacVA_AWR_Base - SacVA_AWR_LF } ! What is the reduction of applied water?
+define SacVA_AWR_Diff_LF_ {alias SacVA_AWR_Diff_LF kind 'APPLIED-WATER-VA' units 'TAF'}
+
+define SacVA_TW_Base {value (TW_08N_SA1 + TW_08N_SA2 + TW_08S_SA1 + TW_08S_SA2 + TW_08S_SA3 + TW_19_SA + TW_21_SA)*cfs_taf} ! Do the similar calculation for tailwater.
+define SacVA_TW_LF {value (TW_08N_SA1_LF + TW_08N_SA2_LF + TW_08S_SA1_LF + TW_08S_SA2_LF + TW_08S_SA3_LF + TW_19_SA_LF + TW_21_SA_LF)*cfs_taf}
+define SacVA_TW_Diff_LF {value SacVA_TW_Base - SacVA_TW_LF}
+define SacVA_TW_Diff_LF_ {alias SacVA_TW_Diff_LF kind 'TAILWATER-VA' units 'TAF'}
+
+! Deliveries in the final cycle are reduced due to land settlement contractor land fallowing
+! Demand units involved: 08N_SA1, 08N_SA2, 08S_SA1, 08S_SA2, 08S_SA3
+! Calculate the deliveries total BEFORE land fallowing ops
+define SacVA_Del_VABase {value (D_SAC178_08N_SA1[WHEELJPOD]
+									+ 	D_SAC159_08N_SA1[WHEELJPOD]
+									!+ 	D_CBD049_08N_SA1[WHEELJPOD]
+									+ 	D_GCC027_08N_SA2[WHEELJPOD]
+									+ 	D_SAC159_08S_SA1[WHEELJPOD]
+									!+ 	D_CBD041_08S_SA1[WHEELJPOD]
+									+	D_GCC056_08S_SA2[WHEELJPOD]
+									!+	D_CBD041_08S_SA2[WHEELJPOD]
+									+	D_SAC109_08S_SA3[WHEELJPOD]
+									+	D_SAC121_08S_SA3[WHEELJPOD]
+									!+	D_CBD028_08S_SA3[WHEELJPOD]
+									+   D_SAC122_19_SA[WHEELJPOD]
+									+   D_SAC115_19_SA[WHEELJPOD]
+									+   D_SAC109_19_SA[WHEELJPOD]
+									+   D_SAC099_19_SA[WHEELJPOD]
+									+   D_SAC091_19_SA[WHEELJPOD]
+									+   D_SAC074_21_SA[WHEELJPOD]
+									+   D_SAC083_21_SA[WHEELJPOD]
+									+   D_YBP023_21_SA[WHEELJPOD]														
+									)}
+define SacVA_Del_VABase_ {alias SacVA_Del_VABase*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+! Deliveries in the final cycle are reduced due to land settlement contractor land fallowing
+! Calculate the delivery totals and differences.
+goal setSC_DelivRed {
+    lhs SC_DelivRed
+    
+    case noLF {
+    	condition SacVAAnn < 0.5
+    	rhs 0.
+    }
+    
+    case other {
+    	condition always
+    	   	rhs   	SacVA_Del_VABase			   		
+			   		-  	(D_SAC178_08N_SA1
+			   		+	D_SAC159_08N_SA1
+			   		!+	D_CBD049_08N_SA1
+			   		+	D_GCC027_08N_SA2
+			   		+	D_SAC159_08S_SA1
+					!+	D_CBD041_08S_SA1
+					+	D_GCC056_08S_SA2
+					!+	D_CBD041_08S_SA2
+					+	D_SAC109_08S_SA3
+					+	D_SAC121_08S_SA3
+					!+	D_CBD028_08S_SA3
+					+   D_SAC122_19_SA
+					+   D_SAC115_19_SA
+					+   D_SAC109_19_SA
+					+   D_SAC099_19_SA
+					+   D_SAC091_19_SA
+					+   D_SAC074_21_SA
+					+   D_SAC083_21_SA
+					+   D_YBP023_21_SA																   		
+			   		)
+    }
+
+}
+
+define SC_DelivRed_taf {alias SC_DelivRed*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+define SC_LF_Returns_VABase {value  (R_08N_SA1_CBD044[WHEELJPOD]
+							   		+ R_08N_SA2_CBD049[WHEELJPOD]
+							   		+ R_08S_SA1_CBD031[WHEELJPOD]
+							   		+ R_08S_SA2_CBD037[WHEELJPOD]
+							   		+ R_08S_SA3_RFS8S[WHEELJPOD]
+							   		+ R_19_SA_RD1500[WHEELJPOD]
+							   		+ R_21_SA_YBP020[WHEELJPOD])}
+							   		
+define SC_LF_Returns_VABase_ {alias SC_LF_Returns_VABase kind 'VA-CFS' units 'CFS'}
+define SC_LF_Returns_VABase_taf {alias SC_LF_Returns_VABase*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+! Return flows in the final cycle are reduced due to land settlement contractor land fallowing
+! Calculate the return flows totals and differences
+goal setSC_LF_Returns {
+    lhs SC_LF_Returns
+
+    case noLF {
+    	condition SacVAAnn < 0.5
+    	rhs 0.
+    }
+    
+   	case other {
+   		condition always
+   		rhs R_08N_SA1_CBD044
+   		+ R_08N_SA2_CBD049
+   		+ R_08S_SA1_CBD031
+   		+ R_08S_SA2_CBD037
+   		+ R_08S_SA3_RFS8S
+		+ R_19_SA_RD1500
+		+ R_21_SA_YBP020
+   		}
+}
+
+goal setSC_LF_RtnDiff {
+    lhs SC_LF_RtnDiff
+
+    case noLF {
+    	condition SacVAAnn < 0.5
+    	rhs 0.
+    }
+    
+   	case other {
+   		condition always
+   		rhs SC_LF_Returns_VABase - SC_LF_Returns 
+   		}
+
+}
+define SC_LF_RtnDiff_taf {alias SC_LF_RtnDiff*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+goal setSC_LF_Savings {SC_LF_Savings = SC_DelivRed - SC_LF_RtnDiff} 
+define SC_LF_Savings_taf {alias SC_LF_Savings*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+
+! ************************************************************************
+! Account for changes in Shasta release to support the Sac River VA action.
+! I_SHSTA_VA is the amount of this month's reduced SC delivery that backs up into Shasta.  
+! This is ADDED to the C_KSWCK_m term in the coa definition for SHADS (Shasta storage chg)
+! This term is zeroed in all but the final cycle, when it is set due to the VA action.
+! C_KSWCK_VA is release from Shasta necessary to create desired pulse flows for Delta Outflow.
+! This is done in the final cycle of the model, concurrent with releases for wheeling and transfers
+define I_SHSTA_VA {std kind 'flow-inflow' units 'cfs'}!goal C_KSWCK_VA_force {C_KSWCK_VA < 99999. - int_C_KSWCK_VA * 99999.}! if int=1, I_SHSTA_VA=pos, C_KSWCK_VA=0
+goal C_KSWCK_VA_change {I_SHSTA_VA - C_KSWCK_VA = C_KSWCK_VABase - C_kswck}
+
+! Spill of VA debt happens if the reservoir fills to flood control level relative to the previous
+! month, thereby filling into the debt space.  It is also is erased if the reservoir has to 
+! release previously stored water (i.e. reduce volume) to meet FC rule. The logic is that if there
+! had been no debt, the spill would have been larger.  
+! -  VA credit is the first block of water to spill whether the reservoir fills to FC limit or 
+! reduces volume to meet FC.  The spill is limited to the excess flow in downstream reaches.
+! *** modification for LTO Alt 2 v3  TF 080923
+! *** water carried over after Dry years (when S_SHSTA_VA > 0) can spill
+define spaceunderfldc {value (S_SHSTAlevel5 - S_SHSTA(-1))*taf_cfs(-1)}
+define S_SHSTA_spillest {value max(0., I_SHSTA - D_SHSTA_WTPJMS[WHEELJPOD] - E_SHSTA[WHEELJPOD] - spaceunderfldc)}  !Calculation of how much water had to spill to stay at flood curve
+define S_SHSTA_spillestdv {alias S_SHSTA_spillest kind 'VA-cfs' units 'cfs'}
+
+define S_SHSTA_AvailCap {value min(280., max(0., S_SHSTALevel5-S_SHSTA[-1]))} 
+define S_SHSTA_AvailCapDV {alias S_SHSTA_AvailCap kind 'storage' units 'taf'}
+define SRSC_spillest {value max(0., S_Shsta_SRSC(-1) - S_Shsta_AvailCap)}
+define SRSC_spillestdv {alias SRSC_spillest kind 'VA-cfs' units 'cfs'}
+
+!Compute spill volume from Shasta
+!Spill from VA account is calculated spill amount but removing spill from SRSC account since that has to spill first
+define SP_SHSTA_sv {
+/*    case Reset {
+        condition   month==Feb 
+        value       S_SHSTA_VA(-1) }
+    case neg_spill {
+        condition S_SHSTA_VA(-1)<0. .and. S_SHSTA_VAbase - S_shstalevel5 > S_SHSTA_VA(-1)
+        value S_SHSTA_VA(-1)-(S_SHSTA_VAbase-S_SHSTAlevel5)}*/
+    case pos_spill {
+        condition S_SHSTA_VA(-1) > 0. .and. abs(S_SHSTAlevel5 - S_SHSTA_VAbase) < 0.001
+        value  min(S_SHSTA_VA(-1), max(0.,min(S_SHSTA_spillest, C_KSWCK_ADD[WHEELJPOD], C_SAC240_ADD[WHEELJPOD], C_SAC120_ADD[WHEELJPOD])*cfs_taf - SRSC_spillest))}
+    case other {
+        condition   always
+        value       0. }
+}
+
+define SP_SHSTA_VADV  {std kind 'VOLUME-SPILL' units 'TAF'}
+
+goal setSP_SHSTA_VADV {SP_SHSTA_VADV = max(0., SP_SHSTA_sv)}
+
+goal S_SHSTA_VA_balance {
+	lhs S_SHSTA_VA 
+	case BegWY1 {
+		condition wateryear == 1922 .and. month < MAR
+		rhs 0. }	
+	case Marm { !Reset in March unless there is positive carryover storage after a Dry year
+		condition month == MAR .and. (wyt_sac_(-11) < 3.5 .or. wyt_sac_(-11) > 4.5) !Checking if prior year April WY type was Dry, in this case do not reset
+		rhs I_SHSTA_VA*cfs_taf - C_KSWCK_VA*cfs_taf }
+	case otherwise {
+		condition always
+		rhs I_SHSTA_VA*cfs_taf - C_KSWCK_VA*cfs_taf - SP_SHSTA_VADV + S_SHSTA_VA(-1) }
+} 
+
+!To post-process Shasta storage without stored VA water, it is useful to have a variable that is positive when S_SHSTA_VA is positive, but never negative
+define S_SHSTA_VA_pos {std kind 'VA-taf' units 'TAF'}
+
+goal S_SHSTA_VA_pos_balance {
+	lhs S_SHSTA_VA_pos
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == OCT
+		rhs 0. }	
+	case otherwise {
+		condition always
+		rhs S_SHSTA_VA 
+		lhs>rhs penalty 1. } 
+} 
+
+! ************************************************************************
+! SAC VA Pulse Flow
+! Guidance as of 06/2022
+! If it's wet Sac WYT then there is no pulse flow.
+! W/AN/BN years - Release half and half in April and May if April 1st Shasta > 3.8 maf. 
+!             - Release 1/3rds in Jun/Jul/Aug if April 1 Shasta < 3.8
+! D/C years - just let foregone delivery go down the river.
+! Calculate credit for any foregone delivery that cannot be backed up into Shasta 
+! due to releases for minimum flow.  This is intended to build in the spring and 
+! be used as soon as possible
+! *** modification for LTO Alt 2 v3  TF 080923
+! *** In AN/BN years split pulse between April and May
+! *** In Dry years, no pulse, but hold credit in Shasta for all land fallowing and release that water in the following year, split evenly between April and May. 
+! *** Need to track how much of that water can actually be backed up, and how much spills.  Only amount remaining needs to be released.
+! *** In a BN/AN year following a Dry year, pulse is a combination of AN/BN water and Dry year carryover
+
+goal SacVApulsetotal {
+	lhs totalSacVAflow
+	rhs C_SAC041_VA_SacPulse
+	}
+define totalSacVAflow_taf {alias totalSacVAflow*cfs_taf kind 'debug-taf' units 'taf'}
+
+define Sac_Pulse_DV  {std kind 'VA_flow'   units 'cfs'}
+!define SacVA_ForegoneSpillDV {std kind 'VA_volume'   units 'taf'}
+
+! Cases BN and AN - if previous Sac_Pulse was zero, look at any volume of water 
+! (from delivery reduction) which DID go down the river last month and add that
+! to a credit that can be applied to a pulse flow in this or a future month
+! Case Reduced - 
+! *** De-activating lf credit in LTO Alt 2 v3  TF 080923
+/*define SC_LF_Credit_DV {std kind 'VA_volume' units 'taf'}
+define SC_LF_Credit {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+    case reset {
+        condition range(month,feb,mar)
+        value 0.}
+    case AN_BN {
+        condition SacVAAnn > 0.5 .and. Sac_Pulse_DV(-1) < 0.1 .and. (wyt_sac < 4)
+        value SC_LF_Credit_DV(-1) + (C_SAC041_VA_SacPulse(-1))*cfs_taf(-1)}
+    case Reduced_Sac_Pulse {
+        condition Sac_Pulse_DV(-1) > 0.1
+        value max(0., SC_LF_Credit_DV(-1) - (Sac_Pulse_DV(-1)-(C_SAC041_VA_SacPulse(-1)))*cfs_taf(-1)+SacVA_ForegoneSpillDV(-1))}
+    case otherwise {
+        condition always
+        value max(0., SC_LF_Credit_DV(-1))}
+} 
+goal saveSC_LF_Credit_DV {SC_LF_Credit_DV = SC_LF_Credit}
+*/
+define Dry_yr_carryover_DV  {std kind 'VA_flow'   units 'taf'}
+
+!Tracking dry year carryover to be release in the following year
+define Dry_yr_carryover {
+	case BegWY1 {
+		condition wateryear == 1922
+		value 0. }	
+	case MarchafterDry {
+		condition month == MAR .and. round(wyt_sac_(prevApr)) == 4
+		value max(0., S_SHSTA_VA(-1))}  !Pull carryover from February, is zeroed out after that
+	case MarchnotafterDry {
+		condition month == MAR
+		value 0. }
+	case AprMayANBNyear {
+		condition (month==APR .or. month==MAY) .and. wyt_sac < 3.5 .and. wyt_sac > 1.5
+		value max(0.,Dry_yr_carryover_DV(-1) - SP_SHSTA_VADV(-1) - max(0.,Sac_Pulse_DV(-1) - (SacVAAnn/2)*taf_cfs(-1))*cfs_taf(-1))} !Need to adjust for any spills and also any Dry year water that was released in the prior month
+	case otherwise {
+		condition always
+		value max(0.,Dry_yr_carryover_DV(-1) - SP_SHSTA_VADV(-1) - Sac_Pulse_DV(-1)*cfs_taf(-1))}
+}
+
+goal setDry_yr_carryover_DV  {Dry_yr_carryover_DV = Dry_yr_carryover}
+
+
+! Shasta Sac pulse flows only during AN/BN years. During D and C years, the "pulse flows" come from foregone settlement contractor deliveries
+! *** modification for LTO Alt 2 v3  TF 080923
+! *** In AN/BN years split pulse between April and May
+! *** In Dry years, no pulse, but hold credit in Shasta for all land fallowing and release standard pulse in the following year, split evenly between April and May.
+! *** Need to track how much of that water can actually be backed up, and how much spills.  Only amount remaining needs to be released.
+! *** In a BN/AN year following a Dry year, pulse is a combination of AN/BN water and Dry year carryover
+define Sac_pulse {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month < MAR
+		value 0. }	
+    case S_SHSTA_Apr_ANBNafterDry {
+        condition month == APR .and. wyt_sac < 3.5 .and. wyt_sac > 1.5 .and. round(wyt_sac_(-12)) == 4 ! Shasta Sac pulse flows in AN/BN years after Dry years
+        value (SacVAAnn/2 + (max(0.,Dry_yr_carryover_DV(-1)-SP_SHSTA_VADV(-1)-SP_SHSTA_sv))/2.) * taf_cfs }
+    case S_SHSTA_May_ANBNafterDry {
+        condition month == MAY .and. wyt_sac_(-1) < 3.5 .and. wyt_sac_(-1) > 1.5 .and. round(wyt_sac_(-13)) == 4 ! Shasta Sac pulse flows in AN/BN years after Dry years, based on April WY type so as not change operation in May
+        value (SacVAAnn + max(0.,Dry_yr_carryover_DV(-1)-SP_SHSTA_VADV(-1)-SP_SHSTA_sv) - Sac_Pulse_DV(-1)*cfs_taf(-1)) * taf_cfs } !Calculation is Pulse req + remaining dry year carryover (which lags by one month) adjusted for spills and the release last month
+    case S_SHSTA_Apr_afterDry {
+        condition month == APR .and. round(wyt_sac_(-12)) == 4 ! Shasta Sac pulse flows in other years after Dry years
+        value (max(0.,Dry_yr_carryover_DV(-1)-SP_SHSTA_VADV(-1)-SP_SHSTA_sv))/2. * taf_cfs }
+    case S_SHSTA_May_afterDry {
+        condition month == MAY .and. round(wyt_sac_(-13)) == 4 ! Shasta Sac pulse flows in other years after Dry years, based on April WY type so as not change operation in May
+        value max(0.,Dry_yr_carryover_DV(-1)-SP_SHSTA_VADV(-1)-SP_SHSTA_sv-Sac_Pulse_DV(-1)*cfs_taf(-1)) * taf_cfs  } !Calculation is remaining dry year carryover (which lags by one month) adjusted for spills and the release last month
+    case S_SHSTA_Apr_ANBN {
+        condition month == APR .and. wyt_sac < 3.5 .and. wyt_sac > 1.5 ! Shasta Sac pulse flows only during AN/BN years
+        value SacVAAnn/2. * taf_cfs }
+    case S_SHSTA_May_ANBN {
+        condition month == MAY .and. wyt_sac_(-1) < 3.5 .and. wyt_sac_(-1) > 1.5 ! Shasta Sac pulse flows only during AN/BN years, based on April WY type so as not change operation in May
+        value SacVAAnn/2. * taf_cfs }
+/*    case highS_SHSTA_Apr {
+        condition S_SHSTA(prevMAR) >= 3800. .and. month == APR .and. wyt_sac < 4 .and. wyt_shasta_CVP < 4 ! Shasta Sac pulse flows only during AN/BN years
+        value SacVAAnn/2. * taf_cfs }
+    case highS_SHSTA_May {
+        condition S_SHSTA(prevMAR) >= 3800. .and. month == MAY .and. wyt_sac_(-1) < 4 .and. wyt_shasta_CVP_(-1) < 4 ! Shasta Sac pulse flows only during AN/BN years based on Apr WYT
+        value SacVAAnn/2. * taf_cfs }
+    case lowS_SHSTA {
+        condition S_SHSTA(prevMAR) < 3800. .and. (month >= JUN .and. month<= AUG).and. (wyt_sac_(prevApr) >= 1 .and. wyt_sac_(prevApr) <= 3) .and. wyt_shasta_CVP_(prevApr) < 2 ! Shasta Sac pulse flows only during AN/BN years from Jun to Aug using Apr WYT
+        value SacVAAnn/3. * taf_cfs }*/
+    case otherwise {
+        condition always
+        value 0. }
+    }
+goal saveSac_Pulse_DV {Sac_Pulse_DV = Sac_Pulse }
+
+! ************************************************************************
+! Calculate foregone spill due to VA debt being erased.  This will be added to the release requirement
+! to preserve the pulse flow intent of the VA action as compared to a baseline condition.
+! *** De-activating spills in LTO Alt 2 v3  TF 080923
+/*define txfr1_ShastaSpill {
+	case MayFC {
+		condition range(month,may,sep) .and. S_SHSTAlevel5 - S_SHSTA[WHEELJPOD] < .1
+		value min(c_KSWCK_ADD[WHEELJPOD], C_SAC240_ADD[WHEELJPOD], C_SAC097_ADD[WHEELJPOD])*cfs_taf}
+	case otherwise {
+		condition always
+		value 0. 	}
+}
+define txfr1_ShastaSpillDV {alias txfr1_ShastaSpill kind 'VA_volume' units 'taf'}
+
+define SacVA_ForegoneSpill {
+	case NegSpill {
+		condition month==may .and. Sac_pulse > 0. .and. SP_shsta_VA < 0.
+		value min(-SP_SHSTA_VA, txfr1_ShastaSpill)}
+	case NegSpill_W { ! Wet years have more instances where Shasta could still reach flood control after May
+		condition wyt_sac_(prevApr) < 2 .and. range(month,jun,sep) .and. Sac_pulse_dv(-1) > 0. .and. SP_shsta_VA < 0.
+		value min(-SP_SHSTA_VA, txfr1_ShastaSpill)}
+	case otherwise {
+		condition always
+		value 0.	}
+}
+goal setSacVA_ForegoneSpillDV {SacVA_ForegoneSpillDV = SacVA_ForegoneSpill }
+*/
+
+! ************************************************************************
+! In a W/AN/BN but Shasta Critical year, in a Dry or Critical year, there is no pulse flow, and
+! delivery reductions should be sent down the river and not backed up into Shasta
+! Any other opportunity to back water up should be taken up to the amount of the delivery reduction 
+! VA credit is zeroed out in February, so don't back up any delivery reduction in February unless it
+! is to pay down a debt. 
+! *** Simplified this for LTO Alt 2 v3  TF 080923 
+! *** Any water from fallowing above the pulse release is backed up into S_SHSTA_VA, handled by a later goal
+/*goal VA_backup {
+    lhs I_SHSTA_VA
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+    case reset {
+        condition month==FEB .and. S_SHSTA_VA(-1)>=0.
+            rhs 0.}
+    case backup {
+        condition always
+            rhs max(0., (SC_DelivRed - SC_LF_RtnDiff) - Sac_Pulse)}
+   case WetDryCritShastaCritApr {
+        condition month == Apr .and. (SacVAAnn < 0.5 .or. (wyt_sac >= 4 .or. wyt_shasta_cvp == 4)) ! Dry, Crit Sac WYT or Shasta critical year
+            rhs 0.}
+    case WetDryCritShastaCritMayJan {
+        condition range(month,May,Jan) .and. (SacVAAnn < 0.5 .or. (wyt_sac_(prevApr) >= 4 .or. wyt_shasta_cvp_(prevApr) == 4))
+            rhs 0.}  
+}*/
+!goal RelsForPulseOnly {C_KSWCK_VA = max(0., Sac_Pulse - SC_LF_Credit*taf_cfs + SacVA_ForegoneSpill*taf_cfs)}
+
+!Outside April-May, I_SHSTA_VA should be the same as water saved from land fallowing unless flows are at MIFs or Shasta is at flood pool, in which case it can't be backed up
+define spaceunderfldc_jpod {value (S_SHSTAlevel5 - S_SHSTA[WHEELJPOD])*taf_cfs}
+define add_flow_downstream {value min(C_KSWCK_ADD[WHEELJPOD], C_SAC240_ADD[WHEELJPOD], C_SAC120_ADD[WHEELJPOD])}
+
+!Make sure there is a legitimate reason to not back up water (should be at or near flood or at MIFs) 
+goal I_SHSTA_VA_limit {
+	lhs I_SHSTA_VA
+	case notAprMay {  
+		condition (month < APR .or. month > MAY) .and. spaceunderfldc_jpod > 0.01 .and. add_flow_downstream > 0.01
+	 	rhs SC_DelivRed - SC_LF_RtnDiff
+	 	lhs>rhs penalty 999999
+		lhs<rhs penalty 999999}
+	case otherwise {
+		condition always
+		rhs 0.
+		lhs>rhs penalty 99999
+		lhs<rhs penalty 99999}
+}
+
+!goal I_SHSTA_VA_limit     {I_SHSTA_VA < SC_DelivRed - SC_LF_RtnDiff}
+define I_SHSTA_VA_taf {alias I_SHSTA_VA*cfs_taf}
+
+goal ShastaBelowEncroachment {S_SHSTA < S_SHSTALevel5} ! Prevent Shasta storage from encroaching in VA cycle
+! C_SAC041_VA_SacPulse is for spring/summer releases supported by land fallowing,
+! or for the direct effect of land fallowing delivery reductions that cannot be 
+! backed up into Shasta.
+! C_KSWCK_VA is the portion of the release that comes from storage and not from direct
+! delivery difference
+! *** Simplified this for LTO Alt 2 v3  TF 080923 
+! *** SacPulseTarget is = Sac_Pulse computed above which is put into C_SAC041_VA_SacPulse
+/*goal Sac_VA_flow {
+    lhs C_SAC041_VA_SacPulse
+	case BegWY1 {
+		condition wateryear == 1922 .and. (month >= oct .and. month <=mar)
+		rhs 0. }
+    case DryCritShastaCritical_Apr {    ! flows reflect delivery and return changes
+        condition month == Apr .and. (wyt_sac >= 4 .or. wyt_shasta_cvp == 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff }
+    case DryCritShastaCritical_Rest {    ! flows reflect delivery and return changes
+        condition range(month,May,Jan) .and. (wyt_sac_(prevApr) >= 4 .or. wyt_shasta_cvp_(prevApr) == 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff }
+    case PreserveMIF {    ! If Shasta only released for Keswick MIF, then Shasta releases cannot be reduced (can't backup). Let it go out to outflow.
+        condition /*range(month,May,Jan) .and.*//* C_KSWCK_ADD[WHEELJPOD] < 0.5
+        rhs C_KSWCK_VA + SC_DelivRed - SC_LF_RtnDiff }
+    case SacPulse {
+        condition max(0., Sac_Pulse - SC_LF_Credit*taf_cfs) > 0.
+        rhs C_KSWCK_VA + SC_DelivRed - SC_LF_RtnDiff - I_SHSTA_VA}
+    case LFRelease {            ! take credit for delivery reduction that can't be backed up during W/AN/BN yrs (Keswick MIF control, Shasta flood control)
+        condition SacVAAnn > 0.5 .and. (wyt_sac < 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff - I_SHSTA_VA }
+    case otherwise {
+        condition always
+        rhs 0.}
+}*/
+
+define SacPulseTarget { value Sac_Pulse} 
+/*    case Sac_Pulse_Flow {
+        condition max(0., Sac_Pulse - SC_LF_Credit*taf_cfs + SacVA_ForegoneSpill*taf_cfs) > 0.
+        value max(0., Sac_Pulse - SC_LF_Credit*taf_cfs + SacVA_ForegoneSpill*taf_cfs)}
+    case otherwise {
+        condition always 
+        value 0.}
+}*/
+define SacPulseTarget_ {alias SacPulseTarget kind 'VA-cfs' units 'cfs'}
+
+goal supportSacPulse1 {C_SAC041_VA_SacPulse_AprMay = SacPulseTarget}
+/*    lhs C_SAC041_VA_SacPulse
+    case DryCritShastaCritical_Apr {    ! flows reflect delivery and return changes
+        condition month == Apr .and. (wyt_sac >= 4 .or. wyt_shasta_cvp == 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff }
+    case DryCritShastaCritical_Rest {    ! flows reflect delivery and return changes
+        condition range(month,May,Jan) .and. (wyt_sac_(prevApr) >= 4 .or. wyt_shasta_cvp_(prevApr) == 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff }
+    case PreserveMIF {    ! If Shasta only released for Keswick MIF, then Shasta releases cannot be reduced (can't backup). Let it go out to outflow.
+        condition /*range(month,May,Jan) .and.*/ /*C_KSWCK_ADD[WHEELJPOD] < 0.5
+        rhs C_KSWCK_VA + SC_DelivRed - SC_LF_RtnDiff }
+
+    case otherwise {
+    	condition always
+    	rhs SacPulseTarget
+!    	lhs<rhs penalty 99999 
+ !   	lhs>rhs penalty 9000 ! penalty on pulse flow above the target just enough to keep it from backing into flood space
+    }
+
+}*/
+
+!Provide water for pulse flow
+!goal supportSacPulse2 {C_SAC041_VA_SacPulse = C_KSWCK_VA + (SC_DelivRed - SC_LF_RtnDiff) - I_SHSTA_VA}
+!Made soft constraint in case not able to backup into Shasta due to being at MIFs downstream 
+goal supportSacPulse2 {lhs C_SAC041_VA_SacPulse_AprMay rhs C_KSWCK_VA + (SC_DelivRed - SC_LF_RtnDiff) - I_SHSTA_VA lhs>rhs penalty 99999 lhs<rhs penalty 99999}
+
+goal setmaxC_KSWCK_VA {C_KSWCK_VA < SacPulseTarget}
+
+!Track water savings from land fallowing that cannot be backed up
+define NetDelivRed_notbackedup {std kind 'VA-cfs' units 'cfs'}		!
+goal setNetDelivRed_notbackedup {NetDelivRed_notbackedup = (C_KSWCK_VA + (SC_DelivRed - SC_LF_RtnDiff) - I_SHSTA_VA) - C_SAC041_VA_SacPulse_AprMay}
+
+goal PreserveC_KSWCK_MIF {C_KSWCK_MIF > C_KSWCK_MIF[WHEELJPOD]}
+
+!****** Any water that cannot be backed up (NetDelivRed_notbackedup) should be exported if possible
+!Friant VA code has calculations of remaining export capacity in the Delta that can be used here
+define Jonesexp_capacity {value min(DeltaRecaptoVAlim1_DAprMaysv, DeltaRecaptoVAlim2_EIsv, DeltaRecaptoVAlim3_OMRsv, Jones_SRPrecap_lmt)}
+define SLCVPspace {value (S_SLUIS_CVPlevel5 - S_SLUIS_CVP[-1])*taf_cfs}
+
+define NetDelivRed_notbackedup_exports {std kind 'VA-cfs' units 'cfs'}		!
+
+goal setNetDelivRed_notbackedup_exports1 {lhs NetDelivRed_notbackedup_exports rhs NetDelivRed_notbackedup lhs<rhs penalty 99999.}
+goal setNetDelivRed_notbackedup_exports2 {lhs NetDelivRed_notbackedup_exports rhs min(Jonesexp_capacity, SLCVPspace) lhs<rhs penalty 99999.}
+
+!Anything left still goes to outflow
+define NetDelivRed_notbackedup_outflow {std kind 'VA-cfs' units 'cfs'}		!
+
+goal setNetDelivRed_notbackedup_outflow {NetDelivRed_notbackedup_outflow = NetDelivRed_notbackedup - NetDelivRed_notbackedup_exports}
+goal setC_SAC041_VA_SacPulse_rest {C_SAC041_VA_SacPulse_rest = NetDelivRed_notbackedup_outflow}
+
+define Jonesexp_capacity_ {alias Jonesexp_capacity kind 'VA-cfs' units 'cfs'}
+define SLCVPspace_ {alias SLCVPspace kind 'VA-cfs' units 'cfs'}
+
+! ************************************************************************
+! ACCOUNTING ONLY
+! ************************************************************************
+!Cumulative monthly reservoir release volume; initialized in Feb, the end of the LF period
+goal TotalSacVARelease {
+	lhs SacVA_CumRel
+
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+	case other {
+		condition always
+		rhs SacVA_CumRel(-1) + totalSacVAflow*cfs_taf }
+}
+! SC deliveries reduced - can either go to backup or Sac flow
+goal TotalSacVALandFallowing_Credit {
+	lhs SacVA_CumLF_Credit
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+	
+	case other {
+		condition always
+		rhs SacVA_CumLF_Credit(-1) + SC_DelivRed*cfs_taf }
+}
+! SC deliveries return flows difference
+goal TotalSacVARtnFlowDiff {
+	lhs SacVA_Cum_RtnDiff
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+	
+	case other {
+		condition always
+		rhs SacVA_Cum_RtnDiff(-1) + SC_LF_Rtndiff*cfs_taf }
+}
+! SC deliveries minus return flows difference - Shows how much net flows increase due to reduced deliveries and return flows
+goal TotalSacVALandFallowingRtnFlowDiff {
+	lhs SacVA_CumLF_RtnDiff
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+	
+	case other {
+		condition always
+		rhs SacVA_CumLF_RtnDiff(-1) + (SC_DelivRed - SC_LF_Rtndiff)*cfs_taf }
+}
+! SC total actual backup to Shasta
+goal TotalSacVALandFallowing_Backup {
+	lhs SacVA_CumLF_backup
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+	
+	case other {
+		condition always
+		rhs SacVA_CumLF_backup(-1) + I_SHSTA_VA*cfs_taf }
+}
+
+define NDOI_ADD_SACVA {alias C_SAC041_VA_SacPulse kind 'FLOW-VA' units 'cfs'}
+
+define DG_VABase {alias DG_08N_SA1[WHEELJPOD] + DG_08N_SA2[WHEELJPOD] + DG_08S_SA1[WHEELJPOD] + DG_08S_SA2[WHEELJPOD] + DG_08S_SA3[WHEELJPOD] +DG_19_SA[WHEELJPOD]+DG_21_SA[WHEELJPOD] kind 'VA_flow'   units 'cfs'}
+define DN_VABase {alias DN_08N_SA1[WHEELJPOD] + DN_08N_SA2[WHEELJPOD] + DN_08S_SA1[WHEELJPOD] + DN_08S_SA2[WHEELJPOD] + DN_08S_SA3[WHEELJPOD] +DN_19_SA[WHEELJPOD] + DN_21_SA[WHEELJPOD] kind 'VA_flow'   units 'cfs'}
+define GP_VABase {alias GP_08N_SA1[WHEELJPOD] + GP_08N_SA2[WHEELJPOD] + GP_08S_SA1[WHEELJPOD] + GP_08S_SA2[WHEELJPOD] + GP_08S_SA3[WHEELJPOD] +GP_19_SA[WHEELJPOD] + GP_21_SA[WHEELJPOD] kind 'VA_flow'   units 'cfs'}
+!define TW_VABase {alias TW_08N_SA1[WHEELJPOD] + TW_08N_SA2[WHEELJPOD] + TW_08S_SA1[WHEELJPOD] + TW_08S_SA2[WHEELJPOD] + TW_08S_SA3[WHEELJPOD] kind 'VA_flow'   units 'cfs'}
+define AW_VABase {alias AW_08N_SA1[WHEELJPOD] + AW_08N_SA2[WHEELJPOD] + AW_08S_SA1[WHEELJPOD] + AW_08S_SA2[WHEELJPOD] + AW_08S_SA3[WHEELJPOD] +AW_19_SA[WHEELJPOD] + AW_21_SA[WHEELJPOD] kind 'VA_flow'   units 'cfs'}
+define RU_VABase {alias RU_08N_SA1[WHEELJPOD] + RU_08N_SA2[WHEELJPOD] + RU_08S_SA1[WHEELJPOD] + RU_08S_SA2[WHEELJPOD] + RU_08S_SA3[WHEELJPOD] +RU_19_SA[WHEELJPOD] +RU_21_SA[WHEELJPOD] kind 'VA_flow'   units 'cfs'}
+define RP_VABase {alias RP_08N_SA1[WHEELJPOD] + RP_08N_SA2[WHEELJPOD] + RP_08S_SA1[WHEELJPOD] + RP_08S_SA2[WHEELJPOD] + RP_08S_SA3[WHEELJPOD] +RP_19_SA[WHEELJPOD] + RP_21_SA[WHEELJPOD] kind 'VA_flow'   units 'cfs'}
+
+define DG_VAFinal {alias DG_08N_SA1 + DG_08N_SA2 + DG_08S_SA1 + DG_08S_SA2 + DG_08S_SA3 + DG_19_SA + DG_21_SA kind 'VA_flow'   units 'cfs'}
+define DN_VAFinal {alias DN_08N_SA1 + DN_08N_SA2 + DN_08S_SA1 + DN_08S_SA2 + DN_08S_SA3 + DN_19_SA + DN_21_SA kind 'VA_flow'   units 'cfs'}
+define GP_VAFinal {alias GP_08N_SA1 + GP_08N_SA2 + GP_08S_SA1 + GP_08S_SA2 + GP_08S_SA3 + GP_19_SA + GP_21_SA kind 'VA_flow'   units 'cfs'}
+define RU_VAFinal {alias RU_08N_SA1 + RU_08N_SA2 + RU_08S_SA1 + RU_08S_SA2 + RU_08S_SA3 + RU_19_SA + RU_21_SA kind 'VA_flow'   units 'cfs'}
+!define TW_VAFinal {alias TW_08N_SA1 + TW_08N_SA2 + TW_08S_SA1 + TW_08S_SA2 + TW_08S_SA3 kind 'VA_flow'   units 'cfs'}
+define AW_VAFinal {alias AW_08N_SA1 + AW_08N_SA2 + AW_08S_SA1 + AW_08S_SA2 + AW_08S_SA3 +AW_19_SA + AW_21_SA kind 'VA_flow'   units 'cfs'}
+define RP_VAFinal {alias RP_08N_SA1 + RP_08N_SA2 + RP_08S_SA1 + RP_08S_SA2 + RP_08S_SA3 + RP_19_SA + RP_21_SA kind 'VA_flow'   units 'cfs'}
+
+define DLT_SAC178_08N_SA1_VABase {alias DLT_SAC178_08N_SA1[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC159_08N_SA1_VABase {alias DLT_SAC159_08N_SA1[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_GCC027_08N_SA2_VABase {alias DLT_GCC027_08N_SA2[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC159_08S_SA1_VABase {alias DLT_SAC159_08S_SA1[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_GCC056_08S_SA2_VABase {alias DLT_GCC056_08S_SA2[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC121_08S_SA3_VABase {alias DLT_SAC121_08S_SA3[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC122_19_SA_VABase {alias DLT_SAC122_19_SA[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC115_19_SA_VABase {alias DLT_SAC115_19_SA[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC099_19_SA_VABase {alias DLT_SAC099_19_SA[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC091_19_SA_VABase {alias DLT_SAC091_19_SA[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC109_19_SA_VABase {alias DLT_SAC109_19_SA[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC083_21_SA_VABase {alias DLT_SAC083_21_SA[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_SAC074_21_SA_VABase {alias DLT_SAC074_21_SA[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define DLT_YBP023_21_SA_VABase {alias DLT_YBP023_21_SA[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+
+
+define GPmin_08N_SA1_VABase {alias GPmin_08N_SA1_dv[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define GPmin_08N_SA2_VABase {alias GPmin_08N_SA2_dv[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define GPmin_08S_SA1_VABase {alias GPmin_08S_SA1_dv[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define GPmin_08S_SA2_VABase {alias GPmin_08S_SA2_dv[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define GPmin_08S_SA3_VABase {alias GPmin_08S_SA3_dv[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define GPmin_19_SA_VABase {alias GPmin_19_SA_dv[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+define GPmin_21_SA_VABase {alias GPmin_21_SA_dv[WHEELJPOD] kind 'DIVERSION-LIMIT'   units 'cfs'}
+
+
+
+
+
+
+define SumAW_08N_SA1_VABASE            {alias SumAW_08N_SA1[WHEELJPOD] kind 'WATER-RIGHT' units 'TAF'}
+define SumAW_08N_SA2_VABASE            {alias SumAW_08N_SA2[WHEELJPOD] kind 'WATER-RIGHT' units 'TAF'}
+define SumAW_08S_SA1_VABASE            {alias SumAW_08S_SA1[WHEELJPOD] kind 'WATER-RIGHT' units 'TAF'}
+define SumAW_08S_SA2_VABASE            {alias SumAW_08S_SA2[WHEELJPOD] kind 'WATER-RIGHT' units 'TAF'}
+define SumAW_08S_SA3_VABASE            {alias SumAW_08S_SA3[WHEELJPOD] kind 'WATER-RIGHT' units 'TAF'}
+define SumAW_19_SA_VABASE            {alias SumAW_19_SA[WHEELJPOD] kind 'WATER-RIGHT' units 'TAF'}
+define SumAW_21_SA_VABASE            {alias SumAW_21_SA[WHEELJPOD] kind 'WATER-RIGHT' units 'TAF'}
+
+
+
+
+
+define CL_SAC159_08N_SA1_VABASE            {alias CL_SAC159_08N_SA1[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_GCC027_08N_SA2_VABASE            {alias CL_GCC027_08N_SA2[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC159_08S_SA1_VABASE            {alias CL_SAC159_08S_SA1[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_GCC056_08S_SA2_VABASE            {alias CL_GCC056_08S_SA2[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC121_08S_SA3_VABASE            {alias CL_SAC121_08S_SA3[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC109_08S_SA3_VABASE            {alias CL_SAC109_08S_SA3[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC122_19_SA_VABASE            {alias CL_SAC122_19_SA[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC115_19_SA_VABASE            {alias CL_SAC115_19_SA[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC099_19_SA_VABASE            {alias CL_SAC099_19_SA[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC091_19_SA_VABASE            {alias CL_SAC091_19_SA[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC083_21_SA_VABASE            {alias CL_SAC083_21_SA[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+define CL_SAC074_21_SA_VABASE            {alias CL_SAC074_21_SA[WHEELJPOD] kind 'CONTRACT-LIMIT' units 'TAF'}
+
+ 
+
+

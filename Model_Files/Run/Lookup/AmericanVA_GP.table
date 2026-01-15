@@ -1,0 +1,22 @@
+!Multiplier for American VA 35 TAF Contribution 2, 3 and 4 distribution - Restricting to Carmichael Water District (26N_NU2), City of Roseville(26N_PU1), City of Sacramento (26S_NU1, 26N_NU3), Golden State Water Company (26S_PU2), and Sacramento County Groundwater Agency (26S_PU4, 26S_NU2) as per communication with RWA (Michelle Banonis) and USBR - PK, Stantec (9/22/2023) - Updated for DWR LTO Model - LTO_SV_Danube_Hist_v1.3.dss (4/16/2024)
+AmericanVA_GP
+ID	mMar	mApr	mMay		
+1	0	0	0	!	G26N_NU1
+2	0.008	0.010	0.015	!	G26N_NU2
+3	0.032	0.036	0.049	!	G26N_NU3
+4	0	0	0	!	G26N_NU4
+5	0.059	0.074	0.115	!	G26N_PU1
+6	0	0	0	!	G26N_PU2
+7	0	0	0	!	G26N_PU3
+8	0.100	0.112	0.153	!	G26S_NU1
+9	0.024	0.030	0.040	!	G26S_NU2
+10	0	0	0	!	G26S_NU3
+11	0	0	0	!	G26S_NU4
+12	0	0	0	!	G26S_PU1
+13	0.008	0.010	0.014	!	G26S_PU2
+14	0	0	0	!	G26S_PU3
+15	0.027	0.036	0.049	!	G26S_PU4
+16	0	0	0	!	G26S_PU5
+17	0	0	0	!	G26S_PU6
+
+

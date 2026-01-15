@@ -1,0 +1,18 @@
+! previous values 
+define pr_cyc_C_SAC041 {value C_SAC041[NDD2]}
+define pr_cyc_EXP_TD {value EXP_TD[NDD2]}
+define pr_cyc_C_SJR070 {value C_SJR070[NDD2]}
+define pr_cyc_DXC {value DXC[NDD2]}
+define pr_cyc_net_DICU {value net_DICU[NDD2]}
+define pr_cyc_sac_oth {value sac_oth[NDD2]}
+define pr_cyc_exp_oth {value exp_oth[NDD2]}
+define pr_cyc_SMSCG_OP  {value SMSCG_OP[NDD2]}
+define pr_cyc_C_SAC048_ISF001 {value C_SAC048_ISF001[NDD2]}
+define pr_cyc_ndddv  {value ndddv[NDD2]}
+define prior_cyc_CAA003  {value C_CAA003[DELTA]}   !DELTA cycle intentional here, needed for wheelcap.wresl
+
+! Use previous cycle values for flows to inform daily average to disaggretate 
+! The daily values are then used in setting bypass criteria and north NDD1 diversion limits
+define Q_SAC048nospill{value C_SAC048[NDD2]+ SP_SAC083_YBP037[NDD2]+ SP_SAC066_YBP020[NDD2]}
+define Q_SAC097{value C_SAC097[NDD2]}
+define Q_SAC048nospilldv {alias Q_SAC048nospill kind 'debug' units 'cfs'}

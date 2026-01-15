@@ -1,0 +1,80 @@
+! VA_PreOps.wresl
+! nullifying any VA variables and operations in cycles before they're implemented
+! and setting up initial accounting and conditions for comparisons
+
+! This file estimates whether Feather VA will happen. This is needed to determine whether the LF timeseries will be used from CalSimHydro
+! *****************************************************************************
+! Feather River Pulse Flows W/AN/BN/D/C
+! *****************************************************************************
+
+define I_FTR059_VA {std kind 'flow-inflow' units 'cfs'}
+define I_FTR059_VA_FOREGONE {std kind 'flow-inflow' units 'cfs'}
+define S_OROVL_VA {lower -1000. kind 'storage' units 'taf'}
+define SP_OROVL_VAdv {std kind 'volume-spill' units 'taf'} 
+define FeatherVA_RtnFlwDiff_LF {std kind 'FLOW-VA' units 'TAF'}		!Monthly return flows difference with before and after LF demands used
+
+! Do not yet release VA water to Delta Outflow
+goal zeroI_FTR059_VA    {I_FTR059_VA = 0.}
+goal zeroI_FTR059_VA_fg    {I_FTR059_VA_foregone = 0.}
+goal zeroC_FTR059_VA    {C_FTR059_VA = 0.}
+goal setS_OROVL_VA     {S_OROVL_VA = S_OROVL_VA(-1)} 
+goal setSP_OROVL_VAdv  {SP_OROVL_VAdv = 0.} 
+goal setRtndiffZero  {FeatherVA_RtnFlwDiff_LF = 0.} 
+
+define FeatherVAVol {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+	case Aprilset {
+		condition month == Apr
+		select feather from VA_Targ_2022 where  wyt=wyt_SAC
+	}
+	case fixtoApr {
+		condition range(month,May,Jan)
+		value FeatherVAVol_(-1)
+	}
+	case otherwise {
+		condition always
+		value 0.}
+}
+define FeatherVAVol_ {alias FeatherVAVol kind 'FLOW-VA' units 'TAF'}
+
+define FeatherVAAnn {										!Feather VA Action volume.
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+	case FeathVAoff {
+		condition simulateFeatherVA < 0.5
+		value 0.}
+	case VAOperationsSTART {
+		condition month == Apr		!available in all WYTs Sac 40-30-30 W, AN, BN, D, and C (W, C yr now added for 2022 MOU purchased water)
+		value FeatherVAVol}											!50 TAF
+	case rest {
+		condition range(month,MAY,JAN) ! Land fallowing starts from April to January
+		value FeatherVAAnn_(-1)
+	}
+	case VAOperationsOFF {
+		condition always
+		value 0.}
+}
+
+define FeatherVAAnn_ {alias FeatherVAAnn kind 'FLOW-VA' units 'TAF'}
+
+define NDOI_ADD_FeatherVA {alias C_FTR059_VA - FeatherVA_RtnFlwDiff_LF*taf_cfs kind 'FLOW-VA' units 'cfs'}
+! Aggregate term for ANN blinding
+/*goal setNDOI_ADD_FeatherVA {
+	lhs NDOI_ADD_FeatherVA
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+	case marchreset {
+		condition month == mar
+		rhs C_FTR059_VA - FeatherVA_RtnFlwDiff_LF*taf_cfs}
+!	case APRMAY {
+!		condition month == apr .or. month == may
+!		rhs C_FTR059_VA - FeatherVA_RtnFlwDiff_LF*taf_cfs - SP_OROVL_VAdv*taf_cfs}
+	case other {
+		condition always
+		rhs C_FTR059_VA - FeatherVA_RtnFlwDiff_LF*taf_cfs + SP_OROVL_VAdv*taf_cfs} ! Spill is negative already.
+}*/
+! Need to subtract the spill because this was found to mislead the ANN blinding

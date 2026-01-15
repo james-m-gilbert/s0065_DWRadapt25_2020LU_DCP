@@ -1,0 +1,487 @@
+! VA_Feather.wresl
+! This files calculates the Feather VA water blocks.
+
+! Originally developed by Karandev Singh, DWR in 2019 in CalSim II
+! Ported into CalSim 3 by Nicole Osorio, DWR, June 2021. Updated for 2022 MOU by Nicole Osorio, DWR in June 2022 .
+!************ Feather VA Action ************!
+/*Water users on the Feather River propose, in coordination with DWR, to make water available in
+W, AN, BN, D, and C Sac 40-30-30 WYTs.
+The updated 2022 volumes would be made available predominantly through
+land idling/crop shifting. A few iterations were conducted to determine how much return flows were decreasing due to fallowing.
+In general, return flows were found to be 40% of the total water made available. To come up with about 50 TAF total
+contribution from Oroville releases AND return flow deduction, 85 TAF has to be released and also made available
+from fallowing.
+85 TAF * 40% = 34 TAF of return flow reduction in the Sac River
+85 TAF Oro release - 34 TAF return flow red = 51 TAF AN/BN/D years
+
+The water delivered to DWR by Feather River water users making water available via land idling/
+crop shifting would be made available under the pattern of evapotranspiration for the crop idled/
+shifted (typically rice). 
+
+The water delivered to DWR by Feather River water users making water available via groundwater
+substitution, not to exceed 10,000 acre-feet, would be made available during the irrigation
+season as it is produced after deducting the applicable assumed streamflow depletion factor.
+
+These additional managed flows can be adaptively managed during the term of the VA to maximize
+environmental benefit and will be provided on top of current flow regimes during Dry, Below Normal,
+and Above Normal water year types.*/
+
+!********** Modeling assumptions **********!
+/*
+Release 1/2 of target split from Apr - May from Oroville dependending on WYT. These flows are protected and routed through 
+Feather River, Sacramento River downstream of Verona and as Delta Outflow on top of the
+baseline flows.
+
+Land fallowing is represented as delivery reduction from Apr - Jan from the difference of non-LF and LF applied water demands and hydrology.
+Land fallowing/ delivery reduction is limited to D_WEC005_11_SA1, D_RVC005_11_SA2, D_JBC004_11_SA3, D_SEC009_11_SA4 arcs
+which represent Western Canal Ag, Joint Board Ag, and Richvale Ag settlement diversions.
+
+No GW substitution is modeled. VA flows are met through reservoir reop and land fallowing only.
+
+Any advance reservoir releases should be fully reimbursed by Mar by the next year.
+*/
+
+!************** Definitions **************!
+/*define FeatherVAvol {value FeatherVAvol_[UPSTREAM]}
+define FeatherVAAnn {value FeatherVAAnn_[UPSTREAM]}
+
+define FeatherVAAnn_ {alias FeatherVAAnn kind 'FLOW-VA' units 'TAF'}*/
+
+!defining here since needed before accessing prior cycle values
+define FeatherVAVol_ {std kind 'FLOW-VA' units 'TAF'}
+define FeatherVAAnn_ {std kind 'FLOW-VA' units 'TAF'}
+
+! But zero out since VA operation does not actually occur in this cycle
+goal zeroFeatherVAVol_ {FeatherVAVol_ = 0.}
+goal zeroFeatherVAAnn_ {FeatherVAAnn_ = 0.}
+
+define FeatherVAVolest {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+	case Aprilset {
+		condition month == Apr
+		select feather from VA_Targ_2022 where  wyt=wyt_SAC
+	}
+	case fixtoApr {
+		condition range(month,May,Jan)
+		value FeatherVAVol_(-1)
+	}
+	case otherwise {
+		condition always
+		value 0.}
+}
+define FeatherVAVolest_ {alias FeatherVAVolest kind 'FLOW-VA' units 'TAF'}
+
+define FeatherVAAnnest {										!Feather VA Action volume.
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+	case FeathVAoff {
+		condition simulateFeatherVA < 0.5
+		value 0.}
+	case VAOperationsSTART {
+		condition month == Apr		!available in all WYTs Sac 40-30-30 W, AN, BN, D, and C (W, C yr now added for 2022 MOU purchased water)
+		value FeatherVAVolest}											!50 TAF
+	case rest {
+		condition range(month,MAY,JAN) ! Land fallowing starts from April to January
+		value FeatherVAAnn_(-1)
+	}
+	case VAOperationsOFF {
+		condition always
+		value 0.}
+}
+
+define FeatherVAAnnest_ {alias FeatherVAAnnest kind 'FLOW-VA' units 'TAF'}
+
+! ************************************************************************
+!define FeatherVA_Relest {std kind 'FLOW-VA' units 'TAF'}		!Monthly reservoir release volume; flow protected and routed through Delta
+!define FeatherVA_Foregone {std kind 'FLOW-VA' units 'TAF'}		!Monthly reservoir foregone delivery volume; flow protected and routed through Delta
+define FeatherVA_Backupest {std kind 'FLOW-VA' units 'TAF'}		!Monthly reservoir backup volume
+!define FeatherVA_LF {std kind 'FLOW-VA' units 'TAF'}		!Monthly land fallowing/ delivery reduction volume; reimbursement to SWP for advance releases
+!define FeatherVA_ForegoneSpillDV {std kind 'VOL-VA'   units 'taf'}
+
+!define FeatherVA_CumRel {lower -10. kind 'FLOW-VA' units 'TAF'}		!Cumulative reservoir release volume; accounting only
+!define FeatherVA_CumForegone {std kind 'FLOW-VA' units 'TAF'}		!Cumulative foregone delivery volume; accounting only
+!define FeatherVA_CumBackup {std kind 'FLOW-VA' units 'TAF'}			!Cumulative backup volume; accounting only
+!define FeatherVA_CumLF {std kind 'FLOW-VA' units 'TAF'}				!Cumulative land fallowing/ delivery reduction volume; accounting only
+!define FeatherVA_Cum_RtnDiff {std kind 'FLOW-VA' units 'TAF'}		!Cumulative return flows difference with before and after LF demands used
+
+!define FeatherVA_Rem {lower -200. kind 'FLOW-VA' units 'TAF'}		!Account of release from Oroville minus reimbursement from SWP contractors
+!define D_WEC005_11_SA1_LFred {std kind 'FLOW-VA' units 'TAF'}		!Delivery reduction at 11_SA1, Western Canal Ag
+!define D_RVC005_11_SA2_LFred {std kind 'FLOW-VA' units 'TAF'}		!Delivery reduction at 11_SA2, Joint Board Ag - Richvale ID
+!define D_LDC007_11_SA2_LFred {std kind 'FLOW-VA' units 'TAF'}		!Delivery reduction at 11_SA2, Joint Board Ag - Little Dry Creek
+!define D_JBC004_11_SA3_LFred {std kind 'FLOW-VA' units 'TAF'}		!Delivery reduction at 11_SA3, Joint Board Ag - Biggs-West Gridley WD, Butte WD
+!define D_SEC009_11_SA4_LFred {std kind 'FLOW-VA' units 'TAF'}		!Delivery reduction at 11_SA3, Joint Board Ag - Sutter Extension WD
+!define FeatherVA_RtnFlw_LF {std kind 'FLOW-VA' units 'TAF'}			!Monthly return flows when LF demands used
+!define featherva_rtnflwdiff_lfest {std kind 'FLOW-VA' units 'TAF'}		!Monthly return flows difference with before and after LF demands used
+
+!***************** Logic *****************!
+
+!Determine the Feather VA release; assumed to be split between Apr - May
+!If spill from previous month fills up into the VA storage debt space, then re-attempt to re-release the VA water from previous month
+!If there is excess water backed up (pos S_OROVL_VAest) from land fallowing, then release everything by Mar to go to Delta outflow, CHECK IF THIS STILL APPLIES
+
+define featherva_rtnflwdiff_lfSV {timeseries kind 'FLOW-VA' units 'TAF'}		!DV timeseries from 'CalSim3_Alt2v3_2022MED_081823_noTUCP.dss'
+define featherva_rtnflwdiff_lfest	{value featherva_rtnflwdiff_lfSV}
+
+! Spill of VA debt happens if the reservoir fills to flood control level relative to the previous
+! month, thereby filling into the debt space.  It is also is erased if the reservoir has to 
+! release previously stored water (i.e. reduce volume) to meet FC rule. The logic is that if there
+! had been no debt, the spill would have been larger.  
+define SP_OROVL_VAest { 
+    case BegWY {	!added this case to avoid having to edit the INIT file to include another init variable
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+    case NoCarryover {
+        condition   month==Mar .and. (S_OROVL_VA(-1) < 0.5 .or. S_OROVL_VA(-1) > 0.5)
+        value       S_OROVL_VA(-1) }	!if there is any debt or excess LF backed up from previous contract year, erase "debt"
+	case Spill {
+		condition S_OROVL_VA(-1)<0. .and. S_OROVL[UPSTREAM]-S_OROVLlevel5 > S_OROVL_VA(-1)
+		value S_OROVL_VA(-1)-(S_OROVL[UPSTREAM]-S_OROVLlevel5)}
+    case other {
+        condition   always
+        value       0. }
+}
+define SP_OROVL_VAestdv {alias SP_OROVL_VAest kind 'VOLUME-SPILL' units 'TAF'}
+
+define FeatherVA_Relest {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+	
+	case Apr {
+		condition month == Apr
+		value FeatherVAANNest/2. + featherva_rtnflwdiff_lfest }
+
+	case May {
+		condition month == May
+!		rhs FeatherVAANN/2. + featherva_rtnflwdiff_lfest - SP_OROVL_VAestdv(-1)}	!subtracted because VA debt is tracked as negative value
+		value FeatherVAANNest/2. + featherva_rtnflwdiff_lfest - SP_OROVL_VAest}	!subtracted because VA debt is tracked as negative value
+
+	case saved_spill_reattempt {
+		condition SP_OROVL_VAest < 0.5 .and. range(month,apr,feb)
+!		rhs -1*SP_OROVL_VAestdv(-1) + featherva_rtnflwdiff_lfest }	!multiplies by (-1) because VA debt tracked as negative value
+		value -1*SP_OROVL_VAest + featherva_rtnflwdiff_lfest }	!multiplies by (-1) because VA debt tracked as negative value
+
+	case rtn_flw_makeup {
+		condition range(month,apr,feb)
+		value featherva_rtnflwdiff_lfest }
+
+	case other {
+		condition always
+		value 0. }
+}
+
+define FeatherVA_LFSV 		{timeseries kind 'FLOW-VA' units 'TAF'}		!DV timeseries from 'CalSim3_Alt2v3_2022MED_081823_noTUCP.dss'
+define FeatherVA_LFest			{value FeatherVA_LFSV}
+
+define FeatherVA_Foregoneest {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+
+	case fc_foregone { ! If Oroville is at flood control, then water can't be backed up.
+		condition month==Jan .and. S_OROVL[UPSTREAM] + 0.1 > S_OROVLLEVEL5
+		value FeatherVA_LFest }
+
+	case fc_spill {
+		condition range(month, jul, nov) .and. S_OROVL[UPSTREAM] + 0.1 > S_OROVLLEVEL5 .and. SP_OROVL_VAestDV(-1) < 0.
+		value FeatherVA_LFest }
+
+!	case winter_fc_spill {
+!		condition range(month, dec, jan) .and. S_OROVL[UPSTREAM] + 0.1 > S_OROVLLEVEL5
+!		rhs FeatherVA_LF - FeatherVA_Relest} 
+/*	case finished_payback {
+		condition abs(FeatherVA_CumBackup(-1) - FeatherVAVol) < 5.
+		rhs FeatherVA_LF }
+*/
+	case other {
+		condition always
+		value 0. }	!multiplies by (-1) because VA debt tracked as negative value
+}
+
+goal FeatherVABackup {
+	lhs FeatherVA_Backupest
+
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case fc_foregone { ! If Oroville is at flood control, then water can't be backed up.
+		condition month==Jan .and. S_OROVL[UPSTREAM] + 0.1 > S_OROVLLEVEL5
+		rhs 0. }
+		
+	case fc_spill { ! If Oroville is at flood control, then water can't be backed up.
+		condition range(month, jul, nov) .and. S_OROVL[UPSTREAM] + 0.1 > S_OROVLLEVEL5 .and. SP_OROVL_VAestDV(-1) < 0.
+		rhs 0. }
+
+!	case winter_fc_spill { ! If Oroville is at flood control, then water can't be backed up.
+!		condition range(month, dec, jan) .and. S_OROVL[UPSTREAM] + 0.1 > S_OROVLLEVEL5
+!		rhs FeatherVA_Relest }
+	
+/*	case finished_payback {
+		condition abs(FeatherVA_CumBackup(-1) - FeatherVAVol) < 5.
+		rhs 0. }
+*/
+
+	case other {
+		condition always
+		rhs FeatherVA_LFest }
+}
+!***************** ACCOUNTING *****************!
+!ACCOUNTING ONLY - Cumulative monthly reservoir release volume; initialized in Mar, the end of the LF period
+/*goal TotalFeatherVARelease {
+	lhs FeatherVA_CumRel
+
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+
+	case April {
+		condition month == Apr
+		rhs FeatherVA_CumRel(-1) + FeatherVA_Relest }
+
+		
+	case other {
+		condition always
+		rhs FeatherVA_CumRel(-1) + FeatherVA_Relest + SP_OROVL_VAestdv(-1) }
+}
+
+goal TotalFeatherVABackup {
+	lhs FeatherVA_CumBackup
+
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+	case other {
+		condition always
+		rhs FeatherVA_CumBackup(-1) + FeatherVA_Backup}
+}
+
+goal TotalFeatherVAForegone {
+	lhs FeatherVA_CumForegone
+
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+	case other {
+		condition always
+		rhs FeatherVA_CumForegone(-1) + FeatherVA_Foregone}
+}*/
+!***************** LOGIC *****************!
+
+!Determine delivery reduction; take difference between deliveries without LF demands and with LF demands applied
+!!11_SA1, Western Canal Ag
+/*goal setD_WEC005_11_SA1_LFred {
+	lhs D_WEC005_11_SA1_LFred
+	
+	case ZeroDelivery {
+		condition FeatherVAAnn < 0.5
+		rhs 0.}
+		
+	case other {
+		condition always
+		rhs (D_WEC005_11_SA1[UPSTREAM] - D_WEC005_11_SA1)*cfs_TAF
+		}
+}
+
+!!11_SA2, Joint Board Ag - Richvale ID
+/*goal setD_RVC005_11_SA2_LFred {
+	lhs D_RVC005_11_SA2_LFred
+	
+	case ZeroDelivery {
+		condition FeatherVAAnn < 0.5
+		rhs 0.}
+		
+	case other {
+		condition always
+		rhs (D_RVC005_11_SA2[UPSTREAM] - D_RVC005_11_SA2)*cfs_TAF
+		}
+}
+
+!!11_SA2, Joint Board Ag - Little Dry Creek
+goal setD_LDC007_11_SA2_LFred {
+	lhs D_LDC007_11_SA2_LFred
+	
+	case ZeroDelivery {
+		condition FeatherVAAnn < 0.5
+		rhs 0.}
+		
+	case other {
+		condition always
+		rhs (D_LDC007_11_SA2[UPSTREAM] - D_LDC007_11_SA2)*cfs_TAF
+		}
+}
+
+!!11_SA3, Joint Board Ag - Biggs-West Gridley WD, Butte WD
+goal setD_JBC004_11_SA3_LFred {
+	lhs D_JBC004_11_SA3_LFred
+	
+	case ZeroDelivery {
+		condition FeatherVAAnn < 0.5
+		rhs 0.}
+		
+	case other {
+		condition always
+		rhs (D_JBC004_11_SA3[UPSTREAM] - D_JBC004_11_SA3)*cfs_TAF
+		}
+}
+
+!!11_SA4, Joint Board Ag - Biggs-West Gridley WD, Butte WD
+goal setD_SEC009_11_SA4_LFred {
+	lhs D_SEC009_11_SA4_LFred
+	
+	case ZeroDelivery {
+		condition FeatherVAAnn < 0.5
+		rhs 0.}
+		
+	case other {
+		condition always
+		rhs (D_SEC009_11_SA4[UPSTREAM] - D_SEC009_11_SA4)*cfs_TAF
+		}
+}
+*/
+! Deliveries in the final cycle are reduced due to settlement contractor land fallowing
+! Calculate the delivery totals and differences.
+/*define FeatherVA_Del_VABase {value (D_WEC005_11_SA1[UPSTREAM]
+									/* + D_RVC005_11_SA2[UPSTREAM]
+									+ D_LDC007_11_SA2[UPSTREAM]*/
+/*   								+ D_JBC004_11_SA3[UPSTREAM]
+									+ D_SEC009_11_SA4[UPSTREAM])*cfs_TAF}
+define FeatherVA_Del_VABase_ {alias FeatherVA_Del_VABase kind 'FLOW-VA' units 'TAF'}
+*/
+!Determine monthly land fallowing/ delivery reduction volume; reimbursement to SWP for advance releases
+!limited to Apr-Jan
+/*goal setFeatherVA_LF {
+    lhs FeatherVA_LF
+    
+   	rhs   	  D_WEC005_11_SA1_LFred*/
+			/* + D_RVC005_11_SA2_LFred
+			+ D_LDC007_11_SA2_LFred*/
+/*			+ D_JBC004_11_SA3_LFred
+			+ D_SEC009_11_SA4_LFred
+}				
+*/
+/*goal constrainFeatherVA_LF { ! Need this additional constraint in September because model chooses to reduce deliveries significantly
+	lhs FeatherVA_LF
+	
+	case sept {
+		condition month == Sep
+		rhs FeatherVA_AWR_Diff_LF
+		lhs<rhs penalty 0. lhs>rhs penalty 99999
+	}
+}*/
+
+! ************************************************************************
+! Account for changes in Oroville release to support the Feather River VA action.
+! I_FTR059_VAest is the amount of this month's reduced Thermalito delivery that backs up into Oroville.  
+! This is ADDED to the C203_m term in the coa definition for SWPDS (Oroville storage chg)
+! This term is zeroed in all but the final cycle, when it is set due to the VA action.
+! C203_VA is release from Oroville necessary to create desired pulse flows for Delta Outflow.
+! This is done in the final cycle of the model, concurrent with releases for wheeling and transfers
+define I_FTR059_VAest {std kind 'flow-inflow' units 'cfs'}
+!define I_FTR059_VAest_foregone {std kind 'flow-inflow' units 'cfs'}
+
+!goal C_FTR059_change {I_FTR059_VAest - C_FTR059_VAest = C_FTR059_VAestBase - C_FTR059 ! ITP arcs are included here because those can change C_FTR059 flows in the last cycle
+!	- Alt2BSWPExpCut_Carryover + SMSCG_Oro_Rel_for_DO + release_ITP_Carryover + remain_ITP_Carryover_Oro_rel*taf_cfs
+	!+ FeatherVA_LF*taf_cfs
+!}
+
+define C_FTR059_VAest   {value FeatherVA_Relest*taf_cfs} ! Total release which includes the water block and spill release reattempts.
+define C_FTR059_VAestdv {alias C_FTR059_VAest kind 'FLOW-CHANNEL' UNITS 'CFS'}
+define I_FTR059_VAest_foregone  	{value FeatherVA_Foregoneest*taf_cfs} ! Total water that goes out to outflow because Oroville could not backup the water due to being at flood control
+define I_FTR059_VAest_foregonedv 	{alias I_FTR059_VAest_foregone kind 'FLOW-CHANNEL' UNITS 'CFS'}
+
+goal setOrobackup {I_FTR059_VAest = FeatherVA_Backupest*taf_cfs} ! Total water made available due to land fallowing. Can go to backup or outflow depending if Oroville is full.
+
+define S_OROVL_VAest {lower -1000. kind 'storage' units 'taf'} 
+
+!***************** ACCOUNTING *****************!
+!ACCOUNTING ONLY - Cumulative land fallowing/ RETURN FLOW reduction volume by Mar
+! Goes either to outflow or backup to Oroville
+/*goal TotalFeatherVARtnFlowDiff {
+	lhs FeatherVA_Cum_RtnDiff
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar 
+		rhs 0. }
+	
+	case other {
+		condition always
+		rhs FeatherVA_Cum_RtnDiff(-1) + featherva_rtnflwdiff_lfest }
+}
+define FeatherVA_Cum_RtnDiff_ {alias FeatherVA_Cum_RtnDiff kind 'FLOW-VA' units 'TAF'}
+
+!ACCOUNTING ONLY - Cumulative land fallowing/ delivery reduction volume by Mar
+! Goes either to outflow or backup to Oroville
+goal TotalFeatherVALandFallowing_Credit {
+	lhs FeatherVA_CumLF
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+
+	case Reset {
+		condition month == Mar
+		rhs 0. }
+	
+	case other {
+		condition always
+		rhs FeatherVA_CumLF(-1) + FeatherVA_LF }
+}
+
+!Update the VA release balance remaining at the end of the month.
+!If this is negative, that means Releases < Total land fallowing water backed up into Oroville
+goal FeatherVARemaining {
+	lhs FeatherVA_Rem
+	rhs FeatherVA_CumRel - FeatherVA_CumLF }
+*/
+! ************************************************************************
+! Spill of VA debt happens if the reservoir fills to flood control level relative to the previous
+! month, thereby filling into the debt space.  It is also is erased if the reservoir has to 
+! release previously stored water (i.e. reduce volume) to meet FC rule. The logic is that if there
+! had been no debt, the spill would have been larger.  
+
+goal S_OROVL_VAest_balance {FeatherVA_LFest - FeatherVA_Foregoneest - FeatherVA_Relest - SP_OROVL_VAest = S_OROVL_VAest - S_OROVL_VA(-1)}
+! ************************************************************************
+! Calculate foregone spill due to VA debt being erased.  This will be added to the release requirement
+! to preserve the pulse flow intent of the VA action as compared to a baseline condition.
+
+/*define txfr1_OrovlSpill {
+	case MayFC {
+		condition month>=MAY .and. month <= JUL .and. S_OROVLlevel5 - S_OROVL[UPSTREAM] < .1
+		value min(C_FTR059_ADD[UPSTREAM], C_FTR003_ADD[UPSTREAM], C_FTR039_ADD[UPSTREAM], C_FTR068_ADD[UPSTREAM])*cfs_taf}
+	case otherwise {
+		condition always
+		value 0. 	}
+}
+define txfr1_OrovlSpilldv {alias txfr1_OrovlSpill kind 'VOLUME-SPILL' units 'TAF'}
+
+define FeatherVA_ForegoneSpill {
+	case NegSpill {
+		condition month>=MAY .and. month <= JUL .and. FeatherVAAnn > 0. .and. SP_OROVL_VAest < 0.
+		value min(-SP_OROVL_VAest, txfr1_OrovlSpill)}
+	case otherwise {
+		condition always
+		value 0.	}
+}
+goal setFeatherVA_ForegoneSpillDV {FeatherVA_ForegoneSpillDV = FeatherVA_ForegoneSpill }*/
+
+define NDOI_ADD_FeatherVAest   {value C_FTR059_VAest - featherva_rtnflwdiff_lfest*taf_cfs + I_FTR059_VAest_foregone}
+define NDOI_ADD_FeatherVAestdv {alias NDOI_ADD_FeatherVAest kind 'FLOW-VA' units 'cfs'}
+

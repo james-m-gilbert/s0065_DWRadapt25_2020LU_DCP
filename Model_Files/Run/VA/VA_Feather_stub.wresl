@@ -1,0 +1,40 @@
+! VA_Feather_stub.wresl
+! nullifying any VA variables if Feather VA is turned off
+
+! *****************************************************************************
+! Feather River Pulse Flows AN/BN/D
+! *****************************************************************************
+
+define I_FTR059_VA {std kind 'flow-inflow' units 'cfs'}
+define I_FTR059_VA_FOREGONE {std kind 'flow-inflow' units 'cfs'}
+define S_OROVL_VA {lower -1000. kind 'storage' units 'taf'}
+define SP_OROVL_VAdv {std kind 'volume-spill' units 'taf'} 
+define FeatherVA_RtnFlwDiff_LF {std kind 'FLOW-VA' units 'TAF'}		!Monthly return flows difference with before and after LF demands used
+
+define FeatherVAAnn {value 0.}
+
+goal zeroI_FTR059_VA    {I_FTR059_VA = 0.}
+goal zeroI_FTR059_VA_fg    {I_FTR059_VA_foregone = 0.}
+goal zeroC_FTR059_VA    {C_FTR059_VA = 0.}
+goal zeroS_OROVL_VA    {S_OROVL_VA = 0.}
+goal setSP_OROVL_VAdv  {SP_OROVL_VAdv = 0.} 
+goal setRtndiffZero  {FeatherVA_RtnFlwDiff_LF = 0.} 
+
+define NDOI_ADD_FeatherVA {alias C_FTR059_VA - FeatherVA_RtnFlwDiff_LF*taf_cfs kind 'FLOW-VA' units 'cfs'}
+! Aggregate term for ANN blinding
+/*goal setNDOI_ADD_FeatherVA {
+	lhs NDOI_ADD_FeatherVA
+	case BegWY {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+	case marchreset {
+		condition month == mar
+		rhs C_FTR059_VA - FeatherVA_RtnFlwDiff_LF*taf_cfs}
+!	case APRMAY {
+!		condition month == apr .or. month == may
+!		rhs C_FTR059_VA - FeatherVA_RtnFlwDiff_LF*taf_cfs - SP_OROVL_VAdv*taf_cfs}
+	case other {
+		condition always
+		rhs C_FTR059_VA - FeatherVA_RtnFlwDiff_LF*taf_cfs + SP_OROVL_VAdv*taf_cfs} ! Spill is negative already.
+}*/
+! Need to subtract the spill because this was found to mislead the ANN blinding

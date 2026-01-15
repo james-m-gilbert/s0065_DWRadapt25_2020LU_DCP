@@ -1,0 +1,531 @@
+! VA_SacPulse.wresl
+! Foregone delivery to Sac River Settlement Contractors supports add'l Sac River flow.
+
+! ************************************************************************
+!Need to be defined in order to access prior cycle values in the code below
+define Sac_Pulse_DV  {std kind 'VA_flow'   units 'cfs'}
+define Dry_yr_carryover_DV  {std kind 'VA_flow'   units 'taf'}
+define SP_SHSTA_VADV  {std kind 'VOLUME-SPILL' units 'TAF'}
+define SacVAVol_ {std kind 'FLOW-VA' units 'TAF'}
+define I_SHSTA_VA {std kind 'flow-inflow' units 'cfs'}
+
+! But zero out since VA operation does not actually occur in this cycle
+goal zeroSac_Pulse_DV    {Sac_Pulse_DV = 0.}
+goal zeroDry_yr_carryover_DV    {Dry_yr_carryover_DV = 0.}
+goal setSP_SHSTA_VAdv  {SP_SHSTA_VAdv = 0.} 
+goal setSacVAVol_     {SacVAVol_ = 0.} 
+goal zeroI_SHSTA_VA    {I_SHSTA_VA = 0.}
+goal zeroS_SHSTA_VA    {S_SHSTA_VA = 0.}
+goal zeroC_KSWCK_VA    {C_KSWCK_VA = 0.}
+
+!Not used here, but needs to be defined since it is in the Weight file
+define NetDelivRed_notbackedup {std kind 'VA-cfs' units 'cfs'}		!
+goal setNetDelivRed_notbackedup {NetDelivRed_notbackedup = 0.}
+
+define SacVAVolest {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+	case Aprilset {
+		condition month == Apr
+		select sac from VA_Targ_2022 where  wyt=wyt_SAC
+	}
+	case fixtoApr {
+		condition range(month,May,Jan)
+		value SacVAVol_(-1)
+	}
+	case otherwise {
+		condition always
+		value 0.}
+}
+define SacVAVolest_ {alias SacVAVolest kind 'FLOW-VA' units 'TAF'}
+
+define SacVAAnnest {										!Sac VA Action volume.
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+	case SacVAoff {
+		condition simulateSacVA < 0.5
+		value 0.}
+	case VAOperationsSTART {
+		condition month == Apr		!available in all WYTs Sac 40-30-30 W, AN, BN, D, and C (W, C yr now added for 2022 MOU purchased water)
+		value SacVAVolest}											!50 TAF
+	case rest {
+		condition range(month,May,Jan) ! Land fallowing starts from April to January
+		value SacVAAnnest_(-1)
+	}
+	case VAOperationsOFF {
+		condition always
+		value 0.}
+}
+define SacVAAnnest_ {alias SacVAAnnest kind 'FLOW-VA' units 'TAF'}
+
+!define SC_DelivRedest {std kind 'VA-cfs' units 'cfs'}		!
+!define SC_LF_Returnsest {std kind 'VA-cfs' units 'cfs'}		!
+!define SC_LF_RtnDiffest {std kind 'VA-cfs' units 'cfs'}		!
+!define totalSacVAflowest {std kind 'VA-cfs' units 'cfs'}
+!define SacVA_CumRelest {lower -100. kind 'VA-taf' units 'TAF'}	!Cumulative monthly reservoir release volume; accounting only
+!define SacVA_CumLF_Creditest {std kind 'VA-taf' units 'TAF'}	!Cumulative land fallowing/ delivery reduction volume; accounting only
+!define SacVA_CumLF_backupest {std kind 'VA-taf' units 'TAF'}	!Cumulative land fallowing/ delivery reduction volume; accounting only
+!define SacVA_Cum_RtnDiffest {std kind 'VA-taf' units 'TAF'}	!Cumulative land fallowing/ delivery reduction volume; accounting only
+!define SacVA_CumLF_RtnDiffest {std kind 'VA-taf' units 'TAF'}	!Cumulative land fallowing/ delivery reduction volume; accounting only
+
+! Deliveries in the final cycle are reduced due to land settlement contractor land fallowing
+! Demand units involved: 08N_SA1, 08N_SA2, 08S_SA1, 08S_SA2, 08S_SA3
+! Method below did not work well, using timeseries instead, would need to refine to do this during run-time
+/*define SacVA_Del_VABaseest {value (D_SAC178_08N_SA1[UPSTREAM]
+									+ 	D_SAC159_08N_SA1[UPSTREAM]
+									!+ 	D_CBD049_08N_SA1[UPSTREAM]
+									+ 	D_GCC027_08N_SA2[UPSTREAM]
+									+ 	D_SAC159_08S_SA1[UPSTREAM]
+									!+ 	D_CBD041_08S_SA1[UPSTREAM]
+									+	D_GCC056_08S_SA2[UPSTREAM]
+									!+	D_CBD041_08S_SA2[UPSTREAM]
+									+	D_SAC109_08S_SA3[UPSTREAM]
+									+	D_SAC121_08S_SA3[UPSTREAM]
+									!+	D_CBD028_08S_SA3[UPSTREAM]
+									+   D_SAC122_19_SA[UPSTREAM]
+									+   D_SAC115_19_SA[UPSTREAM]
+									+   D_SAC109_19_SA[UPSTREAM]
+									+   D_SAC099_19_SA[UPSTREAM]
+									+   D_SAC091_19_SA[UPSTREAM]
+									+   D_SAC074_21_SA[UPSTREAM]
+									+   D_SAC083_21_SA[UPSTREAM]
+									+   D_YBP023_21_SA[UPSTREAM]														
+									)}
+define SacVA_Del_VABase_est {alias SacVA_Del_VABaseest*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+! ESTIMATE differences in deliveries between [UPSTREAM] cycle and this one by subtracting the difference in applied water to meet demand with and without land fallowing
+define D_SACXXX_08N_SA1est {value max(0., D_SAC178_08N_SA1[UPSTREAM] + D_SAC159_08N_SA1[UPSTREAM] 	- ((AWR_08N_SA1 - AWR_08N_SA1_LF)))}!*taf_cfs))}
+define D_GCC027_08N_SA2est {value max(0., D_GCC027_08N_SA2[UPSTREAM]							 	- ((AWR_08N_SA2 - AWR_08N_SA2_LF)))}!*taf_cfs))}
+define D_SAC159_08S_SA1est {value max(0., D_SAC159_08S_SA1[UPSTREAM]							 	- ((AWR_08S_SA1 - AWR_08S_SA1_LF)))}!*taf_cfs))}
+define D_GCC056_08S_SA2est {value max(0., D_GCC056_08S_SA2[UPSTREAM]							 	- ((AWR_08S_SA2 - AWR_08S_SA2_LF)))}!*taf_cfs))}
+define D_SACXXX_08S_SA3est {value max(0., D_SAC109_08S_SA3[UPSTREAM] + D_SAC121_08S_SA3[UPSTREAM] 	- ((AWR_08S_SA3 - AWR_08S_SA3_LF)))}!*taf_cfs))}
+define D_SACXXX_19_SAest   {value max(0., D_SAC122_19_SA[UPSTREAM] + D_SAC115_19_SA[UPSTREAM] + D_SAC109_19_SA[UPSTREAM] + D_SAC099_19_SA[UPSTREAM] + D_SAC091_19_SA[UPSTREAM] - ((AWR_19_SA - AWR_19_SA_LF)))}!*taf_cfs))}
+define D_XXXXXX_21_SAest   {value max(0., D_SAC074_21_SA[UPSTREAM] + D_SAC083_21_SA[UPSTREAM] + D_YBP023_21_SA[UPSTREAM] - ((AWR_21_SA - AWR_21_SA_LF)))}!*taf_cfs))}
+
+define SC_DelivRedest	  {value SacVA_Del_VABaseest 
+					-	(D_SACXXX_08N_SA1est
+			   		+	 D_GCC027_08N_SA2est
+			   		+	 D_SAC159_08S_SA1est
+			   		+ 	 D_GCC056_08S_SA2est	
+			   		+	 D_SACXXX_08S_SA3est	
+			   		+	 D_SACXXX_19_SAest
+			   		+ 	 D_XXXXXX_21_SAest														   		
+			   		)}*/
+define SC_DelivRedSV		{timeseries kind 'VA-CFS' units 'CFS'}	!DV timeseries from 'CalSim3_Alt2v3_2022MED_081823_noTUCP.dss'
+define SC_DelivRedest		{value SC_DelivRedSV}
+define SC_DelivRed_tafest 	{alias SC_DelivRedest*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+! Return flows in the final cycle are reduced due to land settlement contractor land fallowing
+/*define SC_LF_Returns_VABaseest {value  (R_08N_SA1_CBD044[UPSTREAM]
+							   		+ R_08N_SA2_CBD049[UPSTREAM]
+							   		+ R_08S_SA1_CBD031[UPSTREAM]
+							   		+ R_08S_SA2_CBD037[UPSTREAM]
+							   		+ R_08S_SA3_RFS8S[UPSTREAM]
+							   		+ R_19_SA_RD1500[UPSTREAM]
+							   		+ R_21_SA_YBP020[UPSTREAM])}*/
+							   		
+!define SC_LF_Returns_VABase_est {alias SC_LF_Returns_VABaseest kind 'VA-CFS' units 'CFS'}
+!define SC_LF_Returns_VABase_tafest {alias SC_LF_Returns_VABaseest*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+! ESTIMATE the return flows totals and differences based on the proportional reduction in applied water with and without land fallowing
+! Method below did not work well, using timeseries instead, would need to refine to do this during run-time
+/*define R_08N_SA1_CBD044est	 {case FebMar {condition range(month,feb,mar) value 0.} case otherwise {condition always value R_08N_SA1_CBD044[UPSTREAM] * (AWR_08N_SA1_LF / AWR_08N_SA1)}}
+define R_08N_SA2_CBD049est	 {case FebMar {condition range(month,feb,mar) value 0.} case otherwise {condition always value R_08N_SA2_CBD049[UPSTREAM] * (AWR_08N_SA2_LF / AWR_08N_SA2)}}
+define R_08S_SA1_CBD031est	 {case FebMar {condition range(month,feb,mar) value 0.} case otherwise {condition always value R_08S_SA1_CBD031[UPSTREAM] * (AWR_08S_SA1_LF / AWR_08S_SA1)}}
+define R_08S_SA2_CBD037est	 {case FebMar {condition range(month,feb,mar) value 0.} case otherwise {condition always value R_08S_SA2_CBD037[UPSTREAM] * (AWR_08S_SA2_LF / AWR_08S_SA2)}}
+define R_08S_SA3_RFS8Sest	 {case FebMar {condition range(month,feb,mar) value 0.} case otherwise {condition always value R_08S_SA3_RFS8S[UPSTREAM]  * (AWR_08S_SA3_LF / AWR_08S_SA3)}}
+define R_19_SA_RD1500est	 {case FebMar {condition range(month,feb,mar) value 0.} case otherwise {condition always value R_19_SA_RD1500[UPSTREAM]   * (AWR_19_SA_LF   / AWR_19_SA)}}
+define R_21_SA_YBP020est	 {case FebMar {condition range(month,feb,mar) value 0.} case otherwise {condition always value R_21_SA_YBP020[UPSTREAM]   * (AWR_21_SA_LF   / AWR_21_SA)}}
+
+define SC_LF_Returnsest {value R_08N_SA1_CBD044est
+   		+ R_08N_SA2_CBD049est
+   		+ R_08S_SA1_CBD031est
+   		+ R_08S_SA2_CBD037est
+   		+ R_08S_SA3_RFS8Sest
+		+ R_19_SA_RD1500est
+		+ R_21_SA_YBP020est}
+
+define SC_LF_Returns_est 	{alias SC_LF_Returnsest kind 'VA-CFS' units 'CFS'}
+define SC_LF_Returns_tafest {alias SC_LF_Returns_est*cfs_taf kind 'VA-TAF' units 'TAF'}
+*/
+!define SC_LF_RtnDiffest		{value SC_LF_Returns_VABaseest - SC_LF_Returnsest}
+define SC_LF_RtnDiffSV		{timeseries kind 'VA-CFS' units 'CFS'}		!DV timeseries from 'CalSim3_Alt2v3_2022MED_081823_noTUCP.dss'
+define SC_LF_RtnDiffest		{value SC_LF_RtnDiffSV}
+define SC_LF_RtnDiff_tafest {alias SC_LF_RtnDiffest*cfs_taf kind 'VA-TAF' units 'TAF'}
+
+
+! ************************************************************************
+! Account for changes in Shasta release to support the Sac River VA action.
+! I_SHSTA_VA is the amount of this month's reduced SC delivery that backs up into Shasta.  
+! This is ADDED to the C_KSWCK_m term in the coa definition for SHADS (Shasta storage chg)
+! This term is zeroed in all but the final cycle, when it is set due to the VA action.
+! C_KSWCK_VA is release from Shasta necessary to create desired pulse flows for Delta Outflow.
+! This is done in the final cycle of the model, concurrent with releases for wheeling and transfers
+!define I_SHSTA_VAest {std kind 'flow-inflow' units 'cfs'}!goal C_KSWCK_VA_force {C_KSWCK_VA < 99999. - int_C_KSWCK_VA * 99999.}! if int=1, I_SHSTA_VA=pos, C_KSWCK_VA=0
+!goal C_KSWCK_VA_change {I_SHSTA_VA - C_KSWCK_VA = C_KSWCK_VABase - C_kswck}
+
+! Spill of VA debt happens if the reservoir fills to flood control level relative to the previous
+! month, thereby filling into the debt space.  It is also is erased if the reservoir has to 
+! release previously stored water (i.e. reduce volume) to meet FC rule. The logic is that if there
+! had been no debt, the spill would have been larger.  
+! -  VA credit is the first block of water to spill whether the reservoir fills to FC limit or 
+! reduces volume to meet FC.  The spill is limited to the excess flow in downstream reaches.
+! *** modification for LTO Alt 2 v3  TF 080923
+! *** water carried over after Dry years (when S_SHSTA_VA > 0) can spill
+define spaceunderfldc {value (S_SHSTAlevel5 - S_SHSTA(-1))*taf_cfs(-1)}
+define S_SHSTA_spillest {value max(0., I_SHSTA - D_SHSTA_WTPJMS[UPSTREAM] - E_SHSTA[UPSTREAM] - spaceunderfldc)}  !Calculation of how much water had to spill to stay at flood curve
+define S_SHSTA_spillestdv {alias S_SHSTA_spillest kind 'VA-cfs' units 'cfs'}
+
+define S_SHSTA_AvailCap {value min(280., max(0., S_SHSTALevel5-S_SHSTA[-1]))} 
+define S_SHSTA_AvailCapDV {alias S_SHSTA_AvailCap kind 'storage' units 'taf'}
+define SRSC_spillest {value max(0., S_Shsta_SRSC(-1) - S_Shsta_AvailCap)}
+define SRSC_spillestdv {alias SRSC_spillest kind 'VA-cfs' units 'cfs'}
+
+!Compute spill volume from Shasta
+!Spill from VA account is calculated spill amount but removing spill from SRSC account since that has to spill first
+define SP_SHSTAest_sv {
+/*    case Reset {
+        condition   month==Feb 
+        value       S_SHSTA_VA(-1) }
+    case neg_spill {
+        condition S_SHSTA_VA(-1)<0. .and. S_SHSTA_VAbase - S_shstalevel5 > S_SHSTA_VA(-1)
+        value S_SHSTA_VA(-1)-(S_SHSTA_VAbase-S_SHSTAlevel5)}*/
+    case pos_spill {
+        condition S_SHSTA_VA(-1) > 0. .and. abs(S_SHSTAlevel5 - S_SHSTA_VA[UPSTREAM]) < 0.001
+        value  min(S_SHSTA_VA(-1), max(0.,min(S_SHSTA_spillest, C_KSWCK_ADD[UPSTREAM], C_SAC240_ADD[UPSTREAM], C_SAC120_ADD[UPSTREAM])*cfs_taf - SRSC_spillest))}
+    case other {
+        condition   always
+        value       0. }
+}
+
+define SP_SHSTA_VAestDV  {std kind 'VOLUME-SPILL' units 'TAF'}
+goal setSP_SHSTA_VAestDV {SP_SHSTA_VAestDV = max(0., SP_SHSTAest_sv)}
+
+/*goal S_SHSTA_VA_balance {
+	lhs S_SHSTA_VA 
+	case BegWY1 {
+		condition wateryear == 1922 .and. month < MAR
+		rhs 0. }	
+	case Marm { !Reset in March unless there is positive carryover storage after a Dry year
+		condition month == MAR .and. (wyt_sac_(-11) < 3.5 .or. wyt_sac_(-11) > 4.5) !Checking if prior year April WY type was Dry, in this case do not reset
+		rhs I_SHSTA_VA*cfs_taf - C_KSWCK_VA*cfs_taf }
+	case otherwise {
+		condition always
+		rhs I_SHSTA_VA*cfs_taf - C_KSWCK_VA*cfs_taf - SP_SHSTA_VA_DV + S_SHSTA_VA(-1) }
+} */
+
+!To post-process Shasta storage without stored VA water, it is useful to have a variable that is positive when S_SHSTA_VA is positive, but never negative
+/*define S_SHSTA_VA_pos {std kind 'VA-taf' units 'TAF'}
+
+goal S_SHSTA_VA_pos_balance {
+	lhs S_SHSTA_VA_pos
+	case BegWY1 {
+		condition wateryear == 1922 .and. month < MAR
+		rhs 0. }	
+	case otherwise {
+		condition always
+		rhs S_SHSTA_VA 
+		lhs>rhs penalty 1. } 
+}*/ 
+
+! ************************************************************************
+! SAC VA Pulse Flow
+! Guidance as of 06/2022
+! If it's wet Sac WYT then there is no pulse flow.
+! W/AN/BN years - Release half and half in April and May if April 1st Shasta > 3.8 maf. 
+!             - Release 1/3rds in Jun/Jul/Aug if April 1 Shasta < 3.8
+! D/C years - just let forS_SHSTA_VAegone delivery go down the river.
+! Calculate credit for any foregone delivery that cannot be backed up into Shasta 
+! due to releases for minimum flow.  This is intended to build in the spring and 
+! be used as soon as possible
+! *** modification for LTO Alt 2 v3  TF 080923
+! *** In AN/BN years split pulse between April and May
+! *** In Dry years, no pulse, but hold credit in Shasta for all land fallowing and release that water in the following year, split evenly between April and May. 
+! *** Need to track how much of that water can actually be backed up, and how much spills.  Only amount remaining needs to be released.
+! *** In a BN/AN year following a Dry year, pulse is a combination of AN/BN water and Dry year carryover
+
+/*goal SacVApulsetotal {
+	lhs totalSacVAflow
+	rhs C_SAC041_VA_SacPulse
+	}
+define totalSacVAflow_taf {alias totalSacVAflow*cfs_taf kind 'debug-taf' units 'taf'}*/
+
+define Sac_Pulseest_DV  {std kind 'VA_flow'   units 'cfs'}
+!define SacVA_ForegoneSpillDV {std kind 'VA_volume'   units 'taf'}
+
+! Cases BN and AN - if previous Sac_Pulse was zero, look at any volume of water 
+! (from delivery reduction) which DID go down the river last month and add that
+! to a credit that can be applied to a pulse flow in this or a future month
+! Case Reduced - 
+! *** De-activating lf credit in LTO Alt 2 v3  TF 080923
+/*define SC_LF_Credit_DV {std kind 'VA_volume' units 'taf'}
+define SC_LF_Credit {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		value 0. }
+    case reset {
+        condition range(month,feb,mar)
+        value 0.}
+    case AN_BN {
+        condition SacVAAnn > 0.5 .and. Sac_Pulse_DV(-1) < 0.1 .and. (wyt_sac < 4)
+        value SC_LF_Credit_DV(-1) + (C_SAC041_VA_SacPulse(-1))*cfs_taf(-1)}
+    case Reduced_Sac_Pulse {
+        condition Sac_Pulse_DV(-1) > 0.1
+        value max(0., SC_LF_Credit_DV(-1) - (Sac_Pulse_DV(-1)-(C_SAC041_VA_SacPulse(-1)))*cfs_taf(-1)+SacVA_ForegoneSpillDV(-1))}
+    case otherwise {
+        condition always
+        value max(0., SC_LF_Credit_DV(-1))}
+} 
+goal saveSC_LF_Credit_DV {SC_LF_Credit_DV = SC_LF_Credit}
+*/
+
+!Tracking dry year carryover to be release in the following year
+define Dry_yr_carryoverest {
+	case BegWY1 {
+		condition wateryear == 1922
+		value 0. }	
+	case MarchafterDry {
+		condition month == MAR .and. round(wyt_sac_(prevApr)) == 4
+		value max(0., S_SHSTA_VA(-1))}  !Pull carryover from February, is zeroed out after that
+	case MarchnotafterDry {
+		condition month == MAR
+		value 0. }
+	case AprMayANBNyear {
+		condition (month==APR .or. month==MAY) .and. wyt_sac < 3.5 .and. wyt_sac > 1.5
+		value max(0.,Dry_yr_carryover_DV(-1) - SP_SHSTA_VADV(-1) - max(0.,Sac_Pulse_DV(-1) - (SacVAAnnest/2)*taf_cfs(-1))*cfs_taf(-1))} !Need to adjust for any spills and also any Dry year water that was released in the prior month
+	case otherwise {
+		condition always
+		value max(0.,Dry_yr_carryover_DV(-1) - SP_SHSTA_VADV(-1) - Sac_Pulse_DV(-1)*cfs_taf(-1))}
+}
+
+define Dry_yr_carryoverest_ {alias Dry_yr_carryoverest kind 'carryover-VA' units 'TAF'}
+
+!goal setDry_yr_carryover_DV  {Dry_yr_carryover_DV = Dry_yr_carryover}
+
+! Shasta Sac pulse flows only during AN/BN years. During D and C years, the "pulse flows" come from foregone settlement contractor deliveries
+! *** modification for LTO Alt 2 v3  TF 080923
+! *** In AN/BN years split pulse between April and May
+! *** In Dry years, no pulse, but hold credit in Shasta for all land fallowing and release standard pulse in the following year, split evenly between April and May.
+! *** Need to track how much of that water can actually be backed up, and how much spills.  Only amount remaining needs to be released.
+! *** In a BN/AN year following a Dry year, pulse is a combination of AN/BN water and Dry year carryover
+define Sac_pulseest {
+	case BegWY1 {
+		condition wateryear == 1922 .and. month < MAR
+		value 0. }	
+    case S_SHSTA_Apr_ANBNafterDry {
+        condition month == APR .and. wyt_sac < 3.5 .and. wyt_sac > 1.5 .and. round(wyt_sac_(-12)) == 4 ! Shasta Sac pulse flows in AN/BN years after Dry years
+        value (SacVAAnnest/2 + (max(0.,Dry_yr_carryover_DV(-1)-SP_SHSTA_VADV(-1)-SP_SHSTAest_sv))/2.) * taf_cfs }
+    case S_SHSTA_May_ANBNafterDry {
+        condition month == MAY .and. wyt_sac_(-1) < 3.5 .and. wyt_sac_(-1) > 1.5 .and. round(wyt_sac_(-13)) == 4 ! Shasta Sac pulse flows in AN/BN years after Dry years, based on April WY type so as not change operation in May
+        value (SacVAAnnest + max(0.,Dry_yr_carryover_DV(-1)-SP_SHSTA_VADV(-1)-SP_SHSTAest_sv) - Sac_Pulse_DV(-1)*cfs_taf(-1)) * taf_cfs } !Calculation is Pulse req + remaining dry year carryover (which lags by one month) adjusted for spills and the release last month
+    case S_SHSTA_Apr_afterDry {
+        condition month == APR .and. round(wyt_sac_(-12)) == 4 ! Shasta Sac pulse flows in other years after Dry years
+        value (max(0.,Dry_yr_carryover_DV(-1)-SP_SHSTA_VADV(-1)-SP_SHSTAest_sv))/2. * taf_cfs }
+    case S_SHSTA_May_afterDry {
+        condition month == MAY .and. round(wyt_sac_(-13)) == 4 ! Shasta Sac pulse flows in other years after Dry years, based on April WY type so as not change operation in May
+        value max(0.,Dry_yr_carryover_DV(-1)-SP_SHSTA_VADV(-1)-SP_SHSTAest_sv-Sac_Pulse_DV(-1)*cfs_taf(-1)) * taf_cfs  } !Calculation is remaining dry year carryover (which lags by one month) adjusted for spills and the release last month
+    case S_SHSTA_Apr_ANBN {
+        condition month == APR .and. wyt_sac < 3.5 .and. wyt_sac > 1.5 ! Shasta Sac pulse flows only during AN/BN years
+        value SacVAAnnest/2. * taf_cfs }
+    case S_SHSTA_May_ANBN {
+        condition month == MAY .and. wyt_sac_(-1) < 3.5 .and. wyt_sac_(-1) > 1.5 ! Shasta Sac pulse flows only during AN/BN years, based on April WY type so as not change operation in May
+        value SacVAAnnest/2. * taf_cfs }
+/*    case highS_SHSTA_Apr {
+        condition S_SHSTA(prevMAR) >= 3800. .and. month == APR .and. wyt_sac < 4 .and. wyt_shasta_CVP < 4 ! Shasta Sac pulse flows only during AN/BN years
+        value SacVAAnn/2. * taf_cfs }
+    case highS_SHSTA_May {
+        condition S_SHSTA(prevMAR) >= 3800. .and. month == MAY .and. wyt_sac_(-1) < 4 .and. wyt_shasta_CVP_(-1) < 4 ! Shasta Sac pulse flows only during AN/BN years based on Apr WYT
+        value SacVAAnn/2. * taf_cfs }
+    case lowS_SHSTA {
+        condition S_SHSTA(prevMAR) < 3800. .and. (month >= JUN .and. month<= AUG).and. (wyt_sac_(prevApr) >= 1 .and. wyt_sac_(prevApr) <= 3) .and. wyt_shasta_CVP_(prevApr) < 2 ! Shasta Sac pulse flows only during AN/BN years from Jun to Aug using Apr WYT
+        value SacVAAnn/3. * taf_cfs }*/
+    case otherwise {
+        condition always
+        value 0. }
+    }
+
+goal saveSac_Pulseest_DV {Sac_Pulseest_DV = Sac_Pulseest }
+
+! ************************************************************************
+! Calculate foregone spill due to VA debt being erased.  This will be added to the release requirement
+! to preserve the pulse flow intent of the VA action as compared to a baseline condition.
+! *** De-activating spills in LTO Alt 2 v3  TF 080923
+/*define txfr1_ShastaSpill {
+	case MayFC {
+		condition range(month,may,sep) .and. S_SHSTAlevel5 - S_SHSTA[WHEELJPOD] < .1
+		value min(c_KSWCK_ADD[WHEELJPOD], C_SAC240_ADD[WHEELJPOD], C_SAC097_ADD[WHEELJPOD])*cfs_taf}
+	case otherwise {
+		condition always
+		value 0. 	}
+}
+define txfr1_ShastaSpillDV {alias txfr1_ShastaSpill kind 'VA_volume' units 'taf'}
+
+define SacVA_ForegoneSpill {
+	case NegSpill {
+		condition month==may .and. Sac_pulse > 0. .and. SP_shsta_VA < 0.
+		value min(-SP_SHSTA_VA, txfr1_ShastaSpill)}
+	case NegSpill_W { ! Wet years have more instances where Shasta could still reach flood control after May
+		condition wyt_sac_(prevApr) < 2 .and. range(month,jun,sep) .and. Sac_pulse_dv(-1) > 0. .and. SP_shsta_VA < 0.
+		value min(-SP_SHSTA_VA, txfr1_ShastaSpill)}
+	case otherwise {
+		condition always
+		value 0.	}
+}
+goal setSacVA_ForegoneSpillDV {SacVA_ForegoneSpillDV = SacVA_ForegoneSpill }
+*/
+
+! ************************************************************************
+! In a W/AN/BN but Shasta Critical year, in a Dry or Critical year, there is no pulse flow, and
+! delivery reductions should be sent down the river and not backed up into Shasta
+! Any other opportunity to back water up should be taken up to the amount of the delivery reduction 
+! VA credit is zeroed out in February, so don't back up any delivery reduction in February unless it
+! is to pay down a debt. 
+! *** Simplified this for LTO Alt 2 v3  TF 080923 
+! *** Any water from fallowing above the pulse release is backed up into S_SHSTA_VA, handled by a later goal
+/*goal VA_backup {
+    lhs I_SHSTA_VA
+	case BegWY1 {
+		condition wateryear == 1922 .and. month == Oct
+		rhs 0. }
+    case reset {
+        condition month==FEB .and. S_SHSTA_VA(-1)>=0.
+            rhs 0.}
+    case backup {
+        condition always
+            rhs max(0., (SC_DelivRed - SC_LF_RtnDiff) - Sac_Pulse)}
+   case WetDryCritShastaCritApr {
+        condition month == Apr .and. (SacVAAnn < 0.5 .or. (wyt_sac >= 4 .or. wyt_shasta_cvp == 4)) ! Dry, Crit Sac WYT or Shasta critical year
+            rhs 0.}
+    case WetDryCritShastaCritMayJan {
+        condition range(month,May,Jan) .and. (SacVAAnn < 0.5 .or. (wyt_sac_(prevApr) >= 4 .or. wyt_shasta_cvp_(prevApr) == 4))
+            rhs 0.}  
+}*/
+!goal RelsForPulseOnly {C_KSWCK_VA = max(0., Sac_Pulse - SC_LF_Credit*taf_cfs + SacVA_ForegoneSpill*taf_cfs)}
+!goal I_SHSTA_VA_limit     {I_SHSTA_VA < SC_DelivRed - SC_LF_RtnDiff}
+!define I_SHSTA_VA_taf {alias I_SHSTA_VA*cfs_taf}
+
+!goal ShastaBelowEncroachment {S_SHSTA < S_SHSTALevel5} ! Prevent Shasta storage from encroaching in VA cycle
+! C_SAC041_VA_SacPulse is for spring/summer releases supported by land fallowing,
+! or for the direct effect of land fallowing delivery reductions that cannot be 
+! backed up into Shasta.
+! C_KSWCK_VA is the portion of the release that comes from storage and not from direct
+! delivery difference
+! *** Simplified this for LTO Alt 2 v3  TF 080923 
+! *** SacPulseTarget is = Sac_Pulse computed above which is put into C_SAC041_VA_SacPulse
+/*goal Sac_VA_flow {
+    lhs C_SAC041_VA_SacPulse
+	case BegWY1 {
+		condition wateryear == 1922 .and. (month >= oct .and. month <=mar)
+		rhs 0. }
+    case DryCritShastaCritical_Apr {    ! flows reflect delivery and return changes
+        condition month == Apr .and. (wyt_sac >= 4 .or. wyt_shasta_cvp == 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff }
+    case DryCritShastaCritical_Rest {    ! flows reflect delivery and return changes
+        condition range(month,May,Jan) .and. (wyt_sac_(prevApr) >= 4 .or. wyt_shasta_cvp_(prevApr) == 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff }
+    case PreserveMIF {    ! If Shasta only released for Keswick MIF, then Shasta releases cannot be reduced (can't backup). Let it go out to outflow.
+        condition /*range(month,May,Jan) .and.*//* C_KSWCK_ADD[WHEELJPOD] < 0.5
+        rhs C_KSWCK_VA + SC_DelivRed - SC_LF_RtnDiff }
+    case SacPulse {
+        condition max(0., Sac_Pulse - SC_LF_Credit*taf_cfs) > 0.
+        rhs C_KSWCK_VA + SC_DelivRed - SC_LF_RtnDiff - I_SHSTA_VA}
+    case LFRelease {            ! take credit for delivery reduction that can't be backed up during W/AN/BN yrs (Keswick MIF control, Shasta flood control)
+        condition SacVAAnn > 0.5 .and. (wyt_sac < 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff - I_SHSTA_VA }
+    case otherwise {
+        condition always
+        rhs 0.}
+}*/
+
+!define SacPulseTarget { value Sac_Pulse} 
+/*    case Sac_Pulse_Flow {
+        condition max(0., Sac_Pulse - SC_LF_Credit*taf_cfs + SacVA_ForegoneSpill*taf_cfs) > 0.
+        value max(0., Sac_Pulse - SC_LF_Credit*taf_cfs + SacVA_ForegoneSpill*taf_cfs)}
+    case otherwise {
+        condition always 
+        value 0.}
+}*/
+!define SacPulseTarget_ {alias SacPulseTarget kind 'VA-cfs' units 'cfs'}
+
+!This flow is always equal to the pulse requirement, so can estimate it that way
+define C_SAC041_VA_SacPulse_AprMayest {value Sac_Pulseest}
+
+!This flow is = to the volume of land fallowing savings outside of April-May that can't be backed up.
+define C_SAC041_VA_SacPulse_restest {
+	case AprMay {
+		condition month == APR .or. month == MAY 
+		value 0. }
+	case nobackup {
+		condition abs(S_SHSTAlevel5 - S_SHSTA_VA[UPSTREAM]) < 0.001 .or. C_KSWCK_ADD[UPSTREAM] < 0.001
+		value SC_DelivRedest - SC_LF_RtnDiffest}
+	case otherwise {
+		condition always
+		value 0.}	
+}
+
+define C_SAC041_VA_SacPulseest {value C_SAC041_VA_SacPulse_AprMayest + C_SAC041_VA_SacPulse_restest}
+
+define C_SAC041_VA_SacPulseest_ {alias C_SAC041_VA_SacPulseest kind 'PULSE-VA' units 'CFS'}
+define C_SAC041_VA_SacPulse_AprMayest_ {alias C_SAC041_VA_SacPulse_AprMayest kind 'PULSE-VA' units 'CFS'}
+define C_SAC041_VA_SacPulse_restest_ {alias C_SAC041_VA_SacPulse_restest kind 'PULSE-VA' units 'CFS'}
+
+define NDOI_ADD_SACVAest {value C_SAC041_VA_SacPulseest}
+
+define NDOI_ADD_SACVAest_ {alias NDOI_ADD_SACVAest kind 'PULSE-VA' units 'CFS'}
+
+!goal supportSacPulse1 {C_SAC041_VA_SacPulse_AprMay = SacPulseTarget}
+/*    lhs C_SAC041_VA_SacPulse
+    case DryCritShastaCritical_Apr {    ! flows reflect delivery and return changes
+        condition month == Apr .and. (wyt_sac >= 4 .or. wyt_shasta_cvp == 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff }
+    case DryCritShastaCritical_Rest {    ! flows reflect delivery and return changes
+        condition range(month,May,Jan) .and. (wyt_sac_(prevApr) >= 4 .or. wyt_shasta_cvp_(prevApr) == 4)
+        rhs SC_DelivRed - SC_LF_RtnDiff }
+    case PreserveMIF {    ! If Shasta only released for Keswick MIF, then Shasta releases cannot be reduced (can't backup). Let it go out to outflow.
+        condition /*range(month,May,Jan) .and.*/ /*C_KSWCK_ADD[WHEELJPOD] < 0.5
+        rhs C_KSWCK_VA + SC_DelivRed - SC_LF_RtnDiff }
+
+    case otherwise {
+    	condition always
+    	rhs SacPulseTarget
+!    	lhs<rhs penalty 99999 
+ !   	lhs>rhs penalty 9000 ! penalty on pulse flow above the target just enough to keep it from backing into flood space
+    }
+
+}*/
+
+!Provide water for pulse flow
+!goal supportSacPulse2 {C_SAC041_VA_SacPulse = C_KSWCK_VA + (SC_DelivRed - SC_LF_RtnDiff) - I_SHSTA_VA}
+!Made soft constraint in case not able to backup into Shasta due to being at MIFs downstream 
+!goal supportSacPulse2 {lhs C_SAC041_VA_SacPulse_AprMay rhs C_KSWCK_VA + (SC_DelivRed - SC_LF_RtnDiff) - I_SHSTA_VA lhs>rhs penalty 99999 lhs<rhs penalty 99999}
+
+!goal setmaxC_KSWCK_VA {C_KSWCK_VA < SacPulseTarget}
+
+!Track water savings from land fallowing that cannot be backed up
+!define NetDelivRed_notbackedup {std kind 'VA-cfs' units 'cfs'}		!
+!goal setNetDelivRed_notbackedup {NetDelivRed_notbackedup = (C_KSWCK_VA + (SC_DelivRed - SC_LF_RtnDiff) - I_SHSTA_VA) - C_SAC041_VA_SacPulse_AprMay}
+
+!goal PreserveC_KSWCK_MIF {C_KSWCK_MIF > C_KSWCK_MIF[WHEELJPOD]}
+
+!****** Any water that cannot be backed up (NetDelivRed_notbackedup) should be exported if possible
+!Friant VA code has calculations of remaining export capacity in the Delta that can be used here
+
+/*define Jonesexp_capacity {value min(DeltaRecaptoVAlim1_DAprMaysv, DeltaRecaptoVAlim2_EIsv, DeltaRecaptoVAlim3_OMRsv, Jones_SRPrecap_lmt)}
+define SLCVPspace {value (S_SLUIS_CVPlevel5 - S_SLUIS_CVP[-1])*taf_cfs}
+
+define NetDelivRed_notbackedup_exports {std kind 'VA-cfs' units 'cfs'}		!
+
+goal setNetDelivRed_notbackedup_exports1 {lhs NetDelivRed_notbackedup_exports rhs NetDelivRed_notbackedup lhs<rhs penalty 99999.}
+goal setNetDelivRed_notbackedup_exports2 {lhs NetDelivRed_notbackedup_exports rhs min(Jonesexp_capacity, SLCVPspace) lhs<rhs penalty 99999.}
+
+!Anything left still goes to outflow
+define NetDelivRed_notbackedup_outflow {std kind 'VA-cfs' units 'cfs'}		!
+
+goal setNetDelivRed_notbackedup_outflow {NetDelivRed_notbackedup_outflow = NetDelivRed_notbackedup - NetDelivRed_notbackedup_exports}
+goal setC_SAC041_VA_SacPulse_rest {C_SAC041_VA_SacPulse_rest = NetDelivRed_notbackedup_outflow}
+
+define Jonesexp_capacity_ {alias Jonesexp_capacity kind 'VA-cfs' units 'cfs'}
+define SLCVPspace_ {alias SLCVPspace kind 'VA-cfs' units 'cfs'}*/
+

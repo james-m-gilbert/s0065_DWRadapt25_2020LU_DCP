@@ -1,0 +1,164 @@
+! This file includes logic that makes delivery shortages equal amongst Pool deliveries with multiple 
+! contract types being diverted out of each pool.  
+
+
+! Pool 18 Equal Delivery Percentage, CAA 143
+define perdel_P18_cvp_ag1 { std kind 'DELIVERY-PERC-CVP-AG' units 'none'}
+define perdel_P18_cvp_ag2 { std kind 'DELIVERY-PERC-CVP-AG' units 'none'}
+define perdel_P18_cvp_mi  { std kind 'DELIVERY-PERC-CVP-MI' units 'none'}
+
+goal perdel_p18_cvp_ag_1 {
+	lhs perdel_p18_cvp_ag1
+	case dem0 { !If demand is 0, then perdel = 0
+		condition CLM_90_PA1_P18 * taf_cfs * perdel_cvpag_s < 0.01
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs D_CAA143_90_PA1 / (CLM_90_PA1_P18 * taf_cfs * perdel_cvpag_s) 
+		lhs>rhs constrain
+		lhs<rhs constrain}	
+}
+
+goal perdel_p18_cvp_ag_2 {
+	lhs perdel_p18_cvp_ag2
+	case dem0 { !If demand is 0, then perdel = 0
+		condition CLM_90_PA2_P18 * taf_cfs * perdel_cvpag_s < 0.01
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs D_CAA143_90_PA2 / (CLM_90_PA2_P18 * taf_cfs * perdel_cvpag_s) 
+		lhs>rhs constrain
+		lhs<rhs constrain}	
+}
+
+goal perdel_p18_cvp_mi_1 { !Percentage Delivered at Pool 18 for CVP M&I
+	lhs perdel_p18_cvp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition CLM_90_PUa * taf_cfs * perdel_cvpmi_s * 10.0/16.5 < 0.01
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs 	D_CAA143_90_PU / (CLM_90_PUa * taf_cfs * perdel_cvpmi_s * 10.0/16.5) 
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_pool18_ag { !Equal distribution of ag deliveries when all contract types have demand
+	lhs perdel_p18_cvp_ag1
+	case dem0_ag { 
+		condition perdel_cvpag_s == 0.0
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs perdel_p18_cvp_ag2
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_pool18 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p18_cvp_ag2
+	case dem0_ag { 
+		condition perdel_cvpag_s == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_cvpmi_s == 0.0 
+		rhs perdel_p18_cvp_ag2
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs perdel_p18_cvp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+
+! Pool 20 Equal Delivery Percentage, CAA 165
+define perdel_P20_cvp_ag1 { std kind 'DELIVERY-PERC-CVP-AG' units 'none'}
+define perdel_P20_cvp_ag2 { std kind 'DELIVERY-PERC-CVP-AG' units 'none'}
+define perdel_P20_cvp_mi  { std kind 'DELIVERY-PERC-CVP-MI' units 'none'}
+
+goal perdel_p20_cvp_ag_1 {
+	lhs perdel_p20_cvp_ag1
+	case dem0 { !If demand is 0, then perdel = 0
+		condition CLM_90_PA1_p20 * taf_cfs * perdel_cvpag_s < 0.01
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs D_CAA165_90_PA1 / (CLM_90_PA1_p20 * taf_cfs * perdel_cvpag_s) 
+		lhs>rhs constrain
+		lhs<rhs constrain}	
+}
+
+goal perdel_p20_cvp_ag_2 {
+	lhs perdel_p20_cvp_ag2
+	case dem0 { !If demand is 0, then perdel = 0
+		condition CLM_90_PA2_p20 * taf_cfs * perdel_cvpag_s < 0.01
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs D_CAA165_90_PA2 / (CLM_90_PA2_p20 * taf_cfs * perdel_cvpag_s) 
+		lhs>rhs constrain
+		lhs<rhs constrain}	
+}
+
+goal perdel_p20_cvp_mi_1 { !Percentage Delivered at Pool 18 for CVP M&I
+	lhs perdel_p20_cvp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition CLM_90_PUa * taf_cfs * perdel_cvpmi_s * 3.0/16.5 < 0.01
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs 	D_CAA165_90_PU / (CLM_90_PUa * taf_cfs * perdel_cvpmi_s * 3.0/16.5) 
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_pool20_ag { !Equal distribution of ag deliveries when all contract types have demand
+	lhs perdel_p20_cvp_ag1
+	case dem0_ag { 
+		condition perdel_cvpag_s == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs perdel_p20_cvp_ag2
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_pool20 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p20_cvp_ag2
+	case dem0_ag { 
+		condition perdel_cvpag_s == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_cvpmi_s == 0.0 
+		rhs perdel_p20_cvp_ag2
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition cyclenum < cn_ITP
+		rhs perdel_p20_cvp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}

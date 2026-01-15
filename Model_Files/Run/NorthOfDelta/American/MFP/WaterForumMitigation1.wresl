@@ -1,0 +1,876 @@
+!Water Forum Mitigation Water Operations
+!Derya Sumer 7/12/2006
+!M. Bachman 03/2018
+!P. Khatavkar 10/2021
+/* !CH logic
+! Calculate amount to be released for mitigation. Mitigation water released between March and September.
+! Daily release = 47 TAF/214days between Mar and Sep*1000 AF/TAF*1/1.983471099 CFS/AF = 110.73 CFS / day
+! Interpolate mitigation release : 0 TAF if UIFR_MarNov = 950 TAF, 47 TAF if UIFR_MarNov <= 400 TAF*/
+
+! ********************ARPS Pumping Estimate*******************
+! Used to calculated the mitigation water released from May-Sept
+! ARPS estimation for mitigation water calculation
+! ARPS estimation in May = (known Oct-Apr) + projected May-Sept 
+
+!In May, sum up the known deliveries from ARPS from Oct-Apr
+define ARPS_SumOctApr {std kind 'ARPS' units 'TAF'}
+define ARPS_SumOctApr_sv {
+	case FirstYear {  
+         condition month == Oct .and. wateryear==BgnWY
+         value 10.}
+	case MonthMay{
+		condition month==may
+		sum(i=-1,-7,-1) D_NFA016_ABT002(i)*cfs_taf(i)}
+	case Otherwise{
+		condition always
+		value ARPS_SumOctApr(-1)}	
+}
+goal setARPS_SumOctApr_dv {ARPS_SumOctApr=ARPS_SumOctApr_sv}
+
+!Groundwater Pumping to ARPS-eligible (i.e. Z5 and Lower Z1) demand units
+define Sum_GP_LZ1_Z5 {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'}
+define Sum_GP_LZ1_Z5_sv{
+	case MonthOct{    /* Assume minimum groundwater pumping*/
+		condition month==oct
+		value 
+		   GPmin_24_NA2 * (sum(i=0,11,1) AWR_24_NA2(i)*cfs_taf(i)*(1+RPF_24_NA2-RUFR_24_NA2) + AWO_24_NA2(i)*cfs_taf(i)*(1+RPF_24_NA2-RUFO_24_NA2))
+         + GPmin_24_NA3 * (sum(i=0,11,1) 2.5*AWR_24_NA3(i)*cfs_taf(i)*(1+RPF_24_NA3-RUFR_24_NA3) + 2.5*AWO_24_NA3(i)*cfs_taf(i)*(1+RPF_24_NA3-RUFO_24_NA3))
+         + GPmin_24_NU2 * (sum(i=0,11,1) UD_24_NU2(i)*cfs_taf(i))}
+	case otherwise {
+        condition always
+        value Sum_GP_LZ1_Z5(-1) }}
+goal setSum_GP_LZ1_Z5 {Sum_GP_LZ1_Z5 = Sum_GP_LZ1_Z5_sv}
+
+! Estimated ARPS_MaySep = (Total PCWA Z1+Z5 Demands) - (PGE PCWA allocation) - (Min Groundwater pumping) - (Vol. ARPS already delivered Oct-Apr)
+
+!****************************************************
+! THIS CODE IS A REPEAT OF THAT IN YUBA-BEAR MODULE
+!****************************************************
+! Limit PCWA Zone 1 and 5 deliveries based on PG&E WY Allocation
+! Define annual volume of water that may be diverted i.e. the supply
+define CLann_PCWA_1_5 {value 104.}	!TAF
+
+define SumUD_AW_PCWA_1_5 {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define SumUD_AW_PCWA_1_5_sv {
+    case oct{
+    condition month == oct
+        sum(i=0,11,1) AWR_24_NA2(i)*cfs_taf(i)*(1+RPF_24_NA2-RUFR_24_NA2) + AWO_24_NA2(i)*cfs_taf(i)*(1+RPF_24_NA2-RUFO_24_NA2) + 2.5*AWR_24_NA3(i)*cfs_taf(i)*(1+RPF_24_NA3-RUFR_24_NA3) + 2.5*AWO_24_NA3(i)*cfs_taf(i)*(1+RPF_24_NA3-RUFO_24_NA3) + UD_24_NU1(i)*cfs_taf(i) + UD_24_NU2(i)*cfs_taf(i)}
+    case otherwise {
+        condition always
+        value SumUD_AW_PCWA_1_5(-1) }}
+
+goal setSumUD_AW_PCWA_1_5 {SumUD_AW_PCWA_1_5=SumUD_AW_PCWA_1_5_sv}
+
+!*************************************************************
+
+define ARPS_MaySeptEst {value SumUD_AW_PCWA_1_5_sv -(CLann_PCWA_1_5*PGE_WY_Allocation) - Sum_GP_LZ1_Z5_sv - ARPS_SumOctApr_sv }
+
+define ARPS_Estimate {std kind 'ANNUAL-ARPS-ESTIMATE' units 'TAF'}
+define ARPS_Estimate_sv{
+		case FirstYear {  
+         condition month == Oct .and. wateryear==BgnWY
+         value WFann_NFA016_ABT002}
+	case MonthMay{ 
+		condition month==may
+		value min(WFann_NFA016_ABT002,ARPS_SumOctApr_sv + max(0,ARPS_MaySeptEst))} 
+	case otherwise {
+        condition always
+        value ARPS_Estimate(-1) }}
+goal setARPS_Estimate {ARPS_Estimate = ARPS_Estimate_sv}
+
+! ************************Mitigation logic***************************
+! ARPS historical pumping volumes:
+! According to Tony Firenzi of PCWA, 2013 should be the "normal year."  2013 was nearly 11 TAF, and the average 2011-2013 was 13,752 TAF. 
+
+define PCWA_ARPS_deliveryEstimate { 
+	case Existing {condition LODflag==0. value 14.0}
+	case Buildout {condition LODflag==1. value 70.5}}!value max(14.0,ARPS_Estimate_sv)}} ! In future conditions, use an estimate based on logic above.
+!define UD_26N_PU1_ANNdv {std kind 'ANNUAL-DEMAND' units 'TAF'}
+!define UD_26N_PU1_ANN   {case FirstMonth {condition month == OCT .and. WaterYear == BgnWY sum(i=0,11,1) UD_26N_PU1(i)*cfs_taf(i)}
+ !            case MAR {condition month == MAR .and. WaterYear < EndWY sum(i=0,11,1) UD_26N_PU1(i)*cfs_taf(i)}
+  !           case other {condition always value UD_26N_PU1_ANNdv(-1)}
+   !          }
+define Roseville_driestyrdeliveries {							!Sum UD_26N_PU1 for annual demand, correct for minimum gw factor
+	case Existing {condition LODflag==0. value UD_26N_PU1_ANN*(1.- GPMIN_26N_PU1)}  
+	case Buildout {condition LODflag==1. value UD_26N_PU1_ANN*(1.- GPMIN_26N_PU1)}} !from WFA; TAF
+
+define AnnualMitigationWater {value min(27., PCWA_ARPS_deliveryEstimate - 8.5) + min(20., Roseville_driestyrdeliveries - 19.8)} 	!TAF
+define DailyMitigationWater {value AnnualMitigationWater / 143. * 1000. * (1./1.983471099)} !214 - 61 = 143 days (no more March and April)
+
+
+
+define WFMitRel{
+ 	case mitigation{
+		condition range(month,May,Sep) .and. UIFR_MarNov < 950. .and. UIFR_MarNov>=400.
+		value (DailyMitigationWater) - (UIFR_MarNov - 400.) / (950. - 400.) * (DailyMitigationWater)
+		}
+	case below_400{
+		condition range(month,May,Sep) .and. UIFR_MarNov <400.
+		value DailyMitigationWater
+		}
+	case no_mitigation {
+		condition always
+		value 0.
+		}
+	} 
+
+define WFMitReldv {std kind 'FLOW' units 'CFS'}
+goal outputWFMit { WFmitReldv=WFMitRel}
+
+define WFMitRel_ann{
+ 	case mitigation{
+		condition  UIFR_MarNov < 950. .and. UIFR_MarNov>=400.
+		value AnnualMitigationWater*(1. - (UIFR_MarNov - 400.) / (950. - 400.))
+		}
+	case below_400{
+		condition  UIFR_MarNov <400.
+		value AnnualMitigationWater
+		}
+	case no_mitigation {
+		condition always
+		value 0.
+		}
+	}
+
+! Determine if it's a mitigation year
+ define MitYr{
+	case mitigation{
+		condition UIFR_MarNov < 950
+		value wateryear
+		}
+	case no_mitigation {
+		condition always
+		value 0.
+		}
+	}
+
+define MitYrdv {std kind 'FLAG' units 'NONE'}
+goal outputMitYr { MitYrdv=MitYr}
+
+define MFPpow_HHOLE_release {
+	case FirstMonth {
+		condition wateryear==BgnWY .and. month<MAY
+		value 0. 
+		}
+	case JunSep {
+		condition range(month,Jun,SEP)
+		value max(0,(S_HHOLE(-1)+S_FRMDW(-1)+MFPForecast_TotalSystemInflow-MFPForecast_SystemDem-MFPForecast_HHOLEEvap-(150.-WFMitRel_ann)) / (16. - month))
+	}
+	case MOct {
+		condition month == Oct
+		value max(0,(S_HHOLE(-1)+S_FRMDW(-1)+MFPForecast_TotalSystemInflow-MFPForecast_SystemDem-MFPForecast_HHOLEEvap-(150.-WFMitRel_ann)) / (4. - month))
+	}
+		case NovDec {
+		condition range(month,Nov,DEC)
+		value max(0,(S_HHOLE(-1)+S_FRMDW(-1)+MFPForecast_TotalSystemInflow-MFPForecast_MIF_MFP_RUB031-MFPForecast_MIF_MFP_MFA047-MFPForecast_HHOLEEvap-(150.-WFMitRel_ann)) / (4. - month)) !In Nov and Dec no water demand is considered
+	}
+	case Otherwise {
+		condition always
+		value 0.
+	}
+}
+
+!**************************Recovery Logic****************************
+! Determine if it's a recovery year
+define RecovYrdv {std kind 'FLAG' units 'NONE'}
+define RecovYr{
+	case first_month{
+		condition month==Oct .and. wateryear==BgnWY
+		value 0.
+		}
+	case recovery_1{
+		condition range(month,Oct,Feb) .and. MitYrdv(-1)>0 .and. wateryear == MitYrdv(-1)+1
+		value 1.
+		}
+	case recovery{
+		condition range(month,Oct,Feb) .and. RecovYrdv(-1)>0
+		value 1.
+		}
+	case no_recovery {
+		condition always
+		value 0.
+		}
+	}
+
+goal outputRecovYr { RecovYrdv=RecovYr}
+
+! Recovery allowed after Folsom starts spilling. Spilling = Folsom Zone 4 is full.
+! Determine if Folsom is spilling:
+! Check if  S958_4(-1) == (S958level4(-1) - S958level3(-1)
+define FOL_spilldv {std kind 'FLAG' units 'NONE'}
+define FOL_spill{
+	case first_month{
+		condition month==Oct .and. wateryear==BgnWY
+		value 0.
+		}
+	case spill_MitYr{
+		condition MitYr>0 .and. range(month,Oct,Feb) .and. S_FOLSM_4(-1)==(S_FOLSMlevel4(-1) - S_FOLSMlevel3adjdv(-1))
+		value 1.
+		}
+	case afterspill_MitYr{
+		condition MitYr >0 .and. range (month,Oct,Feb) .and. FOL_spilldv(-1)==1.
+		value 1.
+		}
+	case spill{
+		condition MitYr==0 .and. S_FOLSM_4(-1)==(S_FOLSMlevel4(-1) - S_FOLSMlevel3adjdv(-1))
+		value 1.
+		}
+	case afterspill{
+		condition MitYr==0 .and. FOL_spilldv(-1)==1.
+		value 1.
+		}
+	case no_spill{
+		condition always
+		value 0.
+		}
+	}
+
+goal setFOL_spilldv {FOL_spilldv=FOL_spill}
+
+
+! Adjust Hell Hole power release.  Increase release if mitigation water is released, decrease if it is being recovered.
+! Calculate released mitigation water to date.
+define releaseddv {std kind 'FLOW' units 'TAF'}
+define released{
+	case firstmonth{
+		condition month==Oct
+		value WFMitRel*cfs_taf
+		}
+	case other{
+		condition always !range(month,Oct,Feb)
+		value releaseddv(-1)+WFMitRel*cfs_taf
+		}
+	}
+
+goal SetReleaseddv {releaseddv=released}
+
+
+! Recovery is performed by reducing the power release by half until all mitigation water is recovered.
+! Recovery can only occur when during a recovery year and when Folsom Reservoir is spilling
+! Record all water recovered
+define recovereddv {std kind 'FLOW' units 'TAF'}
+define recovered{
+	case firstmonth {
+		condition month==Oct .and. wateryear==BgnWY
+		value RecovYr * FOL_spill * MFPpow_release/2.
+		}
+	case recovery {
+		condition /*range(month,Oct,Feb) .and.*/ deficitdv(-1)>0
+		value min(recovereddv(-1) + FOL_spill * MFPpow_release/2., deficitdv(prevSep))
+		}
+	case other {
+		condition always
+		value 0.
+		}
+	}
+
+goal SetRecovereddv { recovereddv=recovered}
+
+define deficitdv {std kind 'FLOW' units 'TAF'}
+define deficit{
+	case firstmonth {
+		condition month==Oct .and. wateryear==BgnWY 
+		value released-recovered
+		}
+	case other{
+		condition always
+		value max((deficitdv(-1)/**FOL_spilldv(-1)*/ + max((released-releaseddv(-1)),0.)-max((recovered-recovereddv(-1)),0.)),0.)
+		}
+	 }
+
+goal Setdeficitdv {deficitdv=deficit}
+
+!Check to see if recovery is active
+/*define recovery{
+	case first_day{
+	condition day==01 .and. month==Oct .and. wateryear==1922
+	value 1.}
+	case inactive {
+	condition recovered-recovereddv(-1)>0.
+	value 0.}
+	case active{
+	condition always
+	value 1.}
+	}
+ */
+
+
+! Adjust Hell Hole power release as base power release + mitigation release + recovery release
+! Note that these three variables are not active at the same time
+define HH_pow_rel{
+	case firstmonth {
+		condition month==Oct .and. wateryear==BgnWY
+		value (MFPpow_release + (released - recovered))*taf_cfs
+		}
+	case other{
+		condition always
+		value (MFPpow_release - max(recovered-recovereddv(-1),0.))*taf_cfs
+		}
+	}
+	
+define WFMitRel_rsd {std kind 'RESIDUAL' units 'CFS'}
+goal setWFMitRel_rsd {lhs WFMitRel_rsd
+					  rhs 0	
+					  lhs>rhs penalty 999999
+					  lhs<rhs penalty 999999}
+
+
+goal setD_HHOLE_MFT003_POW {D_HHOLE_MFT003_POW < HH_pow_rel }
+goal setD_HHOLE_MFT003_MIT {D_HHOLE_MFT003_MIT < WFMitRel - WFMitRel_rsd}
+
+/*define WY_MFP{
+	case Wet{
+		condition amer_annual >= 3400
+		value 1.
+		}
+	case AboveNormal{
+		condition amer_annual >= 2400
+		value 2.
+		}
+	case BelowNormal{
+		condition amer_annual >= 1500
+		value 3.
+		}
+	case Dry{
+		condition amer_annual >= 1000
+		value 4.
+		}
+	case Critical{
+		condition amer_annual >= 600
+		value 5.
+		}
+	case ExtremeCritical{
+		condition always
+		value 6.
+		}}
+
+define WY_MFPdv	{alias WY_MFP kind 'WATERYEAR' units 'NONE'}
+*/
+!Reservoir Reoperation in Above Normal and Below Normal Water Year Types (American Flow Contribution 1).
+define  wyt_SAC_VA_         {timeseries kind 'wateryeartype' units 'none'} !Perfect foresight for BN and D in March 
+define VA_Contri1_HHOLEdv {std kind 'Res-Release' units 'TAF'}
+define VA_Contri1_HHOLE {	
+	!case AboveNormal{
+	!	condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 3 
+	!	value (10./3.)*SimulateVA_Amr!*taf_cfs
+	!	}
+	case Oct_Feb{
+		condition month>=Oct .and. month<=Feb
+		value 0.
+		}
+	case Sep{
+		condition month==Sep
+		value 0.
+		}
+	case AboveNormal_Mar{
+		condition month==Mar .and. wyt_SAC_VA_(1)==2 
+		value (7./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case AboveNormal_Apr{
+		condition month==Apr .and. WYT_Sac_Frcst==2
+		value (7./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case AboveNormal_May{
+		condition month==May .and. WYT_Sac_Frcst_dv(-1)==2
+		value (7./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	!case BelowNormal{
+	!	condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 3 
+	!	value (10./3.)*SimulateVA_Amr!*taf_cfs
+	!	}
+	case BelowNormal_Mar{
+		condition month==Mar .and. wyt_SAC_VA_(1)==3 
+		value (7./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case BelowNormal_Apr{
+		condition month==Apr .and. WYT_Sac_Frcst==3
+		value (7./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case BelowNormal_May{
+		condition month==May .and. WYT_Sac_Frcst_dv(-1)==3
+		value (7./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case otherwise{condition always value 0.}
+		}
+goal setVA_Contri1_HHOLEdv {VA_Contri1_HHOLEdv = VA_Contri1_HHOLE}
+
+define VA_Contri1_HHOLE_Cumdv {std  kind 'Res-Release' units 'TAF'}
+define VA_Contri1_HHOLE_Cum	{	
+	/*case AboveNormal{
+		condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 2 
+		value VA_Contri1_HHOLE + VA_Contri1_HHOLE_Cumdv(-1)!*taf_cfs
+		}
+	case BelowNormal{
+		condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 3 
+		value VA_Contri1_HHOLE + VA_Contri1_HHOLE_Cumdv(-1)!*taf_cfs
+		}*/
+	case MarMay{
+		!condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 2 
+		condition month>=Mar .and. month<=May! .and. WYT_Sac_Frcst == 2 
+		value VA_Contri1_HHOLE + VA_Contri1_HHOLE_Cumdv(-1)!*taf_cfs
+		}
+	case otherwise{condition always value 0.}
+		}
+
+goal setVA_Contri1_HHOLE_Cumdv {VA_Contri1_HHOLE_Cumdv = VA_Contri1_HHOLE_Cum}
+
+
+!	American VA Contribution 4 (Assumed to be released from Hell hole - PCWA)
+
+!	As per email communication with RWA (Michelle Banonis) and Reclamation (Cameron Koizumi), on April 3, 2023, For contribution 4, 5 TAF should come from 
+!	upstream storage (Hell Hole - 70% and Caples - 30%) and 5 TAF should come from GW subsitution
+
+define VA_Contri4_HHOLEdv {std kind 'Res-Release' units 'TAF'}
+define VA_Contri4_HHOLE {	
+	!case Dry{
+	!	condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 4 
+	!	value (10./3.)*SimulateVA_Amr!*taf_cfs
+	!	}
+	case Oct_Feb{
+		condition month>=Oct .and. month<=Feb
+		value 0.
+		}
+	case Sep{
+		condition month==Sep
+		value 0.
+		}
+	case Dry_Mar{
+		condition month==Mar .and. wyt_SAC_VA_(1)==4
+		value (5./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case Dry_Apr{
+		condition month==Apr .and. WYT_Sac_Frcst==4
+		value (5./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case Dry_May{
+		condition month==May .and. WYT_Sac_Frcst_dv(-1)==4
+		value (5./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case otherwise{condition always value 0.}
+		}
+goal setVA_Contri4_HHOLEdv {VA_Contri4_HHOLEdv = VA_Contri4_HHOLE}
+
+define VA_Contri4_HHOLE_Cumdv {std  kind 'Res-Release' units 'TAF'}
+define VA_Contri4_HHOLE_Cum	{	
+	case Dry{
+		!condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 4 
+		condition month>=Mar .and. month<=May! .and. WYT_Sac_Frcst == 4 
+		value VA_Contri4_HHOLE + VA_Contri4_HHOLE_Cumdv(-1)!*taf_cfs
+		}
+	case otherwise{condition always value 0.}
+		}
+
+goal setVA_Contri4_HHOLE_Cumdv {VA_Contri4_HHOLE_Cumdv = VA_Contri4_HHOLE_Cum}
+
+define VA2_3_Contridv {std   kind 'Res-Release' units 'TAF'}
+!Contribution of total American VA flow
+!!!Multipliers for distributing 10 TAF over different demand units based on average demands (Code Repeated in Upper American VA cycle for NDOI Estimate)
+!define  wyt_SAC_VA_         {timeseries kind 'wateryeartype' units 'none'} !Perfect foresight for BN and D in March 
+define GPmin_26N_NU1_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4        select mMar from AmericanVA_GP where ID = 1}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4         select mApr from AmericanVA_GP where ID = 1}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4  select mMay from AmericanVA_GP where ID = 1}
+				 case otherwise {condition always value 0.}}
+define GPmin_26N_NU1_ADDdv {alias GPmin_26N_NU1_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26N_NU2_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4        select mMar from AmericanVA_GP where ID = 2}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4         select mApr from AmericanVA_GP where ID = 2}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4  select mMay from AmericanVA_GP where ID = 2}
+				 case otherwise {condition always value 0.}}
+define GPmin_26N_NU2_ADDdv {alias GPmin_26N_NU2_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26N_NU3_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4        select mMar from AmericanVA_GP where ID = 3}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4         select mApr from AmericanVA_GP where ID = 3}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4  select mMay from AmericanVA_GP where ID = 3}
+				 case otherwise {condition always value 0.}}
+define GPmin_26N_NU3_ADDdv {alias GPmin_26N_NU3_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+				 
+define GPmin_26N_NU4_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4        select mMar from AmericanVA_GP where ID = 4}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4         select mApr from AmericanVA_GP where ID = 4}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4  select mMay from AmericanVA_GP where ID = 4}
+				 case otherwise {condition always value 0.}}
+define GPmin_26N_NU4_ADDdv {alias GPmin_26N_NU4_ADD kind 'VA-GP-Multiplier' units 'NONE'}				 
+
+define GPmin_26N_PU1_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 5}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 5}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 5}
+				 case otherwise {condition always value 0.}}
+define GPmin_26N_PU1_ADDdv {alias GPmin_26N_PU1_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26N_PU2_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 6}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 6}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 6}
+				 case otherwise {condition always value 0.}}
+define GPmin_26N_PU2_ADDdv {alias GPmin_26N_PU2_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26N_PU3_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 7}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 7}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 7}
+				 case otherwise {condition always value 0.}}
+define GPmin_26N_PU3_ADDdv {alias GPmin_26N_PU3_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_NU1_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 8}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 8}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 8}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_NU1_ADDdv {alias GPmin_26S_NU1_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_NU2_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 9}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 9}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 9}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_NU2_ADDdv {alias GPmin_26S_NU2_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_NU3_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4        select mMar from AmericanVA_GP where ID = 10}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4         select mApr from AmericanVA_GP where ID = 10}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4  select mMay from AmericanVA_GP where ID = 10}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_NU3_ADDdv {alias GPmin_26S_NU3_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_NU4_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 11}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 11}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 11}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_NU4_ADDdv {alias GPmin_26S_NU4_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_PU1_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 12}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 12}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 12}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_PU1_ADDdv {alias GPmin_26S_PU1_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_PU2_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 13}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 13}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 13}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_PU2_ADDdv {alias GPmin_26S_PU2_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_PU3_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 14}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 14}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 14}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_PU3_ADDdv {alias GPmin_26S_PU3_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_PU4_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 15}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 15}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 15}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_PU4_ADDdv {alias GPmin_26S_PU4_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_PU5_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case Sep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 16}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 16}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 16}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_PU5_ADDdv {alias GPmin_26S_PU5_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define GPmin_26S_PU6_ADD	{case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case mSep {condition month==Sep value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) >= 4         select mMar from AmericanVA_GP where ID = 17}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst >= 4          select mApr from AmericanVA_GP where ID = 17}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) >= 4   select mMay from AmericanVA_GP where ID = 17}
+				 case otherwise {condition always value 0.}}
+define GPmin_26S_PU6_ADDdv {alias GPmin_26S_PU6_ADD kind 'VA-GP-Multiplier' units 'NONE'}
+
+define VAContri2_3_Total {value 30.}  ! 10 TAF for Contribution 2, 20 TAF for Contribution 3. 
+define VAContri4_Total {
+				 case Sep {condition month==Sep value 0.}
+   				 case Oct_Feb {condition month>=Oct .and. month<=Feb value 0.}
+				 case mMar {condition month == Mar  .and. wyt_SAC_VA_(1) == 4         value 5.}
+				 case mApr {condition month == Apr  .and. WYT_Sac_Frcst == 4          value 5.}
+				 case mMay {condition month == May  .and. WYT_Sac_Frcst_dv(-1) == 4   value 5.}
+				 case otherwise {condition always value 0.}
+}  ! 5 TAF for Contribution 4 in Dry years using GW substitution as per email communication with RWA (Michelle Banonis) on 4/3/2023
+define VA2_3_4_Contridv {std   kind 'Res-Release' units 'TAF'}
+define VA2_3_4_Contri{value (VAContri2_3_Total+VAContri4_Total)*SimulateVA_Amr*(GPmin_26N_NU1_ADD+GPmin_26N_NU2_ADD+GPmin_26N_NU3_ADD+GPmin_26N_NU4_ADD+GPmin_26N_PU1_ADD+GPmin_26N_PU2_ADD+GPmin_26N_PU3_ADD+GPmin_26S_NU1_ADD+GPmin_26S_NU2_ADD+GPmin_26S_NU3_ADD+GPmin_26S_NU4_ADD+GPmin_26S_PU1_ADD+GPmin_26S_PU2_ADD+GPmin_26S_PU3_ADD+GPmin_26S_PU4_ADD+GPmin_26S_PU5_ADD+GPmin_26S_PU6_ADD)}
+goal setVA2_3_4_Contri {VA2_3_4_Contridv = VA2_3_4_Contri}
+!------------------------------------------------------------------------------------------------------------------------------------------
+define NDOI_ADD_AMERVA {std kind 'VA-VOLUME' units 'CFS'}
+goal SetAMERVA {NDOI_ADD_AMERVA = ((VA_Contri1_HHOLEdv+VA_Contri1_CAPLSdv+VA_Contri4_HHOLEdv+VA2_3_4_Contridv)*taf_cfs)*SimulateVA_Amr_Onoff}
+
+define releasedVAdv {std kind 'FLOW' units 'TAF'}
+define releasedVA{
+	case firstmonth{
+		condition month==Oct
+		value (VA_Contri1_HHOLE+VA_Contri4_HHOLE)
+		}
+	case other{
+		condition always !range(month,Oct,Feb)
+		value releasedVAdv(-1)+(VA_Contri1_HHOLE+VA_Contri4_HHOLE)
+		}
+	}
+
+goal SetReleasedVAdv {releasedVAdv=releasedVA}
+
+
+! Recovery is performed by reducing the power release by half until all VA water is recovered.
+! Recovery can only occur when during a recovery year and when Folsom Reservoir is spilling
+! Record all water recovered
+define recoveredVAdv {std kind 'FLOW' units 'TAF'}
+define recoveredVA{
+	case firstmonth {
+		condition month==Oct .and. wateryear==BgnWY
+		value FOL_spill * MFPpow_release/2.
+		}
+	case VAperiod {condition range(month, Apr, Jun) value 0.}
+	case recovery {
+		condition /*range(month,Oct,Feb) .and.*/ deficitVAdv(-1)>0
+		value recoveredVAdv(-1) + FOL_spill * MFPpow_release/2./* , deficitVAdv(prevSep))*/
+		}
+	case other {
+		condition always
+		value 0.
+		}
+	}
+
+goal SetRecoveredVAdv { recoveredVAdv=recoveredVA}
+
+define deficitVAdv {std kind 'FLOW' units 'TAF'}
+define deficitVA{
+	case firstmonth {
+		condition month==Oct .and. wateryear==BgnWY 
+		value (releasedVA-recoveredVA)*SimulateVA_Amr
+		}
+	case other{
+		condition always
+		value max((deficitVAdv(-1)/**FOL_spilldv(-1)*/ + max((releasedVA-releasedVAdv(-1)),0.)-max((recoveredVA-recoveredVAdv(-1)),0.)),0.)*SimulateVA_Amr
+		}
+	 }
+
+goal SetdeficitVAdv {deficitVAdv=deficitVA}
+
+
+
+goal setD_HHOLE_MFT003_VA  {D_HHOLE_MFT003_VA < (VA_Contri1_HHOLE+VA_Contri4_HHOLE)*SimulateVA_Amr*taf_cfs}
+
+define S_HHOLElevel5 {case FirstYear {condition wateryear == BgnWY value S_HHOLElevel6}
+	case Otherwise {condition always value S_HHOLElevel6-(deficitdv(prevSep)-deficitdv(prevSep)*FOL_spilldv(-1))}
+}
+! Set Hell Hole Level 4  !PK 03122020
+define FRM_ReleaseTarget{case JanMay{condition range(month, Jan, May) value FRM_PowerReleaseTarget_JanMay}
+						 case JunDec{condition range(month, Jun, Sep) .or. range(month, Oct, Dec) value MFPpow_FRMDW_release}
+}
+define debug_Outflow{value max((MIF_MFP_RUB031 + MIF_MFP_buffer)*cfs_taf,75*cfs_taf+WFmon_NFA016_ABT002,(MFPmon_FOLSM_WTPRSV+MFPSJmon_FOLSM_WTPSJP+MFPSSmon_FOLSM_WTPSJP+WFmon_NFA016_ABT002))}
+define HH_Inflow{value I_Hhole*cfs_taf + LittleRubicon_min_flow1 + Rubicon_min_flow+ FRM_ReleaseTarget}!
+
+define S_HHOLE_NoVA	{std kind 'Storage' units 'TAF'}
+
+!define S_HHOLE_NoVA		{case AmerVA {condition SimulateVA_Amr >= 0.5 value S_HHOLE[UPPERAMERICAN]}
+!						 case NoVA	 {condition  always value 0}
+!}
+
+goal setS_HHOLE_NoVA {lhs S_HHOLE_NoVA 
+	 case AmerVA {condition SimulateVA_Amr >= 0.5 rhs S_HHOLE[UPPERAMERICAN] lhs < rhs penalty 99999 lhs > rhs penalty 99999}
+		case noVA {condition always rhs S_HHOLE lhs < rhs penalty 99999 lhs > rhs penalty 99999}
+}
+
+define MFPpow_HHOLE_release_NoVAdv	{std kind 'RES-Release' units 'TAF'}
+
+define MFPpow_HHOLE_release_NoVA		{case AmerVA {condition SimulateVA_Amr >= 0.5 value MFPpow_HHOLE_release[UPPERAMERICAN]}
+						 case NoVA	 {condition  always value MFPpow_HHOLE_release}
+}
+
+goal setMFPpow_HHOLE_release_NoVAdv {MFPpow_HHOLE_release_NoVAdv = MFPpow_HHOLE_release_NoVA}
+
+define AHHOLElast_NoVAdv	{std kind 'AREA' units 'ACRE'}
+
+define AHHOLElast_NoVA		{case AmerVA {condition SimulateVA_Amr >= 0.5 value AHHOLElast[UPPERAMERICAN]}
+						 case NoVA	 {condition  always value AHHOLElast}
+}
+
+goal setAHHOLElast_NoVAdv {AHHOLElast_NoVAdv = AHHOLElast_NoVA}
+
+define S_HHOLElevel4_UpperAmerican {case UpperAmericanCycle {condition SimulateVA_Amr < 0.5 value 0}
+									case UpperVA			{condition SimulateVA_Amr >= 0.5 value S_HHOLElevel4init[UPPERAMERICAN]}
+}
+
+
+define S_HHOLElevel4init {
+		case FirstMonth {
+		condition wateryear==BgnWY .and. month==Oct
+		value 100. 
+		}
+	case JulSep    {condition range(month,Jul,Sep) 										
+	                value min(S_HHOLElevel4dv(-1),max(100- WFMitRel_ann, max(S_HHOLElevel3, S_HHOLE_NoVA(-1)+HH_Inflow- MFPpow_HHOLE_release_NoVA-max((MIF_MFP_RUB031 + MIF_MFP_buffer)*cfs_taf,75*cfs_taf+WFmon_NFA016_ABT002,(MFPmon_FOLSM_WTPRSV+MFPSJmon_FOLSM_WTPSJP+MFPSSmon_FOLSM_WTPSJP+WFmon_NFA016_ABT002))
+	                	-AHHOLElast_NoVA*ER_HHOLE/12000.		!max((MIF_MFP_RUB031 + MIF_MFP_buffer)*cfs_taf,75+WFmon_NFA016_ABT002*taf_cfs*cfs_taf,(D_FOLSM_WTPRSV_MFP+D_FOLSM_WTPSJP_MFP+WFmon_NFA016_ABT002*taf_cfs)*cfs_taf)
+	                )))
+	}
+	case MonOct    {condition month == Oct										
+	                value min(S_HHOLElevel4dv(-1),max(100- WFMitRel_ann, max(S_HHOLElevel3, S_HHOLE_NoVA(-1)+HH_Inflow- MFPpow_HHOLE_release_NoVA-max((MIF_MFP_RUB031 + MIF_MFP_buffer)*cfs_taf,75*cfs_taf+WFmon_NFA016_ABT002,(MFPmon_FOLSM_WTPRSV+MFPSJmon_FOLSM_WTPSJP+MFPSSmon_FOLSM_WTPSJP+WFmon_NFA016_ABT002))
+	                	-AHHOLElast_NoVA*ER_HHOLE/12000.		!max((MIF_MFP_RUB031 + MIF_MFP_buffer)*cfs_taf,75+WFmon_NFA016_ABT002*taf_cfs*cfs_taf,(D_FOLSM_WTPRSV_MFP+D_FOLSM_WTPSJP_MFP+WFmon_NFA016_ABT002*taf_cfs)*cfs_taf)
+	                )))
+	}
+	case JunorNov    {condition  month == Nov .or. month == Jun			! Period of Direct Diversion is Nov 1 - July 1							
+	                value min(S_HHOLElevel4dv(-1),max(100- WFMitRel_ann, max(S_HHOLElevel3, S_HHOLE_NoVA(-1)+HH_Inflow- MFPpow_HHOLE_release_NoVA-(MIF_MFP_RUB031 + MIF_MFP_buffer)*cfs_taf-AHHOLElast_NoVA*ER_HHOLE/12000.)))
+	}
+	case JanApr   {condition range(month,Jan,Apr)
+	               value max(S_HHOLElevel4dv(-1),max(S_HHOLElevel3,S_HHOLE_NoVA(-1)+HH_Inflow - HH_PowerReleaseTarget_JanMay-(MIF_MFP_RUB031 + MIF_MFP_buffer)*cfs_taf-AHHOLElast_NoVA*ER_HHOLE/12000.))
+	}
+	case MMay	  {condition month == May
+					value S_HHOLElevel5
+	}
+	Case MonthDec {condition month == Dec
+		           value 100. - WFMitRel_ann
+    }
+	case Otherwise {!this case will never be used
+		condition always
+		value 0.
+	}	
+}
+
+
+define releaseddeduct {case mOct{condition month == Oct value 0.}
+					   case otherwise {condition always value max(0.,released - releaseddv(-1))}
+}
+
+define releaseddeductdv {alias releaseddeduct kind 'Res-Release' units 'TAF'}
+
+
+define deficitDeduct_VAdv {std kind 'Res-Release' units 'TAF'}
+define deficitDeduct_VA	{case FirstMonth {condition month == Oct .and. wateryear == BgnWY value 0.}
+						 case mJune {condition month == JUN value deficitVA}
+						 case otherwise {condition always value deficitDeduct_VAdv(-1)}
+}
+goal setdeficitDeduct_VA {deficitDeduct_VAdv = deficitDeduct_VA}
+!define S_HHOLElevel4initdv {alias S_HHOLElevel4init kind 'Storage-Level' units 'TAF'}
+
+define S_HHOLElevel4initsv {timeseries kind 'Storage-Level' units 'TAF'}		!Without Mitigation Release
+
+define S_HHOLElevel4in	{case Mityear {condition /*Mityr > 0.5*/ deficit >= 0.01 value S_HHOLElevel4initsv}
+						 case deficitVA {condition deficitVA >= 0.01 .and. SimulateVA_Amr >= 0.5 value S_HHOLElevel4_UpperAmerican}
+						 case otherwise{condition always value S_HHOLElevel4init}
+}
+
+define S_HHOLElevel4{value max(S_HHOLElevel3, min(S_HHOLElevel5,S_HHOLElevel4in - deficit - deficitVA*SimulateVA_Amr))}!releaseddeduct)}
+goal SetHHOLElevel4  {S_HHOLE_4 < max (S_HHOLElevel4-S_HHOLElevel3,0.)}
+define MFPpow_HHOLE_release_dv	{alias MFPpow_HHOLE_release kind 'DEBUG' UNITS 'TAF'}
+define HH_PowerReleaseTarget_JanMay_dv{alias HH_PowerReleaseTarget_JanMay kind 'DEBUG' UNITS 'TAF'}
+
+!Adjust HH max. storage limit according to the released/recovered mitigation water.
+goal Set951level5 {S_HHOLE_5 < max (S_HHOLElevel5-S_HHOLElevel4,0.)}
+define S_HHOLElevel5dv {alias S_HHOLElevel5}
+
+define VA_Contri1_CAPLSdv {std kind 'Res-Release' units 'TAF'}
+define VA_Contri1_CAPLS {	
+	!case AboveNormal{
+	!	condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 3 
+	!	value (10./3.)*SimulateVA_Amr!*taf_cfs
+	!	}
+	case Oct_Feb{
+		condition month>=Oct .and. month<=Feb
+		value 0.
+		}
+	case Sep{
+		condition month==Sep
+		value 0.
+		}
+	case AboveNormal_Mar{
+		condition month==Mar .and. wyt_SAC_VA_(1)==2 
+		value (3./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case AboveNormal_Apr{
+		condition month==Apr .and. WYT_Sac_Frcst==2
+		value (3./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case AboveNormal_May{
+		condition month==May .and. WYT_Sac_Frcst_dv(-1)==2
+		value (3./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	!case BelowNormal{
+	!	condition month>=Apr .and. month<=Jun .and. WYT_Sac_Frcst == 3 
+	!	value (10./3.)*SimulateVA_Amr!*taf_cfs
+	!	}
+	case BelowNormal_Mar{
+		condition month==Mar .and. wyt_SAC_VA_(1)==3 
+		value (3./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case BelowNormal_Apr{
+		condition month==Apr .and. WYT_Sac_Frcst==3
+		value (3./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case BelowNormal_May{
+		condition month==May .and. WYT_Sac_Frcst_dv(-1)==3
+		value (3./3.)*SimulateVA_Amr!*taf_cfs
+		}
+	case otherwise{condition always value 0.}
+		}
+goal setVA_Contri1_CAPLSdv {VA_Contri1_CAPLSdv = VA_Contri1_CAPLS}
+
+define releasedVA_CAPLSdv {std kind 'FLOW' units 'TAF'}
+define releasedVA_CAPLS{
+	case firstmonth{
+		condition month==Oct
+		value (VA_Contri1_CAPLS)
+		}
+	case other{
+		condition always !range(month,Oct,Feb)
+		value releasedVA_CAPLSdv(-1)+(VA_Contri1_CAPLS)
+		}
+	}
+
+goal SetReleasedVA_CAPLSdv {releasedVA_CAPLSdv=releasedVA_CAPLS}
+! Recovery is performed by reducing the power release by half until all VA water is recovered.
+! Recovery can only occur when during a recovery year and when Folsom Reservoir is spilling
+! Record all water recovered
+define recoveredVA_CAPLSdv {std kind 'FLOW' units 'TAF'}
+define recoveredVA_CAPLS{
+	case firstmonth {
+		condition month==Oct .and. wateryear==BgnWY
+		value 0.
+		}
+	case VAperiod {condition range(month, Apr, Jun) value 0.}
+	case recovery {
+		condition /*range(month,Oct,Feb) .and.*/ deficitVA_CAPLSdv(-1)>0
+		value recoveredVA_CAPLSdv(-1) + FOL_spill * min(deficitVA_CAPLSdv(-1), 1.)/* , deficitVAdv(prevSep))*/
+		}
+	case other {
+		condition always
+		value 0.
+		}
+	}
+
+goal SetrecoveredVA_CAPLSdv { recoveredVA_CAPLSdv=recoveredVA_CAPLS}
+
+define deficitVA_CAPLSdv {std kind 'FLOW' units 'TAF'}
+define deficitVA_CAPLS{
+	case firstmonth {
+		condition month==Oct .and. wateryear==BgnWY 
+		value (releasedVA_CAPLS-recoveredVA_CAPLS)*SimulateVA_Amr
+		}
+	case other{
+		condition always
+		value max((deficitVA_CAPLSdv(-1)/**FOL_spilldv(-1)*/ + max((releasedVA_CAPLS-releasedVA_CAPLSdv(-1)),0.)-max((recoveredVA_CAPLS-recoveredVA_CAPLSdv(-1)),0.)),0.)*SimulateVA_Amr
+		}
+	 }
+
+goal SetdeficitVA_CAPLSdv {deficitVA_CAPLSdv=deficitVA_CAPLS}

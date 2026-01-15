@@ -1,0 +1,177 @@
+! EstimatedTDtoNDDshift.wresl
+
+!Have to estimate the shift from TD to NDD in this cycle, for use in adjusting the export estimates for NDD operations, based on DELTA cycle results
+
+!(1) Compute how much salinity outflow requirement can go down, taking into account which stations have negative carriage water
+!Identify which salinity requirements is controlling
+define JPcontrol {
+	case control {
+	condition (NDOI_ADD_CVP[MONTHLYWEIGHTED] + NDOI_ADD_SWP[MONTHLYWEIGHTED] < 0.1) .and. (abs(JP_MRDO[MONTHLYWEIGHTED] - (NDOI_MIN[MONTHLYWEIGHTED] + NDOI_ADD_ANN[MONTHLYWEIGHTED])) < 0.5)
+		value 1. }
+	case otherwise {
+	condition always 
+		value 0. }
+}
+define EMcontrol {
+	case control {
+	condition (NDOI_ADD_CVP[MONTHLYWEIGHTED] + NDOI_ADD_SWP[MONTHLYWEIGHTED] < 0.1) .and. (abs(EM_MRDO[MONTHLYWEIGHTED] - (NDOI_MIN[MONTHLYWEIGHTED] + NDOI_ADD_ANN[MONTHLYWEIGHTED])) < 0.5)
+		value 1. }
+	case otherwise {
+	condition always 
+		value 0. }
+}
+define RScontrol {
+	case control {
+	condition (NDOI_ADD_CVP[MONTHLYWEIGHTED] + NDOI_ADD_SWP[MONTHLYWEIGHTED] < 0.1) .and. (abs(max(RS_MRDO_1[MONTHLYWEIGHTED],RS_MRDO_2[MONTHLYWEIGHTED],RS_MRDO_3[MONTHLYWEIGHTED]) - (NDOI_MIN[MONTHLYWEIGHTED] + NDOI_ADD_ANN[MONTHLYWEIGHTED])) < 0.5)
+		value 1. }
+	case otherwise {
+	condition always 
+		value 0. }
+}
+
+!Amount that salinity outflow can go down before being = to MRDO, only using stations with positivie carriage water
+define SalinityflowaboveMRDO {
+	case JPcontrol {
+	condition JPcontrol > 0.5
+		value JP_MRDO[MONTHLYWEIGHTED] - MRDO_FINALDV[MONTHLYWEIGHTED]
+	}
+	case EMcontrol {
+	condition EMcontrol > 0.5
+		value EM_MRDO[MONTHLYWEIGHTED] - MRDO_FINALDV[MONTHLYWEIGHTED]
+	}
+	case RScontrol {
+	condition RScontrol > 0.5
+		value max(RS_MRDO_1[MONTHLYWEIGHTED],RS_MRDO_2[MONTHLYWEIGHTED],RS_MRDO_3[MONTHLYWEIGHTED]) - MRDO_FINALDV[MONTHLYWEIGHTED]
+	}
+	case otherwise {
+	condition always 
+		value 0. }
+}
+
+define SalinityflowaboveMRDOdv {alias SalinityflowaboveMRDO kind 'debug' units 'cfs'}
+
+!RS slope to use (from highest requirement)
+define RS_m_sv_touse {
+	case RS1 {
+	condition RS_MRDO_1[MONTHLYWEIGHTED] > RS_MRDO_2[MONTHLYWEIGHTED] .and. RS_MRDO_1[MONTHLYWEIGHTED] > RS_MRDO_3[MONTHLYWEIGHTED] 
+		value RS_m_1[MONTHLYWEIGHTED] }
+	case RS2 {
+	condition RS_MRDO_2[MONTHLYWEIGHTED] > RS_MRDO_1[MONTHLYWEIGHTED] .and. RS_MRDO_2[MONTHLYWEIGHTED] > RS_MRDO_3[MONTHLYWEIGHTED] 
+		value RS_m_2[MONTHLYWEIGHTED] }
+	case RS3 {
+	condition RS_MRDO_3[MONTHLYWEIGHTED] > RS_MRDO_1[MONTHLYWEIGHTED] .and. RS_MRDO_3[MONTHLYWEIGHTED] > RS_MRDO_2[MONTHLYWEIGHTED] 
+		value RS_m_3[MONTHLYWEIGHTED] }
+	case otherwise {
+	condition always 
+		value RS_m_1[MONTHLYWEIGHTED] }
+}
+
+define RS_MRDO_touse {value max(RS_MRDO_1[MONTHLYWEIGHTED],RS_MRDO_2[MONTHLYWEIGHTED],RS_MRDO_3[MONTHLYWEIGHTED])}
+	
+!But also need to compute if a station with negative carriage water control's outflow will increase, when this equals the reduced 
+!outflow of the positive carriage water station this is the lowest salinity outflow can go.	
+!Algebraically the equations below will compute when the above situation will occur
+define maxsalinity_outflowreduction {
+!JP controlling with + carriage, EM has - carriage
+	case JPposEMneg {
+	condition JPcontrol > 0.5 .and. EM_m[MONTHLYWEIGHTED] > 1.
+		value ((JP_MRDO[MONTHLYWEIGHTED] - EM_MRDO[MONTHLYWEIGHTED]) / (EM_m[MONTHLYWEIGHTED] - JP_m[MONTHLYWEIGHTED])) * (1 - JP_m[MONTHLYWEIGHTED])
+	}
+!JP controlling with + carriage, RS has - carriage
+	case JPposRSneg {
+	condition JPcontrol > 0.5 .and. RS_m_sv_touse > 1.
+		value (JP_MRDO[MONTHLYWEIGHTED] - RS_MRDO_touse) / (RS_m_sv_touse - JP_m[MONTHLYWEIGHTED]) * (1 - JP_m[MONTHLYWEIGHTED])
+	}
+!RS controlling with + carriage, EM has - carriage
+	case RSposEMneg {
+	condition RScontrol > 0.5 .and. EM_m[MONTHLYWEIGHTED] > 1.
+		value (RS_MRDO_touse - EM_MRDO[MONTHLYWEIGHTED]) / (EM_m[MONTHLYWEIGHTED] - RS_m_sv_touse) * (1 - RS_m_sv_touse)
+	}
+	case otherwise {
+	condition always 
+		value 99999. }
+}
+
+define maxsalinity_outflowreductiondv {alias maxsalinity_outflowreduction kind 'debug' units 'cfs'}
+
+!The carriage water benefit can be limited by hitting EI ratio cap.  Carriage water savings cannot be more than space below cap.  Inflow above NDD could change but ignore this for now.
+define maxincreaseunderEI {value max(0., EIEXPCTRL[MONTHLYWEIGHTED] - TOTAL_EXP_A[MONTHLYWEIGHTED])}
+
+define maxincreaseunderEIdv {alias maxincreaseunderEI kind 'debug' units 'cfs'}
+
+!Final estimate of carriage water benefit
+define CWbenefitest {value max(0., min(SalinityflowaboveMRDO, maxsalinity_outflowreduction, maxincreaseunderEI))}
+
+define CWbenefitestdv {alias CWbenefitest kind 'debug' units 'cfs'}
+
+!Then compute how much reduction in TD exports would be needed to achieve the above, using slopes
+define TDexportreduce1 {
+	case JPcontrolposcarriage {
+	condition JPcontrol > 0.5 .and. JP_m[MONTHLYWEIGHTED] < 1. 
+		value (CWbenefitest * JP_m[MONTHLYWEIGHTED]) / (1. - JP_m[MONTHLYWEIGHTED]) 
+	}
+	case RScontrolposcarriage {
+	condition RScontrol > 0.5 .and. RS_m_sv_touse < 1. 
+		value (CWbenefitest * RS_m_sv_touse) / (1. - RS_m_sv_touse)
+	}
+	case EMcontrolposcarriage {
+	condition EMcontrol > 0.5 .and. EM_m[MONTHLYWEIGHTED] < 1. 
+		value (CWbenefitest * EM_m[MONTHLYWEIGHTED]) / (1. - EM_m[MONTHLYWEIGHTED]) 
+	}
+	case otherwise {
+	condition always 
+		value 0. }
+}
+
+define TDexportreduce1dv {alias TDexportreduce1 kind 'debug' units 'cfs'}
+
+!(2) Now have to compute how much TD exports can be realistically decreased.  This can be limited by the following
+!TD exports in prior cycle taking into account 3000 TD requirement July-Sep. 
+!This can be limited by reducing Rio Vista flow to flow requirement.  Complication is that there is not always a one-to-one relationship here, i.e. TD exports can go down by more than Rio Vista flow.  But ignore this for now.
+!It can also be limited by the space under the bypass flow export cap.  Again since some of the carriage water benefit could be pumped NDD as well, this will not be 100% accurate
+
+!bypass flow export cap
+define nddlimitest {
+   case less20K {
+        condition Q_SAC048corr <= 20000.
+ 		value max(0.,min(ndd,(0.2827*Q_SAC048corr + 2671.3))) }
+    case great20K {
+        condition Q_SAC048corr > 20000.
+        value max(0.,min(ndd,(0.1006*Q_SAC048corr + 6337.8))) }
+ }	
+
+define TDexportreducelimit {
+	case JulSep {
+	condition month >= Jul .and. month <= Sep 
+		value min(max(0.,EXPORTACTUALTD[MONTHLYWEIGHTED] - 3000.), C_SAC017[MONTHLYWEIGHTED] - C_SAC017_MIF[MONTHLYWEIGHTED], nddlimitest)
+	}
+	case othermonths {
+	condition always
+		value min(EXPORTACTUALTD[MONTHLYWEIGHTED], C_SAC017[MONTHLYWEIGHTED] - C_SAC017_MIF[MONTHLYWEIGHTED], nddlimitest)
+	}
+}
+
+define TDexportreducelimitdv {alias TDexportreducelimit kind 'debug' units 'cfs'}
+
+!(3) Take minimum of two calculations above
+define TDShiftest {value min(TDexportreduce1, TDexportreducelimit)}
+
+define TDShiftestdv {alias TDShiftest kind 'debug' units 'cfs'}
+
+!Split between projects based on NDD available capacity
+!Take into account shift from TD to NDD
+define SWP_TDShiftest {value TDShiftest * (max_IF_cap_SWP/(max_IF_cap_CVP + max_IF_cap_SWP))} 
+!Take into account shift from TD to NDD
+define CVP_TDShiftest {value TDShiftest * (max_IF_cap_CVP/(max_IF_cap_CVP + max_IF_cap_SWP))} 
+
+define SWP_TDShiftestdv {alias SWP_TDShiftest kind 'debug' units 'cfs'}
+define CVP_TDShiftestdv {alias CVP_TDShiftest kind 'debug' units 'cfs'}
+
+!Other factors that could affect this that are not yet taken into account:
+
+!(A)May be affected by each projects capacity in the Delta and ability to back up storage, but for now ignore this.
+
+
+
+
+

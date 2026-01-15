@@ -1,0 +1,60 @@
+
+!define the top of the variable space for the wetness index calculation
+Define ORO_TOC_UPPER {
+	Case FIRO {
+		Condition simulateFIRO>0.5
+		Select UPPER_FIRO from ORO_TOC where Month = Month  }
+	Case Existing {
+		Condition simulateFIRO<0.5
+		Select UPPER_Ex from ORO_TOC where Month = Month  }
+}
+
+!define the bottom of the variable space for the wetness index calculation
+Define ORO_TOC_LOWER {
+	Case FIRO {
+		Condition simulateFIRO>0.5
+		Select LOWER_FIRO from ORO_TOC where Month = Month  }
+	Case Existing {
+		Condition simulateFIRO<0.5
+		Select LOWER_Ex from ORO_TOC where Month = Month  }
+}		
+
+Define PPT_OROV_UHH_FIRO {timeseries kind 'PRECIP' units 'INCHES'}
+Define Month_Days {timeseries kind 'DAY' units 'DAYS'}
+
+!Oroville wetness index is normally computed on a daily basis using 97% of the previous day's wetness index.  Testing indicates using the same factors on a monthly timestep is generally consistent
+Define ORO_DECAY_FACTOR {value 1-(0.03*MONTH_DAYS)}
+
+!Calculate wetness index WI = WI(-1) * Decay factor + Precip
+Define ORO_WETNESS_IDX {
+	Case Begin {
+		condition month == oct .and. wateryear == bgnWY
+		value 0.}
+	Case Other{
+		condition always
+		value ORO_WETNESS_IDX_DV(-1)*ORO_DECAY_FACTOR + PPT_OROV_UHH_FIRO}
+}
+define ORO_WETNESS_IDX_DV {alias ORO_WETNESS_IDX kind 'INDEX' units 'INCHES'}
+!Based on the wetness index you calculate the Oroville TOC. 
+Define S_OROVLlevel5 {
+	Case DRY_FIRO {			
+		Condition ORO_WETNESS_IDX < 3.5 .and. simulateFIRO > 0.5	!If conditions are dry, FIRO TOC is at the top of the variable space.
+		Value ORO_TOC_UPPER }
+	Case DRY_EX {			
+		Condition ORO_WETNESS_IDX < 3.5	.and. simulateFIRO < 0.5	!If conditions are dry, existing TOC is at the top of the variable space.
+		Value ORO_TOC_UPPER }
+	Case Wet_FIRO {		
+		Condition ORO_WETNESS_IDX > 8 .and. simulateFIRO > 0.5		!If conditions are wet, FIRO TOC is at the bottom of the variable space.	
+		Value ORO_TOC_LOWER }
+	Case Wet_Ex {		
+		Condition ORO_WETNESS_IDX > 11 .and. simulateFIRO < 0.5	!If conditions are wet, existing TOC is at the bottom of the variable space.
+		Value ORO_TOC_LOWER}
+	Case Wetness_IDX_FIRO {
+		Condition simulateFIRO > 0.5	
+		Value ((ORO_TOC_LOWER - ORO_TOC_UPPER) / (8-3.5)) * (ORO_WETNESS_IDX-3.5) + ORO_TOC_UPPER}		!For FIRO operations, if wetness index is between 3.5 and 8, interpolate to calculate TOC.
+	Case Wetness_IDX_EX {
+		Condition simulateFIRO < 0.5	
+		Value ((ORO_TOC_LOWER - ORO_TOC_UPPER) / (11-3.5)) * (ORO_WETNESS_IDX-3.5) + ORO_TOC_UPPER} 	!For existing operations, if wetness index is between 3.5 and 11, interpolate to calculate TOC.
+}
+
+define S_OROVLlevel5_DV {alias S_OROVLlevel5 kind 'STORAGE-LEVEL' units 'TAF'}

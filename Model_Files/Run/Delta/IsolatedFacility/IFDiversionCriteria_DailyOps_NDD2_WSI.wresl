@@ -1,0 +1,199 @@
+
+!Estimate Daily flow conditions, bypass requirements and bounds on IF Diversion
+!include 'IFDiversionCriteria_DailyOps.wresl'  Moved to main file to be included earlier
+
+!Meet bypass criteria and cap the ND diversion
+goal setndd { !Used soft penalties in this cycle because of problems with infeasibilities
+    lhs C_SAC048_ISF001
+    case less20K {
+        condition Q_SAC048corr <= 20000.
+        rhs max(0.,min(ndd,(0.2827*Q_SAC048corr + 2671.3)))  !limiting summer ndd pumping for sweeping velocity constraints !reducing intercept by 200 cfs to cover most of the months with shortage in DSM2
+		lhs<rhs penalty 999999.
+		lhs>rhs penalty 999999.    
+    }
+    case great20K {
+        condition Q_SAC048corr > 20000.
+        rhs max(0.,min(ndd,(0.1006*Q_SAC048corr + 6337.8)))  !limiting summer ndd pumping for sweeping velocity constraints !reducing intercept by 200 cfs to cover most of the months with shortage in DSM2
+		lhs<rhs penalty 999999.
+		lhs>rhs penalty 999999.    
+    }
+    case other {
+        condition always
+        rhs max(0.,ndd)
+        }
+}
+
+/*define nddlimitest {  !Moved to ExportEstimate1 files
+   case less20K {
+        condition Q_SAC048corr <= 20000.
+ 		value max(0.,min(ndd,(0.2827*Q_SAC048corr + 2671.3))) }
+    case great20K {
+        condition Q_SAC048corr > 20000.
+        value max(0.,min(ndd,(0.1006*Q_SAC048corr + 6337.8))) }
+ }*/	
+
+goal limitNDD {D_SAC041_ISF001 < C_SAC048_ISF001 }
+
+!Split capacity under bypass flow export cap between projects according to capacities
+define SWPbypasscapshare {value max_IF_cap_SWP/(max_IF_cap_SWP + max_IF_cap_CVP)}
+define CVPbypasscapshare {value max_IF_cap_CVP/(max_IF_cap_SWP + max_IF_cap_CVP)}
+!Weighted so that one project can use the others share if it is not used
+goal limitNDDSWP {
+	lhs C_CAA003_SWP_IF + C_CAA003_CVP_IF
+	rhs C_SAC048_ISF001 * SWPbypasscapshare
+	lhs > rhs penalty 800.
+	lhs < rhs penalty 0.
+}
+goal limitNDDCVP {
+	lhs C_DMC000_IF 
+	rhs C_SAC048_ISF001 * CVPbypasscapshare
+	lhs > rhs penalty 800.
+	lhs < rhs penalty 0.
+}
+define SWPbypasscapsharedv {alias SWPbypasscapshare kind 'debug' units 'cfs'}
+define CVPbypasscapsharedv {alias CVPbypasscapshare kind 'debug' units 'cfs'}
+
+! eligible excess is still whatever the excess was in the DELTA cycle
+! Diversion of excess should be whatever the D_SAC041_ISF001_excess was in the NDD cycle 
+define ExcessDOforNDD {std kind 'debug' units 'cfs'}
+define ExcessDO    {value ExcessDOforNDD[NDD]}
+goal Excess_for_NDD1 {D_SAC041_ISF001_excess = D_SAC041_ISF001_excess[NDD1]}
+goal Excess_for_NDD2 {D_SAC041_ISF001_excess < ExcessDO}
+
+!Fix project excess to prior cycle
+goal fixC_CAA003_SWP_IF_excess {C_CAA003_SWP_IF_excess = C_CAA003_SWP_IF_excess[NDD2]}
+goal fixC_DMC000_IF_excess {C_DMC000_IF_excess = C_DMC000_IF_excess[NDD2]}  
+
+! Limit below was to preserve storage, not currently necessary
+/*define D_SAC041_ISF001_excess_limit {select ndd_limit6 from excess_limit given excess=ExcessDO use linear}
+goal MaintainDO {
+	lhs D_SAC041_ISF001_excess
+	case LoExcess {
+		condition month>=DEC .and. month<=MAY 
+		rhs D_SAC041_ISF001_excess_limit
+		lhs<rhs penalty 0 } 
+}*/
+
+! TD to ND elective shift is constant from now on (fixed to NDD cycle)
+! Storage releases are fixed to NDD2 cycle
+
+!Lock down shift from Delta pumping to NDD to same as in NDD2 cycle
+goal Elect_TDND  {D_SAC041_ISF001_elect_tdnd = D_SAC041_ISF001_elect_tdnd[NDD2]}
+goal limit_SWP_ND_ElectT {C_CAA003_SWP_IF_ElectT = C_CAA003_SWP_IF_ElectT[NDD2]}
+goal limit_CVP_ND_ElectT {C_DMC000_IF_ElectT = C_DMC000_IF_ElectT[NDD2]}
+
+!Also need to lock down SWP TD exports so more water doesn't get pulled in there
+goal C_CAA003_TDhold {
+	lhs C_CAA003_SWP_TD
+	rhs C_CAA003_SWP_TD[NDD2]
+	lhs>rhs penalty 99999.
+	lhs<rhs penalty 99999.
+	}
+
+!Also need to lock down CVP TD exports so more water doesn't get pulled in there
+goal C_DMC000_TDhold {
+	lhs C_DMC000_TD
+	rhs C_DMC000_TD[NDD2]
+	lhs>rhs penalty 99999.
+	lhs<rhs penalty 99999.
+	}
+	
+! Any change in flow at C_SAC048 should be either a reduction due to lower carriage water or
+! TD export that has become ND or an increase due to add'l storage withdrawal.  There
+! should be a direct relationship between change in total storage withdrawal and change
+! in flow at C_SAC048. Both sides in the goal below should be either negative or positive.
+! This goal will also keep other NOD ops from changing.  
+! Added CVC wheeling releases into this equation in this file 
+! Goal not needed in this cycle currently if wheeling through NDD is turned off, and was causing infeasibility problems.
+! OK to comment out since all other NDD operations are locked down in this cycle to prior cycles
+/*
+goal C_SAC048_mod {C_SAC048 - C_SAC048[NDD] = swpds - swpds[NDD] 
+	                              + shads - shads[NDD] 
+	                              + folds - folds[NDD] 
+	                              + whssw - whssw[NDD]
+	                              + SP_SAC083_YBP037 - SP_SAC083_YBP037[NDD]
+	                              + SP_SAC066_YBP020 - SP_SAC066_YBP020[NDD]
+	                              + C_WKYTN_whlcv + C_KSWCK_whlcv + C_NTOMA_whlcv}  
+*/
+!Lock down storage release terms (except for wheeling), since those should not change from this cycle onward
+goal Elect_Stor_1  {D_SAC041_ISF001_elect_stor = D_SAC041_ISF001_elect_stor[NDD2]}
+goal limit_SWP_ND_ElectS_1 {C_CAA003_SWP_IF_ElectS = C_CAA003_SWP_IF_ElectS[NDD2]}
+goal limit_CVP_ND_ElectS_1 {C_DMC000_IF_ElectS = C_DMC000_IF_ElectS[NDD2]}
+
+! Elective release of storage for export through the NDD should be a positive change in storage withdrawal
+! (Because D_SAC041_ISF001 components have to be 0 or positive, this goal basically means no backing up ever of erstwhile
+! carriage water. That may not be much of an issue.)
+! Added CVC wheeling releases into this equation in this file 
+goal Elect_Stor {D_SAC041_ISF001_elect_stor <  swpds - swpds[NDD1]
+	                              + shads - shads[NDD1]
+	                              + folds - folds[NDD1]
+	                              + whssw - whssw[NDD1]}
+!	                              + C_WKYTN_whlcv + C_KSWCK_whlcv + C_NTOMA_whlcv}  !don't think this is necessary
+
+! Tie NDD to each project's actual change in export 
+! Added CVC wheeling releases into this equation in this file                                       
+goal limit_SWP_ND_ElectS {C_CAA003_SWP_IF_electS < swpds - swpds[NDD1]}	                                        
+goal limit_CVP_ND_ElectS {C_DMC000_IF_electS + C_CAA003_CVP_IF_electS < shads - shads[NDD1]
+	                                                          + folds - folds[NDD1]
+	                                                          + whssw - whssw[NDD1]}
+!								  							  + C_WKYTN_whlcv + C_KSWCK_whlcv + C_NTOMA_whlcv}  !don't think this is necessary
+
+! Applying switches to turn on or off different sources
+goal switchC_CAA003_SWP_IF_excess {C_CAA003_SWP_IF_excess < SWPExcessSwitch * 99999.}
+goal switchC_DMC000_IF_excess {C_DMC000_IF_excess < CVPExcessSwitch * 99999.}  
+goal switchC_CAA003_CVP_IF_excess {C_CAA003_CVP_IF_excess < CVPWheelSwitch * 99999.}  
+
+goal switchC_CAA003_SWP_IF_ElectT {C_CAA003_SWP_IF_ElectT < SWPTDShiftSwitch * 99999.}
+goal switchC_DMC000_IF_ElectT {C_DMC000_IF_ElectT < CVPTDShiftSwitch * 99999.}  
+
+goal switchC_CAA003_SWP_ElectS {C_CAA003_SWP_IF_ElectS < SWPStorageSwitch * 99999.}  
+goal switchC_DMC000_IF_ElectS {C_DMC000_IF_ElectS < CVPStorageSwitch * 99999.}  
+goal switchC_CAA003_CVP_IF_ElectS {C_CAA003_CVP_IF_ElectS < CVPWheelSwitch * 99999.}  
+!Preference for TD pumping up to 3,000 cfs in summer.
+goal PreferTD {
+	lhs C_DMC000_TD + C_CAA003_TD
+	case JulSep {
+		condition month>=JUL .and. month<=SEP
+		rhs min(3000., C_DMC000_TD[MONTHLYWEIGHTED] + C_CAA003_TD[MONTHLYWEIGHTED])
+		lhs<rhs penalty 1002 ! this has to overcome the negative carriage water penalty
+		lhs>rhs penalty 0
+	}
+}
+	
+! ********************************************************************
+!Variables for debugging
+/*
+define C400_nddchg {alias C400 - C400[NDD2] kind 'debug' units 'cfs'}
+define C406_nddchg {alias C406 - C406[NDD2] kind 'debug' units 'cfs'}
+define C407_ann_nddchg {alias C407_ann - C407_ann[NDD2] kind 'debug' units 'cfs'}
+define C407_cvp_nddchg {alias C407_cvp - C407_cvp[NDD2] kind 'debug' units 'cfs'}
+define C407_swp_nddchg {alias C407_swp - C407_swp[NDD2] kind 'debug' units 'cfs'}
+define C5_nddchg {alias C5 - C5[NDD] kind 'debug' units 'cfs'}
+define C303_nddchg {alias C303 - C303[NDD2] kind 'debug' units 'cfs'}
+define C9_nddchg {alias C9 - C9[NDD2] kind 'debug' units 'cfs'}
+define C129_nddchg {alias C129 - C129[NDD2] kind 'debug' units 'cfs'}
+define C134_nddchg {alias C134 - C134[NDD2] kind 'debug' units 'cfs'}
+define C184a_nddchg {alias C184a - C184a[NDD2] kind 'debug' units 'cfs'}
+define C184b_nddchg {alias C184b - C184b[NDD2] kind 'debug' units 'cfs'}
+define C156_nddchg {alias C156 - C156[NDD2] kind 'debug' units 'cfs'}
+define C157_nddchg {alias C157 - C157[NDD2] kind 'debug' units 'cfs'} */
+define C_SAC048_nddchg {alias C_SAC048 - C_SAC048[NDD2] kind 'debug' units 'cfs'}
+
+define nddlimitestdv {alias nddlimitest kind 'debug' units 'cfs'}
+
+! ********************************************************************
+! repeat dedicated capacity for CVP to wheel NDC water in Banks
+! *** Not currently implemented in model
+define CVP_BanksMaxND_Est {value C_CAA003_CVPDED_IF[NDD2]}
+define CVP_BanksMaxND_EstDV {alias CVP_BanksMaxND_Est kind 'ndd-debug' units 'cfs'}
+goal BanksDedCapWithNDD1 {C_CAA003_CVPDED_IF < BanksMaxAllowCVPIF}
+goal BanksDedCapWithNDD2 {
+    lhs C_CAA003_CVPDED_IF 
+    rhs CVP_BanksMaxND_Est
+    lhs<rhs penalty 3000
+}
+
+!Having some problems with NBA diversions changing in this cycle, so locking down
+goal fixNBA {D_BKR004_NBA009 = D_BKR004_NBA009[MONTHLYWEIGHTED]}
+!Also having problems with Hodge criteria flows changing in this cycle compared to NDD, so lock down
+goal fixHstint {int_Hst_abv = int_Hst_abv[NDD]}

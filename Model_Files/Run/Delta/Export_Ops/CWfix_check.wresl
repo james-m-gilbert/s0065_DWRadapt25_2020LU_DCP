@@ -1,0 +1,109 @@
+!Code to check for and adjust for very rare situation that can occur whereby Jones exports when SL CVP is below rule are disincentivized 
+!by the fact that SL SWP is below rule and Oroville is too low to make releases for exports.  In this case Banks will not cut exports
+!to provide carriage water under COA that allows Jones to export.  Approach is to identify this very rare circumstance, and apply an additional 
+!weight to allow Jones to export.  TF Stantec 120221  
+
+!Use results of GW_FOURTH cycle to assess whether this adjustment is needed.
+!Criteria are as follows:
+!(1) Compute how much salinity outflow requirement can go down, taking into account which stations have negative carriage water
+!Identify which salinity requirements is controlling
+define JPcontrol_GW4 {
+	case control {
+	condition (NDOI_ADD_CVP[GW_FOURTH] + NDOI_ADD_SWP[GW_FOURTH] < 0.1) .and. (abs(JP_MRDO[GW_FOURTH] - (NDOI_MIN[GW_FOURTH] + NDOI_ADD_ANN[GW_FOURTH])) < 0.5)
+		value 1. }
+	case otherwise {
+	condition always 
+		value 0. }
+}
+define EMcontrol_GW4 {
+	case control {
+	condition (NDOI_ADD_CVP[GW_FOURTH] + NDOI_ADD_SWP[GW_FOURTH] < 0.1) .and. (abs(EM_MRDO[GW_FOURTH] - (NDOI_MIN[GW_FOURTH] + NDOI_ADD_ANN[GW_FOURTH])) < 0.5)
+		value 1. }
+	case otherwise {
+	condition always 
+		value 0. }
+}
+define RScontrol_GW4 {
+	case control {
+	condition (NDOI_ADD_CVP[GW_FOURTH] + NDOI_ADD_SWP[GW_FOURTH] < 0.1) .and. (abs(max(RS_MRDO_1[GW_FOURTH],RS_MRDO_2[GW_FOURTH],RS_MRDO_3[GW_FOURTH]) - (NDOI_MIN[GW_FOURTH] + NDOI_ADD_ANN[GW_FOURTH])) < 0.5)
+		value 1. }
+	case otherwise {
+	condition always 
+		value 0. }
+}
+
+!RS slope to use (from highest requirement)
+define RS_m_sv_touse_GW4 {
+	case RS1 {
+	condition RS_MRDO_1[GW_FOURTH] > RS_MRDO_2[GW_FOURTH] .and. RS_MRDO_1[GW_FOURTH] > RS_MRDO_3[GW_FOURTH] 
+		value RS_m_1_sv }
+	case RS2 {
+	condition RS_MRDO_2[GW_FOURTH] > RS_MRDO_1[GW_FOURTH] .and. RS_MRDO_2[GW_FOURTH] > RS_MRDO_3[GW_FOURTH] 
+		value RS_m_2_sv }
+	case RS3 {
+	condition RS_MRDO_3[GW_FOURTH] > RS_MRDO_1[GW_FOURTH] .and. RS_MRDO_3[GW_FOURTH] > RS_MRDO_2[GW_FOURTH] 
+		value RS_m_3_sv }
+	case otherwise {
+	condition always 
+		value RS_m_1_sv }
+}
+
+!Slope of controlling station
+define slope_control {
+	case JPslope {
+		condition JPcontrol_GW4 > 0.5 
+		value JP_m_sv }
+	case EMslope {
+		condition EMcontrol_GW4 > 0.5 
+		value EM_m_sv }
+	case RSslope {
+		condition RScontrol_GW4 > 0.5 
+		value RS_m_sv_touse_GW4 }
+	case otherwise {
+		condition always
+		value 9999. }
+}
+
+!Conditions are that slope of controlling station is between 0.5 and 0.7, since this is the range where the weight on SWP SL storage can affect decision to export
+!And also CVP SL must be below rule, SWP SL must be below rule, C_OROVL_EXP_max_ = 0, and Jones exports must be at 800 (indicating that the CVP is not releasing for exports).
+
+define CWadjneeded {
+	case CWadjneeded {
+		condition slope_control > 0.5 .and. slope_control < 0.7 .and. C_OROVL_EXP_max_ < 0.1 .and. C_DMC000[GW_FOURTH] < 800.1 .and.
+		S_SLUIS_SWP[GW_FOURTH] < SWPRULECV[GW_FOURTH] .and. S_SLUIS_CVP[GW_FOURTH] < CVPRULECV[GW_FOURTH]
+		value 1.}
+	case otherwise {
+		condition always
+		value 0.
+	}
+}
+
+define CWadjneededdv {alias CWadjneeded kind 'debug' units 'none'}
+
+!Add additional penalty to SWP SL storage below rule that is the difference between SL SWP storage above and below rule (1225 - 60 = 1165)
+goal penalizeSLSWP {
+	lhs S_SLUIS_SWP_3 
+		case applypenalty {
+		condition CWadjneeded > 0.5
+		rhs 0.
+		lhs>rhs penalty 1165.*taf_cfs }  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  

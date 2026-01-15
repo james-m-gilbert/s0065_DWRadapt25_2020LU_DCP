@@ -1,0 +1,17 @@
+! previous values
+define pr_cyc_C_SAC041 {value C_SAC041[WHEELCVC]}
+define pr_cyc_EXP_TD {value EXP_TD[WHEELCVC]}
+define pr_cyc_C_SJR070 {value C_SJR070[WHEELCVC]}
+define pr_cyc_DXC {value DXC[WHEELCVC]}
+define pr_cyc_net_DICU {value net_DICU[WHEELCVC]}
+define pr_cyc_sac_oth {value sac_oth[WHEELCVC]}
+define pr_cyc_exp_oth {value exp_oth[WHEELCVC]}
+define pr_cyc_SMSCG_OP  {value SMSCG_OP[WHEELCVC]}
+define pr_cyc_C_SAC048_ISF001 {value C_SAC048_ISF001[WHEELCVC]}
+define pr_cyc_ndddv  {value ndddv[WHEELCVC]}
+
+! Use previous cycle values for flows to inform daily average to disaggretate 
+! The daily values are then used in setting bypass criteria and north WHEELCVC diversion limits
+define Q_SAC048nospill{value C_SAC048[WHEELCVC]+ SP_SAC083_YBP037[WHEELCVC]+ SP_SAC066_YBP020[WHEELCVC]}
+define Q_SAC097{value C_SAC097[WHEELCVC]}
+define Q_SAC048nospilldv {alias Q_SAC048nospill kind 'debug' units 'cfs'}

@@ -1,0 +1,20 @@
+/*
+File Name: Yuba_Trans_VA_stub.wresl
+CalSim 3.0  File for computing volume of LYRA and VA transfers
+
+Purpose: Zero out LYRA and VA Transfer Volumes
+
+*/
+Define YWA_VA_Transfer_LYRA {value 0.}
+Define YWA_VA_Transfer_VA {value 0.}
+Define YWA_VA_Transfer {value YWA_VA_Transfer_LYRA + YWA_VA_Transfer_VA } !VA includes total volume of Repurposed LYRA and VA storage releases
+
+! According to MLionberger/HDR, "The Yuba VA transfer volume variable is YWA_VA_Transfer.  That would be the equivalent of Yuba_VA_Add." 02/2024
+define Yuba_VA_Remove {case VAon {condition SimulateVA_Yub>= 0.5 .and. cyclenum < cn_ITP value max(0,Yuba_VA_Remove[GW_INITIAL])}
+				 	case otherwise {condition always value 0.}}
+define Yuba_VA_Removedv {alias max(0,Yuba_VA_Remove) kind 'VA-VOLUME' units 'CFS'}	
+define Yuba_VA_Remove_dv {alias Yuba_VA_Remove kind 'alias' units 'cfs'}
+
+define Yuba_VA_Add {case VAon {condition SimulateVA_Yub>= 0.5 .and. cyclenum >= cn_ITP value max(0,YWA_VA_Transfer[GW_INITIAL])}
+				 	case otherwise {condition always value 0.}}
+define Yuba_VA_Add_dv {alias Yuba_VA_Add kind 'alias' units 'cfs'}

@@ -1,0 +1,2200 @@
+! VA_Delta.wresl
+! This files applies the discretionary export reduction needed to achieve the Delta VA target.
+
+/*
+Methodology for computing Delta Exporter contributions to VA outflows
+COS - i.e. under operations including full RPA's
+identify potential for export reduction when the system is in excess under D1641 standards
+All reductions happen only if system is in excess conditions
+March 16-31 
+    AN - no reduction
+    BN - reduce exports to 5000 cfs for this portion of the month
+    Dry - reduce exports to 3000 cfs for this portion of the month
+April/May 
+    identify whether the system was in excess conditions under D1641
+    if it was, and exports can be reduced further than already under IE (down to 1500 cfs), then do that
+    up to what is necessary to accomplish the full 300 taf reduction
+June
+    if there is still a deficit relative to 300 taf, and if D1641 operations were in excess conditions, 
+    make further reductions to accomplish the 300 taf, down to 4000 cfs
+
+*/
+
+!Variables used in the Delta VA logic
+define ExpRed_VAincr {std kind 'FLOW-VA' units 'TAF'}
+define ExpRed_CVPJones {std kind 'FLOW-VA' units 'TAF'}
+define ExpRed_CVPBanks {std kind 'FLOW-VA' units 'TAF'}
+define ExpRed_SWPBanks {std kind 'FLOW-VA' units 'TAF'}
+
+
+! Calculate how much the exports were already reduced relative to D1641 standards based on 
+! any criteria implemented in the NDD2 cycles.  Only count the export reduction to the point
+! where it resulted in increased delta outflow - i.e. don't count what backed up into storage
+define Export_Red_Mon {value min(max(0., (NDOI_ADD[NDD2] + NDOI_MIN[NDD2]) - (NDOI_ADD[UPSTREAM] + NDOI_MIN[UPSTREAM])), max(0., EXP_TD[UPSTREAM] - EXP_TD[NDD2]))*cfs_taf}
+define Export_Red_Mon_ {alias Export_Red_Mon kind 'VA-VOLUME' units 'taf' }
+define Export_Red_UpsDlt {alias max(0., EXP_TD[UPSTREAM] - EXP_TD[NDD2])*cfs_taf kind 'VA-VOLUME' units 'taf'}
+define Delta_Incr_UpsDlt {alias max(0., (NDOI_ADD[NDD2] + NDOI_MIN[NDD2]) - (NDOI_ADD[UPSTREAM] + NDOI_MIN[UPSTREAM]))*cfs_taf kind 'VA-VOLUME' units 'taf'}
+
+!Total ITP export cuts (SJRIE and 100 TAF)
+define Export_Red_ITP {alias Alt2BSWPExpCut_SJRIE*cfs_TAF +  Alt2BSWPExpCut_X2*cfs_TAF + Alt2BSWPExpCut_Final*cfs_TAF kind 'flow-delivery' units 'taf'}
+
+! Starting in March for BN and D, in April for AN water years,
+
+! set the amount of export reduction that still needs to happen
+!define  wyt_SAC_VA_         {timeseries kind 'wateryeartype' units 'none'} !Perfect foresight for BN and D in March 
+!!SWP
+define DeltaVARemain_SWP {std kind 'VA-VOLUME' units 'taf'}
+define DeltaVA_SWP_W {value 0.}
+define DeltaVA_SWP_AN {value 117.5}
+define DeltaVA_SWP_BN {value 92.5}
+define DeltaVA_SWP_D {value 92.5}
+define DeltaVA_SWP_C {value 0.}
+
+define DeltaVARemain_SWP_calc {
+    case Oct1922 {
+        condition month==BgnMo .and. wateryear==BgnWY
+        value 0.}
+    case SepEndWY {
+        condition month==Sep .and. wateryear==EndWY
+        value 0.}   
+    case March_C {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==5
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==5
+        value 0.}    
+    case March_D {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==4
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==4
+        value max(0., DeltaVA_SWP_D)}
+    case March_BN {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==3
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==3
+        value max(0., DeltaVA_SWP_BN)}
+    case March_AN {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==2
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==2
+        value 0.}
+    case March_W {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==2
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==1
+        value max(0., DeltaVA_SWP_W)}
+    case Apr_AN {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==2
+        value max(0., DeltaVA_SWP_AN - ExpRed_SWPBanks(-1))}
+    case Apr_BN {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==3
+        value max(0., DeltaVA_SWP_BN - ExpRed_SWPBanks(-1))} 
+    case Apr_D {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==4
+        value max(0., DeltaVA_SWP_D - ExpRed_SWPBanks(-1))}
+    case Apr_C {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==5
+        value max(0., DeltaVA_SWP_C - ExpRed_SWPBanks(-1))} 
+  /*  case Apr_AN {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==2
+        value max(0., 117.5)} */
+    case Apr_W {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==1
+        value max(0., DeltaVA_SWP_W - ExpRed_SWPBanks(-1))}
+/*    case MayJun {
+        condition range(month,MAY,JUN)
+        value max(0., DeltaVARemain_SWP(-1) - ExpRed_SWPBanks(-1))}*/
+    case May_W {
+        condition month==May .and. wyt_sac==1
+        value max(0., DeltaVA_SWP_W - ExpRed_SWPBanks(-1) - ExpRed_SWPBanks(-2))}    
+    case May_AN {
+        condition month==May .and. wyt_sac==2
+        value max(0., DeltaVA_SWP_AN - ExpRed_SWPBanks(-1) - ExpRed_SWPBanks(-2))}
+    case May_BN {
+        condition month==May .and. wyt_sac==3
+        value max(0., DeltaVA_SWP_BN - ExpRed_SWPBanks(-1) - ExpRed_SWPBanks(-2))} 
+    case May_D {
+        condition month==May.and. wyt_sac==4
+        value max(0., DeltaVA_SWP_D - ExpRed_SWPBanks(-1) - ExpRed_SWPBanks(-2))}
+    case May_C {
+        condition month==May .and. wyt_sac==5
+        value max(0., DeltaVA_SWP_C - ExpRed_SWPBanks(-1) - ExpRed_SWPBanks(-2))} 
+    /*case July {
+        condition month==JUL
+        value max(0., DeltaVARemain(-1) - ExpRed_VAincr(-1))}*/
+    case otherwise {
+        condition always 
+        value DeltaVARemain_SWP(-1)}
+}
+goal setDeltaVARemain_SWP {DeltaVARemain_SWP = DeltaVARemain_SWP_calc}
+
+! Calculate the amount of storage in San Luis that can be called on to make up any
+! additional cuts to exports due to this action
+define SL_Avail_VA_SWP {value max(0.,(S_SLUIS_SWP[NDD2]-55.))}
+!define SL_Avail_VA_SWP_ {alias SL_Avail_VA_SWP kind 'VA-VOLUME' units 'taf' }
+
+! Calculate by how much more exports can be reduced this month
+! Depends on what month and year type it is and whether it's excess conditions
+!   (1) do not exceed the discretionary action
+!   (2) do not exceed the export available for reduction (defined as exports above 1500 cfs during Excess months)
+!   (3) can be supported by San Luis storage; the ultimate source of water for the discretionary actions is San Luis storage
+define MarchBN_DeltaVA {value 3000.}
+define MarchDryCritical_DeltaVA {value 3000.}
+define MarchAN_DeltaVA_SWP {value max(600., 21./31.*C_CAA003_SWP[NDD2] + 10./31.*600.)}
+define MarchBN_DeltaVA_SWP {value max(600., 10./31.*C_CAA003_SWP[NDD2] + 21./31.*600.)}
+define MarchDryCritical_DeltaVA_SWP {value max(600., 10./31.*C_CAA003_SWP[NDD2] + 21./31.*600.)}
+!define MarchBN_DeltaVA_SWP {value 600.}
+!define MarchDryCritical_DeltaVA_SWP {value 600.}
+define MarchANW_DeltaVA_CVP {value max(900., 9./31.*C_DMC000_CVP[NDD2] + 22./31.*900.)}
+define MarchBN_DeltaVA_CVP {value max(900., 9./31.*C_DMC000_CVP[NDD2] + 22./31.*900.)}
+define MarchDryCritical_DeltaVA_CVP {value max(900., 9./31.*C_DMC000_CVP[NDD2] + 22./31.*900.)}
+define AprilANBN_DeltaVA_SWP {value 600.}
+define AprilANBN_DeltaVA_CVP {value 900.}
+define AprilDryCritical_DeltaVA_SWP {value 600.} !
+define AprilDryCritical_DeltaVA_CVP {value 900.}
+define MayANBN_DeltaVA_SWP {value 600.}  ! cut down to the minimum here if needed
+define MayANBN_DeltaVA_CVP {value 900.}  ! cut down to the minimum here if needed
+define MayDryCritical_DeltaVA_SWP {value 600.}  ! mostly balance conditions here
+define MayDryCritical_DeltaVA_CVP {value 900.}  ! mostly balance conditions here
+define June_DeltaVA {value 4000.}
+define MarchBN_MaxExportCut {value 125.}
+define MarchD_MaxExportCut {value 125.}
+define MarchBN_MaxExportCut_SWP {value 50.0}
+define MarchD_MaxExportCut_SWP {value 50.0}
+define MarchBN_MaxExportCut_CVP {value 9999.}!62.5}
+define MarchD_MaxExportCut_CVP {value 9999.}!62.5}
+define MarchAN_MaxExportCut_SWP {value 50.0}
+
+define D409_ExpRedAvail_SWP {
+!-KS, 9/12. Remove the balanced month criteria for selecting Mar - Jun months for the Delta VA action (Aaron Miller, O&M).
+!    case Balanced {
+!        condition Excess_Month == 0
+!        value 0.}
+!-KS, 9/12. Under IBU conditions, projects are moving stored. If the projects cannot move the water, most likely they will back-up into upstream storage.
+!	Add a criteria to exclude months when projects are operating under IBU conditions (Aaron Miller, O&M).
+    case SepEndWY {
+        condition month==Sep .and. wateryear==EndWY
+        value 0.} 
+    case Balanced {
+       condition Balanced_D1641[DELTA] == 1 .and. IBU[Delta]>0. !Added IBU condition, 20220606  !Based on pre-NDD operation (BUT RECHECK IF IT SHOULD WORK THAT WAY)
+        value 0.}
+    case MarchW {
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==1 !.and. WYT_Sac_Frcst_90Exc <=2
+        value 0.}
+    case MarchAN {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==2 
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==2 
+        !value min(MarchAN_MaxExportCut_SWP, DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - MarchAN_DeltaVA_SWP)*cfs_TAF))}
+        value 0.}
+    case MarchBN {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==3
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc== 3 
+        value min(MarchBN_MaxExportCut_SWP, DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - MarchBN_DeltaVA_SWP)*cfs_TAF))}
+        !value 0.}
+    case MarchDry {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==4
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc== 4
+        value min(MarchD_MaxExportCut_SWP, DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - MarchDryCritical_DeltaVA_SWP)*cfs_TAF))}
+        !value 0.}
+    case MarchCritical {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==5
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc== 5 
+        value min(DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - MarchDryCritical_DeltaVA*SWP_SHARE[NDD2])*cfs_TAF))}
+        !value 0.}
+    case AprilWANBN {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc>=1 .and. WYT_Sac_Frcst_75Exc <=3
+        value min(DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - AprilANBN_DeltaVA_SWP)*cfs_TAF)) }
+    case AprilDryCritical {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc>=4 .and. WYT_Sac_Frcst_75Exc<=5
+        value min(DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - AprilDryCritical_DeltaVA_SWP)*cfs_TAF)) }
+    case MayWANBN {
+        !condition month==MAY .and. ((wyt_sac>=1 .and. wyt_sac<=3) .or. (wyt_sac_(-1)>=1 .and. wyt_sac_(-1) <=3))
+        condition month==MAY .and. ((wyt_sac>=1 .and. wyt_sac<=3)) !.or. (wyt_sac_(-1)>=1 .and. wyt_sac_(-1) <=3))
+        value min(DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - MayANBN_DeltaVA_SWP)*cfs_TAF)) }
+    case MayDry {
+        !condition month==MAY .and. (wyt_sac==4 .or. wyt_sac_(-1)==4)
+        condition month==MAY .and. (wyt_sac==4)! .or. wyt_sac_(-1)==4)
+        value min(DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - MayDryCritical_DeltaVA_SWP)*cfs_TAF)) }
+    case MayCritical {
+        !condition month==MAY .and. (wyt_sac==5 .or. wyt_sac_(-1)==5)
+        condition month==MAY .and. (wyt_sac==5)! .or. wyt_sac_(-1)==5)
+        value min(DeltaVARemain_SWP_calc, SL_Avail_VA_SWP, UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2], max(0.,(C_CAA003_SWP[NDD2] - MayDryCritical_DeltaVA_SWP)*cfs_TAF)) }
+    case June {
+        condition month==JUN .and. wyt_sac>=1 .and. wyt_sac <=5
+        !value min(DeltaVARemain_calc, SL_Avail_VA, max(0.,(EXP_TD[NDD2] - June_DeltaVA)*cfs_TAF)) }
+        value 0. }
+    case other {
+        condition always
+        value 0. }
+}
+define D409_ExpRedAvail_SWP_ {alias D409_ExpRedAvail_SWP kind 'FLOW-VA' units 'TAF'}
+define MarchBN_MaxExportCut_SWP_ {alias MarchBN_MaxExportCut_SWP kind 'FLOW-VA' units 'TAF'}
+define DeltaVARemain_SWP_calc_ {alias DeltaVARemain_SWP_calc kind 'FLOW-VA' units 'TAF'}
+define SL_Avail_VA_SWP_ {alias SL_Avail_VA_SWP kind 'FLOW-VA' units 'TAF'}
+define UWFE_DELTA_SWP_SHARE {alias UWFE[NDD2]*cfs_TAF*SWP_SHARE[NDD2] kind 'FLOW-VA' units 'TAF'}
+define C_CAA003_SWP_DELTA_ {alias C_CAA003_SWP[NDD2]*cfs_TAF kind 'FLOW-VA' units 'TAF'}
+define MarchBN_DeltaVA_SWP_ {alias MarchBN_DeltaVA_SWP*cfs_TAF kind 'FLOW-VA' units 'TAF'}
+
+define DeltaVA_Ops_onoff {std kind 'FLOW-VA' units 'none'}
+goal fixDeltaVA_Ops_onoff {DeltaVA_Ops_onoff = DeltaVA_Ops_onoff[WHEELJPOD]}
+
+
+define DeltaVA_SWP_MarMay_Frac {     
+    case MarMay {		
+        condition month>=MAR .AND. month<=MAY
+					.AND. C_CAA003_SWP[WHEELJPOD] > 600.					!Health and Safety Exports
+        value 1.0}
+    case otherwise{
+        condition always
+        value 0.0}  
+}
+
+!define DeltaVA_MarMay_Frac {  value 1.0}
+define DeltaVA_SWP_MarMay_Fracdv  {alias DeltaVA_SWP_MarMay_Frac kind 'percentage' units 'none'}
+/*
+define DeltaVA_CVP_MarMay_Frac {     
+    case MarMay {		
+        condition month>=MAR .AND. month<=MAY
+					.AND. C_DMC000_CVP[WHEELJPOD] > 900.					!Health and Safety Exports
+        value 1.0}
+    case otherwise{
+        condition always
+        value 0.0}  
+}
+
+!define DeltaVA_MarMay_Frac {  value 1.0}
+define DeltaVA_CVP_MarMay_Fracdv  {alias DeltaVA_CVP_MarMay_Frac kind 'percentage' units 'none'}
+*/
+
+!Distribute the discretionary action among CVP and SWP South Delta exports.
+!Based on the proportional pumping rate.
+!Does not include export of Water Transfers.  
+!define ratio_CVPJones {value C_DMC000_CVP[NDD2]/(C_DMC000_CVP[NDD2] + C_CAA003_CVP[NDD2] + C_CAA003_SWP[NDD2])}
+!define ratio_CVPBanks {value C_CAA003_CVP[NDD2]/(C_DMC000_CVP[NDD2] + C_CAA003_CVP[NDD2] + C_CAA003_SWP[NDD2])}
+!define ratio_SWPBanks {value C_CAA003_SWP[NDD2]/(C_DMC000_CVP[NDD2] + C_CAA003_CVP[NDD2] + C_CAA003_SWP[NDD2])}
+!define ratio_CVPJones {value 0.5}
+!define ratio_CVPBanks {value 0.}
+define ratio_SWPBanks {value 1.0}
+
+define lim_expredcvp {value C_DMC000_CVP[NDD2]-900.}
+define lim_expredswp {value C_CAA003_SWP[NDD2]-600.}
+!define swp_uncut {value max(0., D409_ExpRedAvail_SWP*ratio_SWPBanks - max(0., lim_expredswp*cfs_TAF))}
+!define cvp_uncut {value max(0., D409_ExpRedAvail_CVP*ratio_CVPJones - max(0., lim_expredcvp*cfs_TAF))}
+/*
+goal CVPJonesExpRed {
+    lhs ExpRed_CVPJones
+    !rhs min(D409_ExpRedAvail * ( (ratio_CVPJones * DeltaVA_CVP_MarMay_Frac) + ratio_SWPBanks * (1 - DeltaVA_SWP_MarMay_Frac)), max(0., lim_expredcvp*cfs_TAF))  }
+    rhs min(D409_ExpRedAvail *ratio_CVPJones * DeltaVA_CVP_MarMay_Frac + swp_uncut, max(0., lim_expredcvp*cfs_TAF))  }
+    
+goal CVPBanksExpRed {
+    lhs ExpRed_CVPBanks
+    rhs D409_ExpRedAvail * ratio_CVPBanks}
+*/   
+
+define ExpRed_SWPBanksSV {value min(D409_ExpRedAvail_SWP *ratio_SWPBanks * DeltaVA_SWP_MarMay_Frac * simulateDeltaVA_SWP/*+ cvp_uncut*/, max(0., lim_expredswp*cfs_TAF))  }
+ 
+goal SWPBanksExpRed {
+    lhs ExpRed_SWPBanks
+    rhs min(D409_ExpRedAvail_SWP *ratio_SWPBanks * DeltaVA_SWP_MarMay_Frac * simulateDeltaVA_SWP/*+ cvp_uncut*/, max(0., lim_expredswp*cfs_TAF))  }
+
+
+!!CVP
+define DeltaVARemain_CVP {std kind 'VA-VOLUME' units 'taf'}
+define DeltaVA_CVP_W {value 27.}
+define DeltaVA_CVP_AN {value 147.}
+define DeltaVA_CVP_BN {value 107.}
+define DeltaVA_CVP_D {value 86.}
+define DeltaVA_CVP_C {value 3.}
+
+define Export_Cut_Req_CVP_ {std kind 'FLOW' units 'TAF'}
+goal setExport_Cut_Req_CVP{! Variable for setting for recording final export cut requirement !add mar and apr
+	lhs Export_Cut_Req_CVP_
+    case March_W { 
+        condition WYT_Sac_Frcst_90Exc==1 .and. month == Mar
+        rhs DeltaVA_CVP_W
+    }
+    case March_AN { 
+        condition WYT_Sac_Frcst_90Exc==2 .and. month == Mar
+        rhs DeltaVA_CVP_AN
+    }
+    case March_BN {
+        condition WYT_Sac_Frcst_90Exc==3 .and. month == Mar
+        rhs DeltaVA_CVP_BN
+    }
+    case March_D {
+        condition WYT_Sac_Frcst_90Exc==4 .and. month == Mar
+        rhs DeltaVA_CVP_D
+    }
+    case March_C {
+        condition WYT_Sac_Frcst_90Exc==5 .and. month == Mar
+        rhs DeltaVA_CVP_C
+    }
+    case Apr_W { 
+        condition WYT_Sac_Frcst_75Exc==1 .and. month == Apr
+        rhs DeltaVA_CVP_W
+    }    
+    case Apr_AN { 
+        condition WYT_Sac_Frcst_75Exc==2 .and. month == Apr
+        rhs DeltaVA_CVP_AN
+    }    
+    case Apr_BN {
+        condition WYT_Sac_Frcst_75Exc==3 .and. month == Apr
+        rhs DeltaVA_CVP_BN
+    }
+    case Apr_D {
+        condition WYT_Sac_Frcst_75Exc==4 .and. month == Apr
+        rhs DeltaVA_CVP_D
+    }
+    case Apr_C {
+        condition WYT_Sac_Frcst_75Exc==5 .and. month == Apr
+        rhs DeltaVA_CVP_C
+    }    
+	case Wetyears{
+		condition WYT_Sac==1 .and. month==May
+		rhs DeltaVA_CVP_W
+	}
+	case ANyears{
+		condition WYT_Sac==2 .and. month==May
+		rhs DeltaVA_CVP_AN
+	}	
+	case BNyears{
+		condition WYT_Sac==3 .and. month==May
+		rhs DeltaVA_CVP_BN
+	}
+	case Dyears{
+		condition WYT_Sac==4 .and. month==May
+		rhs DeltaVA_CVP_D
+	}
+	case Cyears{
+		condition WYT_Sac==5 .and. month==May
+		rhs DeltaVA_CVP_C
+	}
+    case otherwise {
+        condition always 
+        rhs 9999.0  
+}
+
+}
+
+define DeltaVARemain_CVP_calc {
+    case Oct1922 {
+        condition month==BgnMo .and. wateryear==BgnWY
+        value 0.}
+    case SepEndWY {
+        condition month==Sep .and. wateryear==EndWY
+        value 0.}   
+    case March_C {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==5
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==5
+        value max(0., DeltaVA_CVP_C)}    
+    case March_D {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==4
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==4
+        value max(0., DeltaVA_CVP_D)}
+    case March_BN {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==3
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==3
+        value max(0., DeltaVA_CVP_BN)}
+/*    case Apr_BN_D_C {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc>=3 .and. WYT_Sac_Frcst_75Exc <=5
+        value max(0., DeltaVARemain_CVP(-1) - ExpRed_CVPJones(-1))} */
+    case Apr_AN {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==2
+        value max(0., DeltaVA_CVP_AN - ExpRed_CVPJones(-1))}
+    case Apr_BN {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==3
+        value max(0., DeltaVA_CVP_BN - ExpRed_CVPJones(-1))} 
+    case Apr_D {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==4
+        value max(0., DeltaVA_CVP_D - ExpRed_CVPJones(-1))}
+    case Apr_C {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==5
+        value max(0., DeltaVA_CVP_C - ExpRed_CVPJones(-1))} 
+ /*   case Apr_AN {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==2
+        value max(0., 147.)}*/
+    case Apr_W {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc==1
+        value max(0., DeltaVA_CVP_W - ExpRed_CVPJones(-1))}
+/*    case MayJun {
+        condition range(month,MAY,JUN)
+        value max(0., DeltaVARemain_CVP(-1) - ExpRed_CVPJones(-1))} */
+    case May_W {
+        condition month==May .and. wyt_sac==1
+        value max(0., DeltaVA_CVP_W - ExpRed_CVPJones(-1) - ExpRed_CVPJones(-2))}    
+    case May_AN {
+        condition month==May .and. wyt_sac==2
+        value max(0., DeltaVA_CVP_AN - ExpRed_CVPJones(-1) - ExpRed_CVPJones(-2))}
+    case May_BN {
+        condition month==May .and. wyt_sac==3
+        value max(0., DeltaVA_CVP_BN - ExpRed_CVPJones(-1) - ExpRed_CVPJones(-2))} 
+    case May_D {
+        condition month==May.and. wyt_sac==4
+        value max(0., DeltaVA_CVP_D - ExpRed_CVPJones(-1) - ExpRed_CVPJones(-2))}
+    case May_C {
+        condition month==May .and. wyt_sac==5
+        value max(0., DeltaVA_CVP_C - ExpRed_CVPJones(-1) - ExpRed_CVPJones(-2))} 
+    /*case July {
+        condition month==JUL
+        value max(0., DeltaVARemain(-1) - ExpRed_VAincr(-1))}*/
+    case otherwise {
+        condition always 
+        value DeltaVARemain_CVP(-1)}
+}
+goal setDeltaVARemain_CVP {DeltaVARemain_CVP = DeltaVARemain_CVP_calc}
+
+! Calculate the amount of storage in San Luis that can be called on to make up any
+! additional cuts to exports due to this action
+define SL_Avail_VA_CVP {value max(0.,(S_SLUIS_CVP[NDD2]-45.))}
+define SL_Avail_VA_CVP_ {alias SL_Avail_VA_CVP kind 'VA-VOLUME' units 'taf' }
+
+! Calculate by how much more exports can be reduced this month
+! Depends on what month and year type it is and whether it's excess conditions
+!   (1) do not exceed the discretionary action
+!   (2) do not exceed the export available for reduction (defined as exports above 1500 cfs during Excess months)
+!   (3) can be supported by San Luis storage; the ultimate source of water for the discretionary actions is San Luis storage
+/*define MarchBN_DeltaVA {value 3000.}
+define MarchDryCritical_DeltaVA {value 3000.}
+define AprilANBN_DeltaVA {value 1500.}
+define AprilDryCritical_DeltaVA {value 1500.} ! 
+define MayANBN_DeltaVA {value 1500.}  ! cut down to the minimum here if needed
+define MayDryCritical_DeltaVA {value 1500.}  ! mostly balance conditions here
+define June_DeltaVA {value 4000.}
+define MarchBN_MaxExportCut {value 125.}
+define MarchD_MaxExportCut {value 125.}
+*/
+define D409_ExpRedAvail_CVP {
+!-KS, 9/12. Remove the balanced month criteria for selecting Mar - Jun months for the Delta VA action (Aaron Miller, O&M).
+!    case Balanced {
+!        condition Excess_Month == 0
+!        value 0.}
+!-KS, 9/12. Under IBU conditions, projects are moving stored. If the projects cannot move the water, most likely they will back-up into upstream storage.
+!	Add a criteria to exclude months when projects are operating under IBU conditions (Aaron Miller, O&M).
+    case SepEndWY {
+        condition month==Sep .and. wateryear==EndWY
+        value 0.} 
+    case Balanced {
+        condition Balanced_D1641[DELTA] == 1 .and. IBU[Delta]>0. !Added IBU condition, 20220606   !Based on pre-NDD operation (BUT RECHECK IF IT SHOULD WORK THAT WAY)
+        value 0.}
+    case MarchWAN {
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc>=1 .and. WYT_Sac_Frcst_90Exc <=2
+        value min(DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - MarchANW_DeltaVA_CVP)*cfs_TAF))}
+    case MarchBN {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==3
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==3
+        value min(MarchBN_MaxExportCut_CVP, DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - MarchBN_DeltaVA_CVP)*cfs_TAF))}
+        !value 0.}
+    case MarchDry {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==4
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==4
+        value min(MarchD_MaxExportCut_CVP, DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - MarchDryCritical_DeltaVA_CVP)*cfs_TAF))}
+        !value 0.}
+    case MarchCritical {
+        !condition month==MAR .and. wyt_SAC_VA_(1)==5
+        condition month==MAR .and. WYT_Sac_Frcst_90Exc==5
+        value min(DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - MarchDryCritical_DeltaVA*CVP_SHARE[NDD2])*cfs_TAF))}
+        !value 0.}
+    case AprilWANBN {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc>=1 .and. WYT_Sac_Frcst_75Exc <=3
+        value min(DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - AprilANBN_DeltaVA_CVP)*cfs_TAF)) }
+    case AprilDryCritical {
+        condition month==APR .and. WYT_Sac_Frcst_75Exc>=4 .and. WYT_Sac_Frcst_75Exc<=5
+        value min(DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - AprilDryCritical_DeltaVA_CVP)*cfs_TAF)) }
+    case MayWANBN {
+        !condition month==MAY .and. ((wyt_sac>=1 .and. wyt_sac<=3) .or. (wyt_sac_(-1)>=1 .and. wyt_sac_(-1) <=3))
+        condition month==MAY .and. ((wyt_sac>=1 .and. wyt_sac<=3)) !.or. (wyt_sac_(-1)>=1 .and. wyt_sac_(-1) <=3))
+        value min(DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - MayANBN_DeltaVA_CVP)*cfs_TAF)) }
+    case MayDry {
+        !condition month==MAY .and. (wyt_sac==4 .or. wyt_sac_(-1)==4)
+        condition month==MAY .and. (wyt_sac==4)! .or. wyt_sac_(-1)==4)
+        value min(DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - MayDryCritical_DeltaVA_CVP)*cfs_TAF)) }
+    case MayCritical {
+        !condition month==MAY .and. (wyt_sac==5 .or. wyt_sac_(-1)==5)
+        condition month==MAY .and. (wyt_sac==5)! .or. wyt_sac_(-1)==5)
+        value min(DeltaVARemain_CVP_calc, SL_Avail_VA_CVP, UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2], max(0.,(C_DMC000_CVP[NDD2] - MayDryCritical_DeltaVA_CVP)*cfs_TAF)) }
+    case June {
+        condition month==JUN .and. wyt_sac>=1 .and. wyt_sac <=5
+        !value min(DeltaVARemain_calc, SL_Avail_VA, max(0.,(EXP_TD[NDD2] - June_DeltaVA)*cfs_TAF)) }
+        value 0. }
+    case other {
+        condition always
+        value 0. }
+}
+define D409_ExpRedAvail_CVP_ {alias D409_ExpRedAvail_CVP kind 'FLOW-VA' units 'TAF'}
+define MarchBN_MaxExportCut_CVP_ {alias MarchBN_MaxExportCut_CVP kind 'FLOW-VA' units 'TAF'}
+define UWFE_DELTA_CVP_SHARE {alias UWFE[NDD2]*cfs_TAF*CVP_SHARE[NDD2] kind 'FLOW-VA' units 'TAF'}
+define DeltaVARemain_CVP_calc_ {alias DeltaVARemain_CVP_calc kind 'FLOW-VA' units 'TAF'}
+!define SL_Avail_VA_CVP_ {alias SL_Avail_VA_CVP kind 'FLOW-VA' units 'TAF'}
+define C_DMC000_CVP_DELTA_ {alias C_DMC000_CVP[NDD2]*cfs_TAF kind 'FLOW-VA' units 'TAF'}
+define MarchBN_DeltaVA_CVP_ {alias MarchBN_DeltaVA_CVP*cfs_TAF kind 'FLOW-VA' units 'TAF'}
+!define DeltaVA_Ops_onoff {std kind 'FLOW-VA' units 'none'}
+!goal fixDeltaVA_Ops_onoff {DeltaVA_Ops_onoff = DeltaVA_Ops_onoff[WHEELJPOD]}
+
+/*
+define DeltaVA_CVP_MarMay_Frac {     
+    case MarMay {		
+        condition month>=MAR .AND. month<=MAY
+					.AND. C_DMC000_CVP[WHEELJPOD] > 900.					!Health and Safety Exports
+        value 1.0}
+    case otherwise{
+        condition always
+        value 0.0}  
+}
+
+!define DeltaVA_MarMay_Frac {  value 1.0}
+define DeltaVA_CVP_MarMay_Fracdv  {alias DeltaVA_CVP_MarMay_Frac kind 'percentage' units 'none'}
+*/
+
+define DeltaVA_CVP_MarMay_Frac {     
+    case MarMay {		
+        condition month>=MAR .AND. month<=MAY
+					.AND. C_DMC000_CVP[WHEELJPOD] > 900.					!Health and Safety Exports
+        value 1.0}
+    case otherwise{
+        condition always
+        value 0.0}  
+}
+
+!define DeltaVA_MarMay_Frac {  value 1.0}
+define DeltaVA_CVP_MarMay_Fracdv  {alias DeltaVA_CVP_MarMay_Frac kind 'percentage' units 'none'}
+
+
+!Distribute the discretionary action among CVP and SWP South Delta exports.
+!Based on the proportional pumping rate.
+!Does not include export of Water Transfers.  
+!define ratio_CVPJones {value C_DMC000_CVP[NDD2]/(C_DMC000_CVP[NDD2] + C_CAA003_CVP[NDD2] + C_CAA003_SWP[NDD2])}
+!define ratio_CVPBanks {value C_CAA003_CVP[NDD2]/(C_DMC000_CVP[NDD2] + C_CAA003_CVP[NDD2] + C_CAA003_SWP[NDD2])}
+!define ratio_SWPBanks {value C_CAA003_SWP[NDD2]/(C_DMC000_CVP[NDD2] + C_CAA003_CVP[NDD2] + C_CAA003_SWP[NDD2])}
+define ratio_CVPJones {value 1.0}
+!define ratio_CVPBanks {value 0.}
+!define ratio_SWPBanks {value 1.0}
+/*
+define lim_expredcvp {value C_DMC000_CVP[NDD2]-900}
+define lim_expredswp {value C_CAA003_SWP[NDD2]-600}
+define swp_uncut {value max(0., D409_ExpRedAvail*ratio_SWPBanks - max(0., lim_expredswp*cfs_TAF))}
+define cvp_uncut {value max(0., D409_ExpRedAvail*ratio_CVPBanks - max(0., lim_expredcvp*cfs_TAF))}
+*/
+goal CVPJonesExpRed {
+    lhs ExpRed_CVPJones
+    !rhs min(D409_ExpRedAvail * ( (ratio_CVPJones * DeltaVA_CVP_MarMay_Frac) + ratio_SWPBanks * (1 - DeltaVA_SWP_MarMay_Frac)), max(0., lim_expredcvp*cfs_TAF))  }
+    rhs min(D409_ExpRedAvail_CVP *ratio_CVPJones * DeltaVA_CVP_MarMay_Frac * simulateDeltaVA_CVP /*+ swp_uncut*/, max(0., lim_expredcvp*cfs_TAF))  }!lhs > rhs penalty 99999}
+/*   
+goal CVPBanksExpRed {
+    lhs ExpRed_CVPBanks
+    rhs D409_ExpRedAvail * ratio_CVPBanks}
+   
+goal SWPBanksExpRed {
+    lhs ExpRed_SWPBanks
+    rhs min(D409_ExpRedAvail_SWP *ratio_SWPBanks * DeltaVA_SWP_MarMay_Frac /*+ cvp_uncut, max(0., lim_expredswp*cfs_TAF))  }
+*/
+
+!ExpRed_Tot - total South Delta export reduction/ Delta discretionary action
+goal TotExpDecrease {
+    lhs ExpRed_VAincr
+    rhs ExpRed_CVPJones /*+ ExpRed_CVPBanks*/ + ExpRed_SWPBanks}
+!    lhs<rhs penalty 999999  ! needs a weight of 20540 to work
+!    lhs>rhs penalty 999999 }
+
+define NDOI_ADD_DELTAVA {alias ExpRed_CVPJones*TAF_cfs + ExpRed_CVPBanks*TAF_cfs + ExpRed_SWPBanks*TAF_cfs kind 'VA-VOLUME' units 'CFS'}
+define PrjExp_Red {alias (C_DMC000_CVP + C_CAA003_CVP + C_CAA003_SWP - C_DMC000_CVP[WHEELJPOD] - C_CAA003_CVP[WHEELJPOD] - C_CAA003_SWP[WHEELJPOD])*cfs_taf kind 'VA-VOLUME' units 'taf'}
+define Delta_Incr {alias ((NDOI_ADD + NDOI_MIN)  - (NDOI_ADD[WHEELJPOD] + NDOI_MIN[WHEELJPOD]))*cfs_taf kind 'VA-VOLUME' units 'taf'}
+
+!Need to partition SWP cut between TD and NDD (cut TD first)
+define ExpRed_SWPBanksTD {value min(ExpRed_SWPBanksSV, C_CAA003_SWP_TD[NDD2]*cfs_taf)}
+define ExpRed_SWPBanksIF {value max(0.,min(ExpRed_SWPBanksSV - ExpRed_SWPBanksTD, C_CAA003_SWP_IF[NDD2]*cfs_taf))}
+
+!For IF part now need to apportion between surplus, shift from Delta, and storage withdrawal (in that order).  Just for accounting purposes, will not affect overall results.
+define ExpRed_SWPBanksIFex {value min(ExpRed_SWPBanksIF, C_CAA003_SWP_IF_excess[NDD2]*cfs_taf)}
+define ExpRed_SWPBanksIFtdnd {value min(ExpRed_SWPBanksIF - ExpRed_SWPBanksIFex, C_CAA003_SWP_IF_electT[NDD2]*cfs_taf)}
+define ExpRed_SWPBanksIFstor {value min(ExpRed_SWPBanksIF - ExpRed_SWPBanksIFex - ExpRed_SWPBanksIFtdnd, C_CAA003_SWP_IF_electS[NDD2]*cfs_taf)}
+
+define ExpRed_SWPBanksdv {alias ExpRed_SWPBanks*TAF_cfs kind 'flow-delivery' units 'CFS'}
+define ExpRed_SWPBanksIFdv {alias ExpRed_SWPBanksIF*TAF_cfs kind 'flow-delivery' units 'CFS'}
+define ExpRed_SWPBanksTDdv {alias ExpRed_SWPBanksTD*TAF_cfs kind 'flow-delivery' units 'CFS'}
+define ExpRed_SWPBanksIFexdv {alias ExpRed_SWPBanksIFex*TAF_cfs kind 'flow-delivery' units 'CFS'}
+define ExpRed_SWPBanksIFtdnddv {alias ExpRed_SWPBanksIFtdnd*TAF_cfs kind 'flow-delivery' units 'CFS'}
+define ExpRed_SWPBanksIFstordv {alias ExpRed_SWPBanksIFstor*TAF_cfs kind 'flow-delivery' units 'CFS'}
+
+define ExpRed_VAincr_TD {std kind 'FLOW-VA' units 'TAF'}
+define ExpRed_VAincr_IF {std kind 'FLOW-VA' units 'TAF'}
+
+goal TotExpDecrease_TD {ExpRed_VAincr_TD = ExpRed_CVPJones /*+ ExpRed_CVPBanks*/ + ExpRed_SWPBanksTD}
+goal TotExpDecrease_IF {ExpRed_VAincr_IF = ExpRed_SWPBanksIF}
+
+define DeltaVA_SWP_Difference {     
+    case Jun_C {		
+        condition month==JUN .and. wyt_sac==5
+        value (DeltaVA_SWP_C-ExpRed_SWPBanks(-1)-ExpRed_SWPBanks(-2)-ExpRed_SWPBanks(-3))}
+     case Jun_D {		
+        condition month==JUN .and. wyt_sac==4
+        value (DeltaVA_SWP_D-ExpRed_SWPBanks(-1)-ExpRed_SWPBanks(-2)-ExpRed_SWPBanks(-3))}
+     case Jun_BN {		
+        condition month==JUN .and. wyt_sac==3
+        value (DeltaVA_SWP_BN-ExpRed_SWPBanks(-1)-ExpRed_SWPBanks(-2)-ExpRed_SWPBanks(-3))}
+     case Jun_AN {		
+        condition month==JUN .and. wyt_sac==2
+        value (DeltaVA_SWP_AN-ExpRed_SWPBanks(-1)-ExpRed_SWPBanks(-2)-ExpRed_SWPBanks(-3))}
+     case Jun_W {		
+        condition month==JUN .and. wyt_sac==1
+        value (DeltaVA_SWP_W-ExpRed_SWPBanks(-1)-ExpRed_SWPBanks(-2)-ExpRed_SWPBanks(-3))}
+    case otherwise {
+        condition always 
+        value 0.}          
+}
+
+define DeltaVA_SWP_Difference_ {alias DeltaVA_SWP_Difference kind 'FLOW-VA' units 'TAF'}
+
+define DeltaVA_CVP_Difference {     
+    case Jun_C {		
+        condition month==JUN .and. wyt_sac==5
+        value DeltaVA_CVP_C-ExpRed_CVPJones(-1)-ExpRed_CVPJones(-2)-ExpRed_CVPJones(-3)}
+     case Jun_D {		
+        condition month==JUN .and. wyt_sac==4
+        value DeltaVA_CVP_D-ExpRed_CVPJones(-1)-ExpRed_CVPJones(-2)-ExpRed_CVPJones(-3)}
+     case Jun_BN {		
+        condition month==JUN .and. wyt_sac==3
+        value DeltaVA_CVP_BN-ExpRed_CVPJones(-1)-ExpRed_CVPJones(-2)-ExpRed_CVPJones(-3)}
+     case Jun_AN {		
+        condition month==JUN .and. wyt_sac==2
+        value DeltaVA_CVP_AN-ExpRed_CVPJones(-1)-ExpRed_CVPJones(-2)-ExpRed_CVPJones(-3)}
+     case Jun_W {		
+        condition month==JUN .and. wyt_sac==1
+        value DeltaVA_CVP_W-ExpRed_CVPJones(-1)-ExpRed_CVPJones(-2)-ExpRed_CVPJones(-3)}
+    case otherwise {
+        condition always 
+        value 0.}          
+}
+define DeltaVA_CVP_Difference_ {alias DeltaVA_CVP_Difference kind 'FLOW-VA' units 'TAF'}
+define ExpRed_CVPJones_SV {value min(D409_ExpRedAvail_CVP *ratio_CVPJones * DeltaVA_CVP_MarMay_Frac * simulateDeltaVA_CVP /*+ swp_uncut*/, max(0., lim_expredcvp*cfs_TAF))}
+define EXPRed_CVPJONES_Annual {
+	    case Oct1922 {
+        condition month < MAR .and. wateryear==BgnWY
+        value 0.}
+	case March {
+		condition month==MAR 
+		value ExpRed_CVPJones_SV
+	}
+	case April {
+		condition month==APR
+		value  ExpRed_CVPJones_SV+ExpRed_CVPJones(-1)
+	}
+	case May {
+		condition month==MAY
+		value ExpRed_CVPJones_SV+ExpRed_CVPJones(-1)+ExpRed_CVPJones(-2)
+	}
+	case otherwise{
+		condition always
+		value ExpRed_CVPJones(prevmar)+ExpRed_CVPJones(prevapr)+ExpRed_CVPJones(prevmay)
+	}
+}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!delivery wheeljpod cycle
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+define D_DMC021_50_PA1_WHEELJPOD_ {alias D_DMC021_50_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC030_71_PA1_WHEELJPOD_ {alias D_DMC030_71_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC034_71_PA2_WHEELJPOD_ {alias D_DMC034_71_PA2[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC034_71_PA3_WHEELJPOD_ {alias D_DMC034_71_PA3[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC044_71_PA4_WHEELJPOD_ {alias D_DMC044_71_PA4[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC044_71_PA5_WHEELJPOD_ {alias D_DMC044_71_PA5[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC064_71_PA6_WHEELJPOD_ {alias D_DMC064_71_PA6[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC011_71_PA8_WHEELJPOD_ {alias D_DMC011_71_PA8[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC070_73_PA1_WHEELJPOD_ {alias D_DMC070_73_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA087_73_PA1_WHEELJPOD_ {alias D_CAA087_73_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC105_73_PA2_WHEELJPOD_ {alias D_DMC105_73_PA2[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_DMC091_73_PA3_WHEELJPOD_ {alias D_DMC091_73_PA3[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA095_73_PA3_WHEELJPOD_ {alias D_CAA095_73_PA3[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA109_73_PA3_WHEELJPOD_ {alias D_CAA109_73_PA3[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_MDOTA_90_PA1_WHEELJPOD_ {alias D_MDOTA_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA095_90_PA1_WHEELJPOD_ {alias D_CAA095_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA109_90_PA1_WHEELJPOD_ {alias D_CAA109_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA122_90_PA1_WHEELJPOD_ {alias D_CAA122_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA133_90_PA1_WHEELJPOD_ {alias D_CAA133_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA143_90_PA1_WHEELJPOD_ {alias D_CAA143_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA155_90_PA1_WHEELJPOD_ {alias D_CAA155_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA165_90_PA1_WHEELJPOD_ {alias D_CAA165_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA172_90_PA1_WHEELJPOD_ {alias D_CAA172_90_PA1[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_CAA143_90_PA2_WHEELJPOD_ {alias D_CAA143_90_PA2[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_MDOTA_91_PA_WHEELJPOD_ {alias D_MDOTA_91_PA[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_XCC025_72_PA_WHEELJPOD_ {alias D_XCC025_72_PA[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_PCH000_SCVWD_PA_WHEELJPOD_ {alias D_PCH000_SCVWD_PA[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+define D_PCH000_SBCWD_PA_WHEELJPOD_ {alias D_PCH000_SBCWD_PA[WHEELJPOD] kind 'DELIVERY' units 'CFS'}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Code for CVP delivery cut !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!General exports
+define General_Delivery_Cut_Req_CVP {
+    case March_C {
+        condition WYT_Sac_Frcst_90Exc==5 .and. month == Mar
+        value  0.}    
+    case March_D {
+        condition WYT_Sac_Frcst_90Exc==4 .and. month == Mar
+        value 62.5}
+    case March_BN {
+        condition WYT_Sac_Frcst_90Exc==3 .and. month == Mar
+        value 62.5}
+    case March_AN { 
+        condition WYT_Sac_Frcst_90Exc==2 .and. month == Mar
+        value 87.5}
+    case March_W { 
+        condition WYT_Sac_Frcst_90Exc==1 .and. month == Mar
+        value 0.} 
+    case Apr_C {
+        condition WYT_Sac_Frcst_75Exc==5 .and. month == Apr
+        value  0.}         
+    case Apr_D {
+        condition WYT_Sac_Frcst_75Exc==4 .and. month == Apr
+        value 62.5}
+    case Apr_BN {
+        condition WYT_Sac_Frcst_75Exc==3 .and. month == Apr
+        value 62.5}        
+    case Apr_AN { 
+        condition WYT_Sac_Frcst_75Exc==2 .and. month == Apr
+        value 87.5}
+    case Apr_W { 
+        condition WYT_Sac_Frcst_75Exc==1 .and. month == Apr
+        value 0.} 
+    case Mayon_C {
+        condition wyt_sac==5
+        value  0.}    
+    case Mayon_D {
+        condition wyt_sac==4 
+        value 62.5}
+    case Mayon_BN {
+        condition wyt_sac==3 
+        value 62.5}
+    case Mayon_AN { 
+        condition wyt_sac==2
+        value 87.5}
+    case Mayon_W { 
+        condition wyt_sac==1
+        value 0.} 	
+}
+define General_Delivery_Cut_Req_CVP_ {alias General_Delivery_Cut_Req_CVP kind 'FLOW-VA' units 'TAF'}
+define General_Delivery_Cut_CVP_ {std kind 'VA-VOLUME' units 'taf'}
+
+
+define General_Delivery_Remain_CVP {std kind 'VA-VOLUME' units 'taf'}
+define General_Delivery_Remain_CVP_calc {
+    case Oct1922 {
+        condition month==BgnMo .and. wateryear==BgnWY
+        value 0.}
+    case Sep2015 {
+        condition month==Sep .and. wateryear==EndWY
+        value 0.}
+    Case March {
+    	condition month==MAR 
+    	value General_Delivery_Cut_Req_CVP
+    }   
+    case Apr_Change {
+    	condition month==APR 
+    	value max (0, General_Delivery_Cut_Req_CVP-General_Delivery_Cut_CVP_(-1))
+    }
+    case May_Change {
+    	condition month==MAY 
+    	value max (0, General_Delivery_Cut_Req_CVP-General_Delivery_Cut_CVP_(-1)-General_Delivery_Cut_CVP_(-2))
+    }
+    case otherwise {
+        condition always
+        value max(0., General_Delivery_Remain_CVP(-1) - General_Delivery_Cut_CVP_(-1))}
+
+}
+
+define General_Delivery_Cut_CVP_annual {
+		case Oct1922 {
+        condition month < MAR .and. wateryear==BgnWY
+        value 0.}
+	case March {
+		condition month==MAR
+		value 0.
+	}
+	case otherwise{
+		condition always
+	sum(i=-1,prevmar,-1) General_Delivery_Cut_CVP_(i)
+}
+}
+define General_Delivery_Cut_CVP {value max(0.,min(General_Delivery_Remain_CVP_calc,
+	(EXPRed_CVPJONES_Annual-General_Delivery_Cut_CVP_annual),
+	del_cvp_pag_s[WHEELJPOD]*CFS_TAF))}
+goal setGeneralDelivery_Cut_CVP {General_Delivery_Cut_CVP_ = General_Delivery_Cut_CVP}
+goal setGeneralDelivery_Remain_CVP {General_Delivery_Remain_CVP = General_Delivery_Remain_CVP_calc}
+!define General_cut_50_PA1
+
+define General_cut_50_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC021_50_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_71_PA1 
+define General_cut_71_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC030_71_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_71_PA2 
+define General_cut_71_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC034_71_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_71_PA3 
+define General_cut_71_PA3 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC034_71_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_71_PA4
+define General_cut_71_PA4 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC044_71_PA4[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_71_PA5 
+define General_cut_71_PA5 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC044_71_PA5[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_71_PA6 
+define General_cut_71_PA6 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC064_71_PA6[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_71_PA8 
+define General_cut_71_PA8 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC011_71_PA8[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_73_PA1
+define General_cut_73_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC070_73_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA087_73_PA1 
+define General_cut_D_CAA087_73_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA087_73_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_73_PA2 
+define General_cut_73_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC105_73_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_73_PA3 
+define General_cut_73_PA3 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_DMC091_73_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA095_73_PA3 
+define General_cut_D_CAA095_73_PA3 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA095_73_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA109_73_PA3 
+define General_cut_D_CAA109_73_PA3 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA109_73_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_90_PA1 
+define General_cut_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_MDOTA_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA095_90_PA1 
+define General_cut_D_CAA095_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA095_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA109_90_PA1 
+define General_cut_D_CAA109_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA109_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA122_90_PA1 
+define General_cut_D_CAA122_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA122_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA133_90_PA1 
+define General_cut_D_CAA133_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA133_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA143_90_PA1 
+define General_cut_D_CAA143_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA143_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA155_90_PA1 
+define General_cut_D_CAA155_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA155_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA165_90_PA1 
+define General_cut_D_CAA165_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA165_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA172_90_PA1 {value General_Delivery_Cut_CVP*D_CAA172_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA172_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA172_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA095_90_PA2 {value General_Delivery_Cut_CVP*D_CAA095_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA095_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA095_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA109_90_PA2  {value General_Delivery_Cut_CVP*D_CAA109_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA109_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA109_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA122_90_PA2 {value General_Delivery_Cut_CVP*D_CAA122_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA122_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA122_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA133_90_PA2 {value General_Delivery_Cut_CVP*D_CAA133_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA133_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA133_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA143_90_PA2 {value General_Delivery_Cut_CVP*D_CAA143_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA143_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA143_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA155_90_PA2 {value General_Delivery_Cut_CVP*D_CAA155_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA155_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA155_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA165_90_PA2 {value General_Delivery_Cut_CVP*D_CAA165_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA165_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA165_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_D_CAA172_90_PA2 {value General_Delivery_Cut_CVP*D_CAA172_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_D_CAA172_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_CAA172_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+!define General_cut_91_PA {value General_Delivery_Cut_CVP*D_MDOTA_91_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_91_PA {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_MDOTA_91_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_72_PA {value General_Delivery_Cut_CVP*D_XCC025_72_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_72_PA {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_XCC025_72_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_SCVWD_PA {value General_Delivery_Cut_CVP*D_PCH000_SCVWD_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_SCVWD_PA {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_PCH000_SCVWD_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define General_cut_SBCWD_PA {value General_Delivery_Cut_CVP*D_PCH000_SBCWD_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define General_cut_SBCWD_PA {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value General_Delivery_Cut_CVP*D_PCH000_SBCWD_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!PWA Purchase CVP SOD
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+define PWA_Purch_CVP_SOD_Delivery_Cut_Req_CVP {
+    case March_C {
+        condition WYT_Sac_Frcst_90Exc==5 .and. month == Mar
+        value  0.}    
+    case March_D {
+        condition WYT_Sac_Frcst_90Exc==4 .and. month == Mar
+        value 12.5}
+    case March_BN {
+        condition WYT_Sac_Frcst_90Exc==3 .and. month == Mar
+        value 24.5}
+    case March_AN { 
+        condition WYT_Sac_Frcst_90Exc==2 .and. month == Mar
+        value 35.}
+    case March_W { 
+        condition WYT_Sac_Frcst_90Exc==1 .and. month == Mar
+        value 0.} 
+    case Apr_C {
+        condition WYT_Sac_Frcst_75Exc==5 .and. month == Apr
+        value  0.}         
+    case Apr_D {
+        condition WYT_Sac_Frcst_75Exc==4 .and. month == Apr
+        value 12.5}
+    case Apr_BN {
+        condition WYT_Sac_Frcst_75Exc==3 .and. month == Apr
+        value 24.5}        
+    case Apr_AN { 
+        condition WYT_Sac_Frcst_75Exc==2 .and. month == Apr
+        value 35.}
+    case Apr_W { 
+        condition WYT_Sac_Frcst_75Exc==1 .and. month == Apr
+        value 0.} 
+    case Mayon_C {
+        condition WYT_Sac==5
+        value  0.}    
+    case Mayon_D {
+        condition WYT_Sac==4 
+        value 12.5}
+    case Mayon_BN {
+        condition WYT_Sac==3 
+        value 24.5}
+    case Mayon_AN { 
+        condition WYT_Sac==2
+        value 35.}
+    case Mayon_W { 
+        condition WYT_Sac==1
+        value 0.} 	
+}
+
+define PWA_Purch_CVP_SOD_Delivery_Cut_Req_CVP_ {alias PWA_Purch_CVP_SOD_Delivery_Cut_Req_CVP kind 'FLOW-VA' units 'TAF'}
+define PWA_Purch_CVP_SOD_Delivery_Cut_CVP_ {std kind 'VA-VOLUME' units 'taf'}
+
+
+define PWA_Purch_CVP_SOD_Delivery_Remain_CVP {std kind 'VA-VOLUME' units 'taf'}
+define PWA_Purch_CVP_SOD_Delivery_Remain_CVP_calc {
+    case Oct1922 {
+        condition month==BgnMo .and. wateryear==BgnWY
+        value 0.}
+    case Sep2015 {
+        condition month==Sep .and. wateryear==EndWY
+        value 0.}
+    Case March {
+    	condition month==MAR 
+    	value PWA_Purch_CVP_SOD_Delivery_Cut_Req_CVP
+    }   
+    case Apr_Change {
+    	condition month==APR 
+    	value max (0, PWA_Purch_CVP_SOD_Delivery_Cut_Req_CVP-PWA_Purch_CVP_SOD_Delivery_Cut_CVP_(-1))
+    }
+    case May_Change {
+    	condition month==MAY 
+    	value max (0, PWA_Purch_CVP_SOD_Delivery_Cut_Req_CVP-PWA_Purch_CVP_SOD_Delivery_Cut_CVP_(-1)-PWA_Purch_CVP_SOD_Delivery_Cut_CVP_(-2))
+    }
+ 
+     case otherwise {
+        condition always
+        value max(0., PWA_Purch_CVP_SOD_Delivery_Remain_CVP(-1) - PWA_Purch_CVP_SOD_Delivery_Cut_CVP_(-1))}
+
+}
+
+define PWA_Purch_CVP_SOD_Delivery_Cut_CVP_annual {
+		case Oct1922 {
+        condition month < MAR .and. wateryear==BgnWY
+        value 0.}
+	case March {
+		condition month==MAR
+		value 0.
+	}
+	case otherwise{
+		condition always
+	sum(i=-1,prevmar,-1) PWA_Purch_CVP_SOD_Delivery_Cut_CVP_(i)
+}
+}
+
+
+define PWA_Purch_CVP_SOD_Delivery_Cut_CVP {value max(0.,min(PWA_Purch_CVP_SOD_Delivery_Remain_CVP_calc,
+	(EXPRed_CVPJONES_Annual-General_Delivery_Cut_CVP_annual-General_Delivery_Cut_CVP
+		-PWA_Purch_CVP_SOD_Delivery_Cut_CVP_annual),
+	(del_cvp_pag_s[WHEELJPOD]*CFS_TAF - General_Delivery_Cut_CVP)))}
+goal setPWA_Purch_CVP_SODDelivery_Cut_CVP {PWA_Purch_CVP_SOD_Delivery_Cut_CVP_ = PWA_Purch_CVP_SOD_Delivery_Cut_CVP}
+goal setPWA_Purch_CVP_SODDelivery_Remain_CVP {PWA_Purch_CVP_SOD_Delivery_Remain_CVP = PWA_Purch_CVP_SOD_Delivery_Remain_CVP_calc}
+!define PWA_Purch_CVP_SOD_cut_50_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC021_50_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_50_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC021_50_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_71_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC030_71_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_71_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC030_71_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_71_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC034_71_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_71_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC034_71_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_71_PA3 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC034_71_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_71_PA3 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC034_71_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_71_PA4 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC044_71_PA4[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_71_PA4 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC044_71_PA4[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_71_PA5 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC044_71_PA5[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_71_PA5 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC044_71_PA5[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_71_PA6 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC064_71_PA6[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_71_PA6 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC064_71_PA6[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_71_PA8 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC011_71_PA8[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_71_PA8 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC011_71_PA8[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_73_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC070_73_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_73_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC070_73_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA087_73_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA087_73_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA087_73_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA087_73_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_73_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC105_73_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_73_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC105_73_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_73_PA3 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC091_73_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_73_PA3 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_DMC091_73_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+define PWA_Purch_CVP_SOD_cut_D_CAA095_73_PA3 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA095_73_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA109_73_PA3 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA109_73_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA109_73_PA3 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA109_73_PA3[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_MDOTA_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_MDOTA_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA095_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA095_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA109_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA109_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA122_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA122_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA133_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA133_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA143_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA143_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA155_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA155_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA165_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA165_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA1 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA172_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA1 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA172_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA095_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA095_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA2  {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA109_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA2  {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA109_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA122_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA122_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA133_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA133_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA143_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA143_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA155_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA155_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA165_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA165_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+!define PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA2 {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA172_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA2 {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_CAA172_90_PA2[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+!define PWA_Purch_CVP_SOD_cut_91_PA {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_MDOTA_91_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_91_PA {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_MDOTA_91_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+
+!define PWA_Purch_CVP_SOD_cut_72_PA {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_XCC025_72_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_72_PA {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_XCC025_72_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_SCVWD_PA {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_PCH000_SCVWD_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_SCVWD_PA {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_PCH000_SCVWD_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!define PWA_Purch_CVP_SOD_cut_SBCWD_PA {value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_PCH000_SBCWD_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_CVP_SOD_cut_SBCWD_PA {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_CVP_SOD_Delivery_Cut_CVP*D_PCH000_SBCWD_PA[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+}
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!PWA Purchase Add CVP SOD
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+define PWA_Purch_Add_CVP_SOD_Delivery_Cut_Req_CVP {
+    case March_C {
+        condition WYT_Sac_Frcst_90Exc==5 .and. month == Mar
+        value  0.}    
+    case March_D {
+        condition WYT_Sac_Frcst_90Exc==4 .and. month == Mar
+        value min(5., CL_71_PA5*perdel_cvpag_s)}
+    case March_BN {
+        condition WYT_Sac_Frcst_90Exc==3 .and. month == Mar
+        value min(5., CL_71_PA5*perdel_cvpag_s)}
+    case March_AN { 
+        condition WYT_Sac_Frcst_90Exc==2 .and. month == Mar
+        value min(5., CL_71_PA5*perdel_cvpag_s)}
+    case March_W { 
+        condition WYT_Sac_Frcst_90Exc==1 .and. month == Mar
+        value 0.} 
+    case Apr_C {
+        condition WYT_Sac_Frcst_75Exc==5 .and. month == Apr
+        value  0.}        
+    case Apr_D {
+        condition WYT_Sac_Frcst_75Exc==4 .and. month == Apr
+        value min(5., CL_71_PA5*perdel_cvpag_s)}        
+    case Apr_BN {
+        condition WYT_Sac_Frcst_75Exc==3 .and. month == Apr
+        value min(5., CL_71_PA5*perdel_cvpag_s)}
+    case Apr_AN { 
+        condition WYT_Sac_Frcst_75Exc==2 .and. month == Apr
+        value min(5., CL_71_PA5*perdel_cvpag_s)}
+    case Apr_W { 
+        condition WYT_Sac_Frcst_75Exc==1 .and. month == Apr
+        value 0.} 
+  	case Mayon_C {
+        condition WYT_Sac==5
+        value  0.}    
+    case Mayon_D {
+        condition WYT_Sac==4 
+        value min(5., CL_71_PA5*perdel_cvpag_s)}
+    case Mayon_BN {
+        condition WYT_Sac==3 
+        value min(5., CL_71_PA5*perdel_cvpag_s)}
+    case Mayon_AN { 
+        condition WYT_Sac==2
+        value min(5., CL_71_PA5*perdel_cvpag_s)}
+    case Mayon_W { 
+        condition WYT_Sac==1
+        value 0.} 	
+}
+
+define PWA_Purch_Add_CVP_SOD_Delivery_Cut_Req_CVP_ {alias PWA_Purch_Add_CVP_SOD_Delivery_Cut_Req_CVP kind 'FLOW-VA' units 'TAF'}
+define PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_ {std kind 'VA-VOLUME' units 'taf'}
+
+
+define PWA_Purch_Add_CVP_SOD_Delivery_Remain_CVP {std kind 'VA-VOLUME' units 'taf'}
+define PWA_Purch_Add_CVP_SOD_Delivery_Remain_CVP_calc {
+    case Oct1922 {
+        condition month==BgnMo .and. wateryear==BgnWY
+        value 0.}
+    case Sep2015 {
+        condition month==Sep .and. wateryear==EndWY
+        value 0.}
+    Case March {
+    	condition month==MAR 
+    	value PWA_Purch_Add_CVP_SOD_Delivery_Cut_Req_CVP
+    }   
+    case Apr_Change {
+    	condition month==APR 
+    	value max (0, PWA_Purch_Add_CVP_SOD_Delivery_Cut_Req_CVP-PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_(-1))
+    }
+    case May_Change {
+    	condition month==MAY 
+    	value max (0, PWA_Purch_Add_CVP_SOD_Delivery_Cut_Req_CVP-PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_(-1)-PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_(-2))
+    }
+ 
+     case otherwise {
+        condition always
+        value max(0., PWA_Purch_Add_CVP_SOD_Delivery_Remain_CVP(-1) - PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_(-1))}
+
+}
+
+define PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_annual {
+		case Oct1922 {
+        condition month < MAR .and. wateryear==BgnWY
+        value 0.}
+	case March {
+		condition month==MAR
+		value 0.
+	}
+	case otherwise{
+		condition always
+	sum(i=-1,prevmar,-1) PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_(i)
+}
+}
+
+
+define PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP {value max(0.,min(PWA_Purch_Add_CVP_SOD_Delivery_Remain_CVP_calc,
+	(EXPRed_CVPJONES_Annual-General_Delivery_Cut_CVP_annual-General_Delivery_Cut_CVP
+		-PWA_Purch_CVP_SOD_Delivery_Cut_CVP_annual-PWA_Purch_CVP_SOD_Delivery_Cut_CVP
+		-PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_annual),
+	(D_DMC044_71_PA5[WHEELJPOD]*CFS_TAF - General_cut_71_PA5 - PWA_Purch_CVP_SOD_cut_71_PA5)))}
+goal setPWA_Purch_Add_CVP_SODDelivery_Cut_CVP {PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_ = PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP}
+goal setPWA_Purch_Add_CVP_SODDelivery_Remain_CVP {PWA_Purch_Add_CVP_SOD_Delivery_Remain_CVP = PWA_Purch_Add_CVP_SOD_Delivery_Remain_CVP_calc}
+
+!define PWA_Purch_Add_CVP_SOD_cut_71_PA5 {value PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP*D_DMC044_71_PA5[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_Add_CVP_SOD_cut_71_PA5 {
+	case no_delive_cut {
+	condition D_DMC044_71_PA5[WHEELJPOD]==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP}
+}
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!PWA Purchase WWD SOD
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+define PWA_Purch_WWD_SOD_Delivery_Cut_Req_CVP {
+	case no_delive_cut {
+	condition del_cvp_pag_s[WHEELJPOD]==0
+	value 0.}
+   	case March_C {
+        condition WYT_Sac_Frcst_90Exc==5 .and. month == Mar
+        value min(3., 31.185*perdel_cvpag_s)}    
+    case March_D {
+        condition WYT_Sac_Frcst_90Exc==4 .and. month == Mar
+        value min(6., 31.185*perdel_cvpag_s)}
+    case March_BN {
+        condition WYT_Sac_Frcst_90Exc==3 .and. month == Mar
+        value min(15., 31.185*perdel_cvpag_s)}
+    case March_AN { 
+        condition WYT_Sac_Frcst_90Exc==2 .and. month == Mar
+        value min(19.5, 31.185*perdel_cvpag_s)}
+    case March_W { 
+        condition WYT_Sac_Frcst_90Exc==1 .and. month == Mar
+        value min(27., 31.185*perdel_cvpag_s)}
+   	case Apr_C {
+        condition WYT_Sac_Frcst_75Exc==5 .and. month == Apr
+        value min(3., 31.185*perdel_cvpag_s)} 
+    case Apr_D {
+        condition WYT_Sac_Frcst_75Exc==4 .and. month == Apr
+        value min(6., 31.185*perdel_cvpag_s)}
+    case Apr_BN {
+        condition WYT_Sac_Frcst_75Exc==3 .and. month == Apr
+        value min(15., 31.185*perdel_cvpag_s)}
+    case Apr_AN { 
+        condition WYT_Sac_Frcst_75Exc==2 .and. month == Apr
+        value min(19.5, 31.185*perdel_cvpag_s)}
+    case Apr_W { 
+        condition WYT_Sac_Frcst_75Exc==1 .and. month == Apr
+        value min(27., 31.185*perdel_cvpag_s)}
+   	case Mayon_C {
+        condition WYT_Sac==5
+        value min(3., 31.185*perdel_cvpag_s)}    
+    case Mayon_D {
+        condition WYT_Sac==4 
+        value min(6., 31.185*perdel_cvpag_s)}
+    case Mayon_BN {
+        condition WYT_Sac==3 
+        value min(15., 31.185*perdel_cvpag_s)}
+    case Mayon_AN { 
+        condition WYT_Sac==2
+        value min(19.5, 31.185*perdel_cvpag_s)}
+    case Mayon_W { 
+        condition WYT_Sac==1
+        value min(27., 31.185*perdel_cvpag_s)} 	
+}
+
+define PWA_Purch_WWD_SOD_Delivery_Cut_Req_CVP_ {alias PWA_Purch_WWD_SOD_Delivery_Cut_Req_CVP kind 'FLOW-VA' units 'TAF'}
+define PWA_Purch_WWD_SOD_Delivery_Cut_CVP_ {std kind 'VA-VOLUME' units 'taf'}
+
+
+define PWA_Purch_WWD_SOD_Delivery_Remain_CVP {std kind 'VA-VOLUME' units 'taf'}
+define PWA_Purch_WWD_SOD_Delivery_Remain_CVP_calc {
+    case Oct1922 {
+        condition month==BgnMo .and. wateryear==BgnWY
+        value 0.}
+    case Sep2015 {
+        condition month==Sep .and. wateryear==EndWY
+        value 0.}
+    Case March {
+    	condition month==MAR 
+    	value PWA_Purch_WWD_SOD_Delivery_Cut_Req_CVP
+    }   
+    case Apr_Change {
+    	condition month==APR 
+    	value max (0, PWA_Purch_WWD_SOD_Delivery_Cut_Req_CVP-PWA_Purch_WWD_SOD_Delivery_Cut_CVP_(-1))
+    }
+    case May_Change {
+    	condition month==MAY 
+    	value max (0, PWA_Purch_WWD_SOD_Delivery_Cut_Req_CVP-PWA_Purch_WWD_SOD_Delivery_Cut_CVP_(-1)-PWA_Purch_WWD_SOD_Delivery_Cut_CVP_(-2))
+    }
+ 
+     case otherwise {
+        condition always
+        value max(0., PWA_Purch_WWD_SOD_Delivery_Remain_CVP(-1) - PWA_Purch_WWD_SOD_Delivery_Cut_CVP_(-1))}
+
+}
+
+define PWA_Purch_WWD_SOD_Delivery_Cut_CVP_annual {
+		case Oct1922 {
+        condition month < MAR .and. wateryear==BgnWY
+        value 0.}
+	case March {
+		condition month==MAR
+		value 0.
+	}
+	case otherwise{
+		condition always
+	sum(i=-1,prevmar,-1) PWA_Purch_WWD_SOD_Delivery_Cut_CVP_(i)
+}
+}
+
+define WWD_cvp_pag_total_whljpod {value D_CAA095_90_PA1[WHEELJPOD] + D_CAA109_90_PA1[WHEELJPOD] + D_CAA122_90_PA1[WHEELJPOD] + D_CAA133_90_PA1[WHEELJPOD] + D_CAA143_90_PA1[WHEELJPOD] + D_CAA155_90_PA1[WHEELJPOD] + D_CAA165_90_PA1[WHEELJPOD]  + D_CAA172_90_PA1[WHEELJPOD]}
+define WWD_General_Cut_total {value General_cut_D_CAA095_90_PA1 + General_cut_D_CAA109_90_PA1 + General_cut_D_CAA122_90_PA1 + General_cut_D_CAA133_90_PA1  + General_cut_D_CAA143_90_PA1 + General_cut_D_CAA155_90_PA1 + General_cut_D_CAA165_90_PA1  + General_cut_D_CAA172_90_PA1}
+define WWD_PWA_Purch_Cut_total {value PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA1 + PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA1 + PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA1 + PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA1 + PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA1 + PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA1 + PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA1 + PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA1 }
+
+define WWD_cvp_pag_total_whljpoddv {alias WWD_cvp_pag_total_whljpod kind 'QA-QC' units 'TAF'}
+define WWD_General_Cut_totaldv {alias WWD_General_Cut_total kind 'QA-QC' units 'TAF'}
+define WWD_PWA_Purch_Cut_totaldv {alias WWD_PWA_Purch_Cut_total kind 'QA-QC' units 'TAF'}
+
+define PWA_Purch_WWD_SOD_Delivery_Cut_CVP {value max(0.,min(PWA_Purch_WWD_SOD_Delivery_Remain_CVP_calc,
+	(EXPRed_CVPJONES_Annual-General_Delivery_Cut_CVP_annual-General_Delivery_Cut_CVP
+		-PWA_Purch_CVP_SOD_Delivery_Cut_CVP_annual-PWA_Purch_CVP_SOD_Delivery_Cut_CVP
+		-PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_annual-PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP
+		-PWA_Purch_WWD_SOD_Delivery_Cut_CVP_annual),
+	(WWD_cvp_pag_total_whljpod*CFS_TAF -WWD_General_Cut_total-WWD_PWA_Purch_Cut_total)))}
+goal setPWA_Purch_WWD_SODDelivery_Cut_CVP {PWA_Purch_WWD_SOD_Delivery_Cut_CVP_ = PWA_Purch_WWD_SOD_Delivery_Cut_CVP}
+goal setPWA_Purch_WWD_SODDelivery_Remain_CVP {PWA_Purch_WWD_SOD_Delivery_Remain_CVP = PWA_Purch_WWD_SOD_Delivery_Remain_CVP_calc}
+
+
+!define PWA_Purch_WWD_SOD_cut_D_CAA095_90_PA1 {value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA095_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_WWD_SOD_cut_D_CAA095_90_PA1 {
+	case no_delive_cut {
+	condition WWD_cvp_pag_total_whljpod==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA095_90_PA1[WHEELJPOD]/WWD_cvp_pag_total_whljpod}
+}
+
+!define PWA_Purch_WWD_SOD_cut_D_CAA109_90_PA1 {value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA109_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_WWD_SOD_cut_D_CAA109_90_PA1 {
+	case no_delive_cut {
+	condition WWD_cvp_pag_total_whljpod==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA109_90_PA1[WHEELJPOD]/WWD_cvp_pag_total_whljpod}
+}
+
+!define PWA_Purch_WWD_SOD_cut_D_CAA122_90_PA1 {value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA122_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_WWD_SOD_cut_D_CAA122_90_PA1 {
+	case no_delive_cut {
+	condition WWD_cvp_pag_total_whljpod==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA122_90_PA1[WHEELJPOD]/WWD_cvp_pag_total_whljpod}
+}
+
+!define PWA_Purch_WWD_SOD_cut_D_CAA133_90_PA1 {value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA133_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_WWD_SOD_cut_D_CAA133_90_PA1 {
+	case no_delive_cut {
+	condition WWD_cvp_pag_total_whljpod==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA133_90_PA1[WHEELJPOD]/WWD_cvp_pag_total_whljpod}
+}
+
+!define PWA_Purch_WWD_SOD_cut_D_CAA143_90_PA1 {value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA143_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_WWD_SOD_cut_D_CAA143_90_PA1 {
+	case no_delive_cut {
+	condition WWD_cvp_pag_total_whljpod==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA143_90_PA1[WHEELJPOD]/WWD_cvp_pag_total_whljpod}
+}
+
+
+!define PWA_Purch_WWD_SOD_cut_D_CAA155_90_PA1 {value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA155_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_WWD_SOD_cut_D_CAA155_90_PA1 {
+	case no_delive_cut {
+	condition WWD_cvp_pag_total_whljpod==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA155_90_PA1[WHEELJPOD]/WWD_cvp_pag_total_whljpod}
+}
+
+!define PWA_Purch_WWD_SOD_cut_D_CAA165_90_PA1 {value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA165_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_WWD_SOD_cut_D_CAA165_90_PA1 {
+	case no_delive_cut {
+	condition WWD_cvp_pag_total_whljpod==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA165_90_PA1[WHEELJPOD]/WWD_cvp_pag_total_whljpod}
+}
+
+
+!define PWA_Purch_WWD_SOD_cut_D_CAA172_90_PA1 {value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA172_90_PA1[WHEELJPOD]/del_cvp_pag_s[WHEELJPOD]}
+define PWA_Purch_WWD_SOD_cut_D_CAA172_90_PA1 {
+	case no_delive_cut {
+	condition WWD_cvp_pag_total_whljpod==0
+	value 0.
+	}
+	case otherwise {
+	condition always
+	value PWA_Purch_WWD_SOD_Delivery_Cut_CVP*D_CAA172_90_PA1[WHEELJPOD]/WWD_cvp_pag_total_whljpod}
+}
+
+!Shortage in delivery cuts
+define CVPDelcut_shortage {std kind 'check' units 'cfs'}
+goal setCVPDelcut_shortage {CVPDelcut_shortage = (General_Delivery_Cut_CVP + PWA_Purch_CVP_SOD_Delivery_Cut_CVP + PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP 
+	+ PWA_Purch_WWD_SOD_Delivery_Cut_CVP)*taf_cfs - (del_cvp_pag_s[WHEELJPOD] - del_cvp_pag_s)}
+
+define CVPDelcut_shortage_taf {std kind 'check' units 'taf'}
+goal setCVPDelcut_shortage_taf {CVPDelcut_shortage_taf = CVPDelcut_shortage*cfs_taf }
+
+!Shortages for individual delivery cuts
+define Delcut_short_D_PCH000_SCVWD_PA {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_PCH000_SCVWD_PA {Delcut_short_D_PCH000_SCVWD_PA = (D_PCH000_SCVWD_PA - D_PCH000_SCVWD_PA[WHEELJPOD]) + General_cut_SCVWD_PA*taf_cfs + PWA_Purch_CVP_SOD_cut_SCVWD_PA*taf_cfs }
+
+define Delcut_short_D_PCH000_SBCWD_PA {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_PCH000_SBCWD_PA {Delcut_short_D_PCH000_SBCWD_PA = (D_PCH000_SBCWD_PA - D_PCH000_SBCWD_PA[WHEELJPOD]) + General_cut_SBCWD_PA*taf_cfs + PWA_Purch_CVP_SOD_cut_SBCWD_PA*taf_cfs }
+
+define Delcut_short_D_DMC011_71_PA8 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC011_71_PA8 {Delcut_short_D_DMC011_71_PA8 = (D_DMC011_71_PA8 - D_DMC011_71_PA8[WHEELJPOD]) + General_cut_71_PA8*taf_cfs + PWA_Purch_CVP_SOD_cut_71_PA8*taf_cfs }
+
+define Delcut_short_D_DMC021_50_PA1 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC021_50_PA1 {Delcut_short_D_DMC021_50_PA1 = (D_DMC021_50_PA1 - D_DMC021_50_PA1[WHEELJPOD]) + General_cut_50_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_50_PA1*taf_cfs}
+
+define Delcut_short_D_DMC030_71_PA1 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC030_71_PA1 {Delcut_short_D_DMC030_71_PA1 = (D_DMC030_71_PA1 - D_DMC030_71_PA1[WHEELJPOD]) + General_cut_71_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_71_PA1*taf_cfs}
+
+define Delcut_short_D_DMC034_71_PA2 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC034_71_PA2 {lhs Delcut_short_D_DMC034_71_PA2 rhs (D_DMC034_71_PA2 - D_DMC034_71_PA2[WHEELJPOD]) + General_cut_71_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_71_PA2*taf_cfs lhs<rhs penalty 99999 lhs>rhs penalty 99999}
+
+define Delcut_short_D_DMC034_71_PA3 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC034_71_PA3 {Delcut_short_D_DMC034_71_PA3 = (D_DMC034_71_PA3 - D_DMC034_71_PA3[WHEELJPOD]) + General_cut_71_PA3*taf_cfs + PWA_Purch_CVP_SOD_cut_71_PA3*taf_cfs}
+
+define Delcut_short_D_DMC044_71_PA4 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC044_71_PA4 {Delcut_short_D_DMC044_71_PA4 = (D_DMC044_71_PA4 - D_DMC044_71_PA4[WHEELJPOD]) + General_cut_71_PA4*taf_cfs + PWA_Purch_CVP_SOD_cut_71_PA4*taf_cfs }
+
+define Delcut_short_D_DMC044_71_PA5 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC044_71_PA5 {Delcut_short_D_DMC044_71_PA5 = (D_DMC044_71_PA5 - D_DMC044_71_PA5[WHEELJPOD]) + General_cut_71_PA5*taf_cfs + PWA_Purch_CVP_SOD_cut_71_PA5*taf_cfs + PWA_Purch_Add_CVP_SOD_cut_71_PA5*taf_cfs}
+
+define Delcut_short_D_DMC064_71_PA6 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC064_71_PA6 {Delcut_short_D_DMC064_71_PA6 = (D_DMC064_71_PA6 - D_DMC064_71_PA6[WHEELJPOD]) + General_cut_71_PA6*taf_cfs + PWA_Purch_CVP_SOD_cut_71_PA6*taf_cfs}
+
+define Delcut_short_D_DMC070_73_PA1 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC070_73_PA1 {Delcut_short_D_DMC070_73_PA1 = (D_DMC070_73_PA1 - D_DMC070_73_PA1[WHEELJPOD]) + General_cut_73_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_73_PA1*taf_cfs}
+
+define Delcut_short_D_DMC091_73_PA3 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC091_73_PA3 {Delcut_short_D_DMC091_73_PA3 = (D_DMC091_73_PA3 - D_DMC091_73_PA3[WHEELJPOD]) + General_cut_73_PA3*taf_cfs + PWA_Purch_CVP_SOD_cut_73_PA3*taf_cfs}
+
+define Delcut_short_D_DMC105_73_PA2 {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_DMC105_73_PA2 {Delcut_short_D_DMC105_73_PA2 = (D_DMC105_73_PA2 - D_DMC105_73_PA2[WHEELJPOD]) + General_cut_73_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_73_PA2*taf_cfs}
+
+define Delcut_short_D_MDOTA_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_MDOTA_90_PA1 {Delcut_short_D_MDOTA_90_PA1 = (D_MDOTA_90_PA1 - D_MDOTA_90_PA1[WHEELJPOD]) + General_cut_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_90_PA1*taf_cfs}
+
+define Delcut_short_D_MDOTA_91_PA {std kind 'check' units 'cfs'}
+goal setDelcut_short_D_MDOTA_91_PA {lhs Delcut_short_D_MDOTA_91_PA rhs (D_MDOTA_91_PA - D_MDOTA_91_PA[WHEELJPOD]) + General_cut_91_PA*taf_cfs + PWA_Purch_CVP_SOD_cut_91_PA*taf_cfs lhs<rhs penalty 99999 lhs>rhs penalty 99999}
+
+define Delcut_short_D_XCC025_72_PA {std kind 'check' units 'cfs'}  
+goal setDelcut_short_D_XCC025_72_PA {Delcut_short_D_XCC025_72_PA = (D_XCC025_72_PA - D_XCC025_72_PA[WHEELJPOD]) + General_cut_72_PA*taf_cfs + PWA_Purch_CVP_SOD_cut_72_PA*taf_cfs}
+
+define Delcut_short_D_CAA087_73_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA087_73_PA1 {Delcut_short_D_CAA087_73_PA1 = (D_CAA087_73_PA1 - D_CAA087_73_PA1[WHEELJPOD]) + General_cut_D_CAA087_73_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA087_73_PA1*taf_cfs}
+
+
+define Delcut_short_D_CAA095_73_PA3 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA095_73_PA3 {Delcut_short_D_CAA095_73_PA3 = (D_CAA095_73_PA3 - D_CAA095_73_PA3[WHEELJPOD]) + General_cut_D_CAA095_73_PA3*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA095_73_PA3*taf_cfs}
+
+define Delcut_short_D_CAA109_73_PA3 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA109_73_PA3 {Delcut_short_D_CAA109_73_PA3 = (D_CAA109_73_PA3 - D_CAA109_73_PA3[WHEELJPOD]) + General_cut_D_CAA109_73_PA3*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA109_73_PA3*taf_cfs}
+
+define Delcut_short_D_CAA095_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA095_90_PA1 {Delcut_short_D_CAA095_90_PA1 = (D_CAA095_90_PA1 -D_CAA095_90_PA1[WHEELJPOD]) + General_cut_D_CAA095_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA1*taf_cfs + PWA_Purch_WWD_SOD_cut_D_CAA095_90_PA1*taf_cfs }
+
+define Delcut_short_D_CAA109_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA109_90_PA1 {Delcut_short_D_CAA109_90_PA1 = (D_CAA109_90_PA1 -D_CAA109_90_PA1[WHEELJPOD]) + General_cut_D_CAA109_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA1*taf_cfs + PWA_Purch_WWD_SOD_cut_D_CAA109_90_PA1*taf_cfs }
+
+define Delcut_short_D_CAA122_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA122_90_PA1 {Delcut_short_D_CAA122_90_PA1 = (D_CAA122_90_PA1 -D_CAA122_90_PA1[WHEELJPOD]) + General_cut_D_CAA122_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA1*taf_cfs + PWA_Purch_WWD_SOD_cut_D_CAA122_90_PA1*taf_cfs }
+
+define Delcut_short_D_CAA133_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA133_90_PA1 {Delcut_short_D_CAA133_90_PA1 = (D_CAA133_90_PA1 -D_CAA133_90_PA1[WHEELJPOD]) + General_cut_D_CAA133_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA1*taf_cfs + PWA_Purch_WWD_SOD_cut_D_CAA133_90_PA1*taf_cfs }
+
+define Delcut_short_D_CAA143_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA143_90_PA1 {Delcut_short_D_CAA143_90_PA1 = (D_CAA143_90_PA1 -D_CAA143_90_PA1[WHEELJPOD]) + General_cut_D_CAA143_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA1*taf_cfs + PWA_Purch_WWD_SOD_cut_D_CAA143_90_PA1*taf_cfs}
+
+
+define Delcut_short_D_CAA155_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA155_90_PA1 {Delcut_short_D_CAA155_90_PA1 = (D_CAA155_90_PA1 - D_CAA155_90_PA1[WHEELJPOD]) + General_cut_D_CAA155_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA1*taf_cfs + PWA_Purch_WWD_SOD_cut_D_CAA155_90_PA1*taf_cfs}
+
+define Delcut_short_D_CAA165_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA165_90_PA1 {Delcut_short_D_CAA165_90_PA1 = (D_CAA165_90_PA1 - D_CAA165_90_PA1[WHEELJPOD]) + General_cut_D_CAA165_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA1*taf_cfs + PWA_Purch_WWD_SOD_cut_D_CAA165_90_PA1*taf_cfs}
+
+define Delcut_short_D_CAA172_90_PA1 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA172_90_PA1 {Delcut_short_D_CAA172_90_PA1 = (D_CAA172_90_PA1 - D_CAA172_90_PA1[WHEELJPOD]) + General_cut_D_CAA172_90_PA1*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA1*taf_cfs + PWA_Purch_WWD_SOD_cut_D_CAA172_90_PA1*taf_cfs}
+
+define Delcut_short_D_CAA095_90_PA2 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA095_90_PA2 {Delcut_short_D_CAA095_90_PA2 = (D_CAA095_90_PA2 -D_CAA095_90_PA2[WHEELJPOD]) + General_cut_D_CAA095_90_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA2*taf_cfs}
+
+define Delcut_short_D_CAA109_90_PA2  {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA109_90_PA2 {Delcut_short_D_CAA109_90_PA2  = (D_CAA109_90_PA2  - D_CAA109_90_PA2[WHEELJPOD]) + General_cut_D_CAA109_90_PA2 *taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA2 *taf_cfs}
+
+define Delcut_short_D_CAA122_90_PA2 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA122_90_PA2 {Delcut_short_D_CAA122_90_PA2 = (D_CAA122_90_PA2 -D_CAA122_90_PA2[WHEELJPOD]) + General_cut_D_CAA122_90_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA2*taf_cfs}
+
+define Delcut_short_D_CAA133_90_PA2 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA133_90_PA2 {Delcut_short_D_CAA133_90_PA2 = (D_CAA133_90_PA2 -D_CAA133_90_PA2[WHEELJPOD]) + General_cut_D_CAA133_90_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA2*taf_cfs}
+
+define Delcut_short_D_CAA143_90_PA2 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA143_90_PA2 {Delcut_short_D_CAA143_90_PA2 = (D_CAA143_90_PA2 -D_CAA143_90_PA2[WHEELJPOD]) + General_cut_D_CAA143_90_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA2*taf_cfs}
+
+define Delcut_short_D_CAA155_90_PA2 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA155_90_PA2 {Delcut_short_D_CAA155_90_PA2 = (D_CAA155_90_PA2 -D_CAA155_90_PA2[WHEELJPOD]) + General_cut_D_CAA155_90_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA2*taf_cfs}
+
+define Delcut_short_D_CAA165_90_PA2 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA165_90_PA2 {Delcut_short_D_CAA165_90_PA2 = (D_CAA165_90_PA2 -D_CAA165_90_PA2[WHEELJPOD]) + General_cut_D_CAA165_90_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA2*taf_cfs}
+
+define Delcut_short_D_CAA172_90_PA2 {std kind 'check' units 'cfs'} 
+goal setDelcut_short_D_CAA172_90_PA2 {Delcut_short_D_CAA172_90_PA2 = (D_CAA172_90_PA2 -D_CAA172_90_PA2[WHEELJPOD]) + General_cut_D_CAA172_90_PA2*taf_cfs + PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA2*taf_cfs}
+
+!Difference in delivery cut compared to final requirement
+define DeltaVA_CVPDelCut_Difference {     
+    case Firstyr {
+        condition month<=FEB .and. wateryear==BgnWY
+        value 0.}
+    case February {		
+        condition month==FEB 
+		value (General_Delivery_Cut_Req_CVP_(prevMay)+PWA_Purch_CVP_SOD_Delivery_Cut_Req_CVP_(prevMay)
+		+PWA_Purch_Add_CVP_SOD_Delivery_Cut_Req_CVP_(prevMay)+PWA_Purch_WWD_SOD_Delivery_Cut_Req_CVP_(prevMay))
+        -(General_Delivery_Cut_CVP_annual+General_Delivery_Cut_CVP
+		+PWA_Purch_CVP_SOD_Delivery_Cut_CVP_annual+PWA_Purch_CVP_SOD_Delivery_Cut_CVP
+		+PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_annual+PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP
+		+PWA_Purch_WWD_SOD_Delivery_Cut_CVP_annual+PWA_Purch_WWD_SOD_Delivery_Cut_CVP) }
+	case otherwise {
+		condition always
+		value 0.	}
+}
+
+define DeltaVA_CVPDelCut_Difference_ {alias DeltaVA_CVPDelCut_Difference kind 'FLOW-VA' units 'TAF'}
+	
+!Difference in delivery cut compared to final required export cut
+define DeltaVA_CVPDelCut_Difference_ExpReq {     
+    case Firstyr {
+        condition month<=FEB .and. wateryear==BgnWY
+        value 0.}
+    case February {		
+        condition month==FEB 
+		value Export_Cut_Req_CVP_(prevMay)
+        -(General_Delivery_Cut_CVP_annual+General_Delivery_Cut_CVP
+		+PWA_Purch_CVP_SOD_Delivery_Cut_CVP_annual+PWA_Purch_CVP_SOD_Delivery_Cut_CVP
+		+PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_annual+PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP
+		+PWA_Purch_WWD_SOD_Delivery_Cut_CVP_annual+PWA_Purch_WWD_SOD_Delivery_Cut_CVP) }
+	case otherwise {
+		condition always
+		value 0.	}
+}
+
+define DeltaVA_CVPDelCut_Difference_ExpReq_ {alias DeltaVA_CVPDelCut_Difference_ExpReq kind 'FLOW-VA' units 'TAF'}
+
+!Difference in delivery cut compared to final actual export cut
+define DeltaVA_CVPDelCut_Difference_ExpCut {     
+    case Firstyr {
+        condition month<=FEB .and. wateryear==BgnWY
+        value 0.}
+    case February {		
+        condition month==FEB 
+		value EXPRed_CVPJONES_Annual
+        -(General_Delivery_Cut_CVP_annual+General_Delivery_Cut_CVP
+		+PWA_Purch_CVP_SOD_Delivery_Cut_CVP_annual+PWA_Purch_CVP_SOD_Delivery_Cut_CVP
+		+PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP_annual+PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP
+		+PWA_Purch_WWD_SOD_Delivery_Cut_CVP_annual+PWA_Purch_WWD_SOD_Delivery_Cut_CVP) }
+	case otherwise {
+		condition always
+		value 0.	}
+}
+
+define DeltaVA_CVPDelCut_Difference_ExpCut_ {alias DeltaVA_CVPDelCut_Difference_ExpCut kind 'FLOW-VA' units 'TAF'}
+	

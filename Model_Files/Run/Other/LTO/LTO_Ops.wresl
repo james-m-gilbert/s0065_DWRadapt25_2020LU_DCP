@@ -1,0 +1,447 @@
+! LTO_Ops.wresl
+
+! From February through April (or May), assess conditions for Shasta Fill and Carryover which will
+! drive actions designed to promote conditions favorable to fish survival.
+! Assessments are developed for "Now through April" and "May through September"
+
+! Assess Inflow through April
+define NowAprShaInf90 {   ! Current month forecast, sum from current month to Apr
+    case FebApr {
+        condition month >= Feb .and. month <= Apr
+        sum(i=0,Apr-month,1) I3_fm_90[UPPERFEATHER](i)}
+    case otherwise {
+        condition always
+        value 0 }
+    }
+define NowAprShaInf90_ {alias NowAprShaInf90 kind 'forecast' units 'taf'}
+
+define I_Shsta_thruApr_ {std kind 'forecast' units 'taf'}
+define I_Shsta_thruApr {
+    case OctApr22 {
+        condition month<FEB .and. wateryear==BgnWY
+        value 0.}
+    case FebApr {
+        condition month>JAN .and. month<MAY
+        value NowAprShaInf90 }
+    case otherwise {
+        condition always
+        value I_Shsta_thruApr_(-1)}
+    }
+goal set_I_Shsta_thruApr_ {I_Shsta_thruApr_ = I_Shsta_thruApr}
+
+! Assess Inflow May through September
+define MaySepShaInf90 {   ! Current month forecast, sum from current May to Sep
+    case FebMay {
+        condition month >= Feb .and. month <= May
+        sum(i=May-month,Sep-month,1) I3_fm_90[UPPERFEATHER](i)}
+    case otherwise {
+        condition always
+        value 0 }
+    }
+define MaySepShaInf90_ {alias MaySepShaInf90 kind 'forecast' units 'taf'}
+
+define I_Shsta_thruSep_ {std kind 'forecast' units 'taf'}
+define I_Shsta_thruSep {
+    case OctApr22 {
+        condition month<FEB .and. wateryear==BgnWY
+        value 0.}
+    case FebApr {
+        condition month>JAN .and. month<MAY
+        value NowAprShaInf90 + MaySepShaInf90 }
+    case May {
+        condition month==MAY
+        sum(i=0,4,1) I_SHSTA(i)*cfs_taf(i) }
+    case otherwise {
+        condition always
+        value I_Shsta_thruSep_(-1)} ! values June-Jan keep the previous May estimate
+    }
+goal set_I_Shsta_thruSep_ {I_Shsta_thruSep_ = I_Shsta_thruSep}
+
+! Assess delivery cost through April
+! assume 100% allocation in February and March, and use the March allocation in February
+! also assume that all delivery is from Shasta release
+! these assumptions result in the most conservative assessment of fill
+
+define SC_alloc_base {
+    case ShastaCritical {condition wyt_SHASTA_cvp>3.5 value .75}
+    case otherwise      {condition always             value 1.0}
+}
+
+define DelCostThruApril {
+    case FebMar {  !assume 100% allocation in February and March
+        condition month==FEB .or. month==MAR
+        value NowApr_cvpdem_pag_n + NowApr_cvpdem_pmi_n + NowApr_cvpdem_psc_n + NowApr_cvpdem_prf_n}
+    case April { 
+        condition month==APR
+        value NowApr_cvpdem_pag_n * perdv_cvpag_sys(-1) 
+            + NowApr_cvpdem_pmi_n * perdv_cvpmi_sys(-1) 
+            + NowApr_cvpdem_psc_n * SC_alloc_base 
+            + NowApr_cvpdem_prf_n * SC_alloc_base}
+    case otherwise {
+        condition always
+        value 0.}
+}
+define DelCostThruApril_ {alias DelCostThruApril kind 'LTO-taf' units 'taf'}
+
+! Regulatory cost is hard to predict in Feb-Apr.  Assume that Shasta must release water to meet
+! Keswick 3250 cfs, which in each month is approximately 200 TAF.
+define FebAprRegCost {value 600.}
+define MarAprRegCost {value 400.}
+define AprilRegCost  {value 200.}
+define S_SHSTA_SRSC {std kind 'STORAGE' units 'TAF'}
+
+! Sac VA storage accounts
+define S_SHSTA_VA {lower -1000. kind 'storage' units 'taf'}
+
+! Use the "through April" assessments to project End of April Fill
+define EOAprShastaEst {
+    case FirstFourMonths {
+        condition month<FEB .and. wateryear==BgnWY
+        value 4552.}
+    case February {
+        condition month==FEB
+        value min(4552., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruApr - DelCostThruApril - FebAprRegCost)}
+    case March {
+        condition month==MAR
+        value min(4552., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruApr - DelCostThruApril - MarAprRegCost)}
+    case April {
+        condition month==APR
+        value min(4552., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruApr - DelCostThruApril - AprilRegCost)}
+    case otherwise {
+        condition always
+        value S_SHSTA(prevAPR)-s_shsta_srsc(prevAPR)}
+}
+define EOAprShastaEst_ {alias EOAprShastaEst kind 'debug-taf' units 'taf'}
+
+
+! Assess delivery costs through the end of September
+define DelCostThruSept {
+    case FebMar {  !assume 100% allocation in February and March
+        condition month==FEB .or. month==MAR
+        value NowApr_cvpdem_pag_n
+            + NowApr_cvpdem_pmi_n
+            + NowApr_cvpdem_psc_n * SC_alloc_base 
+            + NowApr_cvpdem_prf_n * SC_alloc_base
+            + MaySep_cvpdem_pag_n
+            + MaySep_cvpdem_pmi_n
+            + MaySep_cvpdem_psc_n * SC_alloc_base 
+            + MaySep_cvpdem_prf_n * SC_alloc_base}
+    case April { 
+        condition month==APR
+        value NowApr_cvpdem_pag_n * perdv_cvpag_sys(-1) 
+            + NowApr_cvpdem_pmi_n * perdv_cvpmi_sys(-1) 
+            + NowApr_cvpdem_psc_n * SC_alloc_base 
+            + NowApr_cvpdem_prf_n * SC_alloc_base
+            + MaySep_cvpdem_pag_n * perdv_cvpag_sys(-1) 
+            + MaySep_cvpdem_pmi_n * perdv_cvpmi_sys(-1) 
+            + MaySep_cvpdem_psc_n * SC_alloc_base 
+            + MaySep_cvpdem_prf_n * SC_alloc_base}
+    case May { 
+        condition month==MAY
+        value MaySep_cvpdem_pag_n * perdv_cvpag_sys(-1) 
+            + MaySep_cvpdem_pmi_n * perdv_cvpmi_sys(-1) 
+            + MaySep_cvpdem_psc_n * SC_alloc_base 
+            + MaySep_cvpdem_prf_n * SC_alloc_base}
+    case otherwise {
+        condition always
+        value 0.}
+}
+define DelCostThruSept_ {alias DelCostThruSept kind 'LTO-taf' units 'taf'}
+
+
+! Assess Regulatory cost (D1641+ESA) through the end of September, based on Fill or Fill projection
+define MaySepRegCost {
+    case FebApr {
+        condition month>=FEB .and. month<=APR 
+        select med from MaySepRegCostEst given Fill=EOAprShastaEst use minimum}
+    case May {
+        condition month>APR                  
+        select med from MaySepRegCostEst given Fill=max(0.,S_SHSTA(prevApr)-s_shsta_srsc(prevApr)) use minimum}
+    case otherwise {
+        condition always
+        value 0.}
+}
+define MaySepRegCost_ {alias MaySepRegCost kind 'LTO-taf' units 'taf'}
+
+! Estimate end of September carryover based on available information
+define EOSeptShastaEst_ {std kind 'storage-est' units 'taf'}
+define EOSeptShastaEst {
+    case FirstFourMonths {
+        condition month<FEB .and. wateryear==BgnWY
+        value 3400.}
+    case February {
+        condition month==FEB
+        value min(3400., max(0., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruSep - FebAprRegCost - MaySepRegCost - DelCostThruSept))}
+    case March {
+        condition month==MAR
+        value min(3400., max(0., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruSep - MarAprRegCost - MaySepRegCost - DelCostThruSept))}
+    case April {
+        condition month==APR
+        value min(3400., max(0., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruSep - AprilRegCost - MaySepRegCost - DelCostThruSept))}
+    case May {
+        condition month==MAY
+        value min(3400., max(0., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruSep - MaySepRegCost - DelCostThruSept))}
+    case otherwise {
+        condition always
+        value EOSeptShastaEst_(-1)}
+}
+goal setEOSeptShastaEst_ {EOSeptShastaEst_ = EOSeptShastaEst}
+
+! Calculate shasta inflow since October - used in setting Bin3
+! Feb, Mar, and Apr values are through those months.  May value is through Apr
+define I_Shasta_OctNow {
+    case FebApr {condition month>=FEB .and. month<=APR  sum(i=prevoct,0,1)  I_SHSTA(i)*cfs_taf(i)}
+    case May    {condition month==MAY                   sum(i=prevoct,-1,1) I_SHSTA(i)*cfs_taf(i)}
+    case otherwise {condition always value 0.}
+}
+
+
+! identify which case controls, and use this to trigger actions
+define ShastaBin_ {std kind 'LTO-Flag' units 'none'}
+define ShastaBin {
+    case off   {condition simulateShastaPA <0.5 value 0.}
+    case OctJan   {condition month<=JAN value 0.}
+
+! February through April Bin Setting
+    case Bin1A    { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3700. .and. EOSeptShastaEst>3000.  value 1.}
+    case Bin1B    { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3700. .and. EOSeptShastaEst>2400.  value 2.}
+    case Bin1B_2A { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3700.                              value 3.}
+    
+    case Bin2A    { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3000. .and. EOSeptShastaEst>2200.  value 3.}
+    case Bin2B    { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3000. .and. EOSeptShastaEst>2000.  value 4.}
+    case Bin2B_3A { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3000.                              value 5.}
+
+    case Bin3A    { condition month>JAN .and. month<MAY .and. EOAprShastaEst<3000. .and. EOSeptShastaEst>2000.  value 5.}
+
+!    case Bin3B    { condition month>JAN .and. month<MAY .and. EOAprShastaEst<3000.                              value 6.}
+
+    case Bin3Bfeb { condition month==FEB                          .and. EOAprShastaEst<3000. .and. I_Shasta_OctNow<1671.  value 6.}
+    case Bin3Bmar { condition month==MAR .and. wyt_SHASTA_CVP>3.5 .and. EOAprShastaEst<3000. .and. I_Shasta_OctNow<1989.  value 6.}
+    case Bin3Bapr { condition month==APR .and. wyt_SHASTA_CVP>3.5 .and. EOAprShastaEst<3000. .and. I_Shasta_OctNow<2500.  value 6.}
+    case Bin3A_def { condition month>JAN .and. month<MAY .and. EOAprShastaEst<3000.                              value 5.}
+
+! Set final Bin in May - comment out this section if Bin is to be finalized in April
+    case Bin1Amay    { condition month==MAY .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)>3700. .and. EOSeptShastaEst>3000.  value 1.}
+    case Bin1Bmay    { condition month==MAY .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)>3700. .and. EOSeptShastaEst>2400.  value 2.}
+    case Bin1B_2Amay { condition month==MAY .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)>3700.                              value 3.}
+    
+    case Bin2Amay    { condition month==MAY .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)>3000. .and. EOSeptShastaEst>2200.  value 3.}
+    case Bin2Bmay    { condition month==MAY .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)>3000. .and. EOSeptShastaEst>2000.  value 4.}
+    case Bin2B_3Amay { condition month==MAY .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)>3000.                              value 5.}
+
+    case Bin3Amay    { condition month==MAY .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)<3000. .and. EOSeptShastaEst>2000.  value 5.}
+!    case Bin3Bmay    { condition month==MAY .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)<3000.                              value 6.}
+
+    case Bin3Bmay    { condition month==MAY .and. wyt_SHASTA_CVP>3.5 .and. S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1)<3000. .and. I_Shasta_OctNow<2500.  value 6.}
+    case Bin3Amaydef { condition month==MAY .and. EOAprShastaEst<3000.                           value 5.}
+
+    case otherwise { condition always value ShastaBin_(-1)}
+}
+goal setShastaBin_ {ShastaBin_ = ShastaBin}
+
+! Set target carryover to use in defining some PA actions
+define EOSeptShastaTgt_ {std kind 'LTO-taf' units 'taf'}
+define EOSeptShastaTgt {
+    case off   {condition simulateShastaPA <0.5 value 0.}
+    case Bin1A    { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3700. .and. EOSeptShastaEst>3000.  value 3000.}
+    case Bin1B    { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3700. .and. EOSeptShastaEst>2400.  value 2400.}
+    case Bin1Bact { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3700.                              value 2400.}
+    
+    case Bin2A    { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3000. .and. EOSeptShastaEst>2200.  value 2400.}
+    case Bin2B    { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3000. .and. EOSeptShastaEst>2000.  value 2200.}
+    case Bin2Bact { condition month>JAN .and. month<MAY .and. EOAprShastaEst>3000.                              value 2000.}
+
+    case Bin3A    { condition month>JAN .and. month<MAY .and. EOAprShastaEst<3000. .and. EOSeptShastaEst>2000.  value 2200.}
+    case Bin3B    { condition month>JAN .and. month<MAY .and. EOAprShastaEst<3000.                              value 2000.}
+
+    case Bin1Amay    { condition month==MAY .and. EOAprShastaEst>3700. .and. EOSeptShastaEst>3000.  value 3000.}
+    case Bin1Bmay    { condition month==MAY .and. EOAprShastaEst>3700. .and. EOSeptShastaEst>2400.  value 2400.}
+    case Bin1Bactmay { condition month==MAY .and. EOAprShastaEst>3700.                              value 2400.}
+    
+    case Bin2Amay    { condition month==MAY .and. EOAprShastaEst>3000. .and. EOSeptShastaEst>2200.  value 2400.}
+    case Bin2Bmay    { condition month==MAY .and. EOAprShastaEst>3000. .and. EOSeptShastaEst>2000.  value 2200.}
+    case Bin2Bactmay { condition month==MAY .and. EOAprShastaEst>3000.                              value 2000.}
+
+    case Bin3Amay    { condition month==MAY .and. EOAprShastaEst<3000. .and. EOSeptShastaEst>2000.  value 2200.}
+    case Bin3Bmay    { condition month==MAY .and. EOAprShastaEst<3000.                              value 2000.}
+
+    case otherwise { condition always value 0.}
+}
+goal setEOSeptShastaTgt_ {EOSeptShastaTgt_ = EOSeptShastaTgt}
+
+
+!************************************************************************************************
+! Set triggers to drive LTO actions
+!************************************************************************************************
+
+! SC cuts in Bin3
+define SCcut_trigger_ {std kind 'trigger' units 'none'}
+define SCcut_trigger {
+    case off   {condition simulateShastaPA <0.5 value 0.}
+    case OctApr {condition month<FEB .and. wateryear==1922 value 0.}
+    case Cuts { condition month>JAN .and. ShastaBin > 5.1  value 1.}
+    case NoCuts { condition month>JAN  value 0.}
+    case otherwise { condition always value SCcut_trigger_(-1)}
+}
+goal setSCcut_trigger_ {SCcut_trigger_ = SCcut_trigger}
+
+! Ag cuts in Bin1B_act and above
+define AgCut_trigger_ {std kind 'trigger' units 'none'}
+define AgCut_trigger { 
+    case off   {condition simulateShastaPA <0.5 value 0.}
+    case OctApr {condition month<FEB .and. wateryear==1922 value 0.}
+    case Cuts { condition month>JAN .and. ShastaBin > 2.1  value 1.}
+    case NoCuts { condition month>JAN  value 0.}
+    case otherwise { condition always value Agcut_trigger_(-1)}
+}
+goal setAgCut_trigger_ {AgCut_trigger_ = AgCut_trigger}
+
+! MI cuts to 25% when SC cuts are triggered
+define MIcut_trigger_ {std kind 'trigger' units 'none'}
+define MIcut_trigger {
+    case off   {condition simulateShastaPA <0.5 value 0.}
+    case OctApr {condition month<FEB .and. wateryear==1922 value 0.}
+    case Cuts { condition month>JAN .and. ShastaBin > 5.1  value 1.}
+    case NoCuts { condition month>JAN  value 0.}
+    case otherwise { condition always value MIcut_trigger_(-1)}
+}
+goal setMIcut_trigger_ {MIcut_trigger_ = MIcut_trigger}
+
+! for Bin1B, shift reservoir balance to trinity/folsom if possible - used in balance.wresl
+define Bal_trigger_ {std kind 'trigger' units 'none'}
+define Bal_trigger {
+    case off   {condition simulateShastaPA <0.5 value 0.}
+    case OctApr {condition month<MAY value 0.}
+    case MayBal {condition month==MAY .and. ShastaBin>1.5 .and. ShastaBin<2.1 value 1.}
+    case MayFolBal {condition month==MAY .and. ShastaBin>1.5 .and. ShastaBin<4.1 value 2.}
+    case otherwise {condition always value Bal_trigger_(-1)}
+}
+goal set_Bal_trigger_ {Bal_trigger_ = Bal_trigger}
+
+define NewMelonesLTO_trigger_ {std kind 'LTO-trigger' units 'none'}
+define NewMelonesLTO_trigger {
+    case off   {condition simulateShastaPA <0.5 value 0.}
+    case OctApr {condition month<MAY .and. wateryear==1922 value 0.}
+    case LTOAction { condition month==MAY .and. S_MELON(-1)>1300. .and. EOSeptShastaEst<1200. .and. ShastaBin > 5.1  value 1.}
+    case MayNoCuts { condition month==MAY  value 0.}
+    case otherwise { condition always value NewMelonesLTO_trigger_(-1)}
+}
+goal setNewMelonesLTO_trigger_ {NewMelonesLTO_trigger_ = NewMelonesLTO_trigger}
+
+!*************************************************************************************************************
+! assess delivery potential to Sac River diverters which depend on Shasta supplies affected by LTO
+! and calculate "alternative" allocation to be used with allocation logic
+
+! Calculate water supply available for delivery after LTO reservation for carryover and regulatory cost
+define LTOSacSupply { 
+    case Feb { condition month==FEB value max(0., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruSep - FebAprRegCost - MaySepRegCost - EOSeptShastaTgt)}
+    case Mar { condition month==MAR value max(0., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruSep - MarAprRegCost - MaySepRegCost - EOSeptShastaTgt)}
+    case Apr { condition month==APR value max(0., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruSep - AprilRegCost  - MaySepRegCost - EOSeptShastaTgt)}
+    case May { condition month==MAY value max(0., S_SHSTA(-1)-s_shsta_srsc(-1)-s_shsta_va(-1) + I_Shsta_thruSep                 - MaySepRegCost - EOSeptShastaTgt)}
+    case otherwise {condition always value 0.}
+}
+define LTOSacSupply_ {alias LTOSacSupply kind 'water-supply' units 'taf'}
+
+! Calculate delivery potential - i.e. whether the projected Shasta water supply can support allocations
+! Refuge first, then SC, then MI (if SC can't be fully met then MI is H&S), and then ag
+
+define delpot_CVPrf_ {std kind 'Seasonal' units 'taf'}
+define delpot_CVPsc_ {std kind 'Seasonal' units 'taf'}
+define delpot_CVPmi_ {std kind 'Seasonal' units 'taf'}
+define delpot_CVPag_ {std kind 'Seasonal' units 'taf'}
+
+define delpot_CVPrf {
+    case preMay22  {condition month<MAY .and. wateryear==1922 value NowApr_cvpdem_prf_n + MaySep_cvpdem_prf_n}
+    case FebApr    {condition month<MAY value min(LTOSacSupply, NowApr_cvpdem_prf_n + MaySep_cvpdem_prf_n)}
+    case May       {condition month==MAY value MaySep_cvpdem_prf_n} 
+    case otherwise {condition always value delpot_CVPrf_(-1)}
+}
+define delpot_CVPsc {
+    case preMay22  {condition month<MAY .and. wateryear==1922 value NowApr_cvpdem_psc_n+MaySep_cvpdem_psc_n}
+
+    case SCcutFA   {condition month<MAY .and. SCcut_trigger > .5 value max(0., min(LTOSacSupply - delpot_CVPrf, NowApr_cvpdem_psc_n+MaySep_cvpdem_psc_n))}
+    case FebApr    {condition month<MAY value NowApr_cvpdem_psc_n+MaySep_cvpdem_psc_n} 
+
+    case SCcutMay  {condition month==MAY .and. SCcut_trigger > .5 value max(0., min(LTOSacSupply - delpot_CVPrf, MaySep_cvpdem_psc_n))} 
+    case May       {condition month==MAY value MaySep_cvpdem_psc_n} 
+
+    case otherwise {condition always value delpot_CVPsc_(-1)}
+}
+define delpot_CVPmi {
+    case preMay22  {condition month<MAY .and. wateryear==1922 value NowApr_cvpdem_pmi_n + MaySep_cvpdem_pmi_n}
+
+    case MIcutFA   {condition month<MAY .and. MIcut_trigger>.5 value max((NowApr_cvpdem_pmi_n + MaySep_cvpdem_pmi_n)*.25, min(LTOSacSupply - delpot_CVPrf - delpot_CVPsc, NowApr_cvpdem_pmi_n + MaySep_cvpdem_pmi_n))}
+    case FebApr    {condition month<MAY value NowApr_cvpdem_pmi_n + MaySep_cvpdem_pmi_n} 
+
+    case MIcut     {condition month==MAY .and. MIcut_trigger>.5 value max(MaySep_cvpdem_pmi_n*.25, min(LTOSacSupply - delpot_CVPrf - delpot_CVPsc, MaySep_cvpdem_pmi_n))}
+    case May       {condition month==MAY value MaySep_cvpdem_pmi_n} 
+
+    case otherwise {condition always value delpot_CVPmi_(-1)}
+}
+define delpot_CVPag {
+    case preMay22  {condition month<MAY .and. wateryear==1922 value NowApr_cvpdem_pag_n + MaySep_cvpdem_pag_n}
+    case AGcutFA   {condition month<MAY .and. AgCut_trigger>.5 value max(0., min(LTOSacSupply - delpot_CVPrf - delpot_CVPsc - delpot_CVPmi, NowApr_cvpdem_pag_n + MaySep_cvpdem_pag_n))} 
+    case FebApr    {condition month<MAY value NowApr_cvpdem_pag_n + MaySep_cvpdem_pag_n} 
+    case AGcut     {condition month==MAY .and. AgCut_trigger>.5 value max(0., min(LTOSacSupply - delpot_CVPrf - delpot_CVPsc - delpot_CVPmi, MaySep_cvpdem_pag_n))} 
+    case May       {condition month==MAY value MaySep_cvpdem_pag_n} 
+    case otherwise {condition always value delpot_CVPag_(-1)}
+}
+
+goal savedelpot_cvprf {delpot_cvprf_ = delpot_cvprf}
+goal savedelpot_cvpsc {delpot_cvpsc_ = delpot_cvpsc}
+goal savedelpot_cvpmi {delpot_cvpmi_ = delpot_cvpmi}
+goal savedelpot_cvpag {delpot_cvpag_ = delpot_cvpag}
+
+
+! Calculate alternative allocations 
+! LTO alternative allocation is compared to the ordinary allocation logic values in cvpcut.wresl
+! IF (and only if) cuts are triggered, then cvpcut.wresl logic will decide which allocation value prevails.
+! Note that cuts to Ag and by extension MI service are limited by additional logic in cvpcut.wresl
+define alt_perdel_cvp_rf_n_ {std  kind 'allocation' units 'none'}
+define alt_perdel_cvp_sc_n_ {std  kind 'allocation' units 'none'}
+define alt_perdel_cvp_mi_n_ {std  kind 'allocation' units 'none'}
+define alt_perdel_cvp_ag_n_ {std  kind 'allocation' units 'none'}
+
+define alt_perdel_cvp_rf_n {
+    case firstyear {condition month<MAR .and. wateryear==1922 value 1.}
+    case MarApr {condition month==MAR .or. month==APR  value min(1.,delpot_CVPrf/(NowApr_cvpdem_prf_n + MaySep_cvpdem_prf_n))}
+    case May    {condition month==MAY value min(1.,delpot_CVPrf/MaySep_cvpdem_prf_n)}
+    case otherwise {condition always value alt_perdel_cvp_rf_n_(-1)}
+}
+define alt_perdel_cvp_sc_n {
+    case firstyear {condition month<MAY .and. wateryear==1922 value 1.}
+!    case MarApr {condition month==MAR .or. month==APR value min(1.,delpot_CVPsc/(NowApr_cvpdem_psc_n+MaySep_cvpdem_psc_n))}
+    case MarApr {condition month==MAR .or. month==APR value min(1.,max(.47,delpot_CVPsc/(NowApr_cvpdem_psc_n+MaySep_cvpdem_psc_n)))}
+!    case May {condition month==MAY value min(1.,delpot_CVPsc/MaySep_cvpdem_psc_n)}
+    case May {condition month==MAY value min(1.,max(.47,delpot_CVPsc/MaySep_cvpdem_psc_n))}
+    case otherwise {condition always value alt_perdel_cvp_sc_n_(-1)}
+}
+define alt_perdel_cvp_mi_n {
+    case firstyear {condition month<MAY .and. wateryear==1922 value 1.}
+    case MarApr  {condition month==MAR .or. month==APR value min(1.,delpot_CVPmi/(NowApr_cvpdem_pmi_n + MaySep_cvpdem_pmi_n))}
+    case May     {condition month==MAY value min(1.,delpot_CVPmi/MaySep_cvpdem_pmi_n)}
+    case otherwise {condition always value alt_perdel_cvp_mi_n_(-1)}
+}
+define alt_perdel_cvp_ag_n {
+    case firstyear {condition month<MAY .and. wateryear==1922 value 1.}
+    case MarApr  {condition month==MAR .or. month==APR value min(1.,delpot_CVPag/(NowApr_cvpdem_pag_n + MaySep_cvpdem_pag_n))}
+    case May     {condition month==MAY value min(1.,delpot_CVPag/MaySep_cvpdem_pag_n)}
+    case otherwise {condition always value alt_perdel_cvp_ag_n_(-1)}
+}
+
+goal setalt_perdel_cvp_rf_n_ {alt_perdel_cvp_rf_n_ = alt_perdel_cvp_rf_n }
+goal setalt_perdel_cvp_sc_n_ {alt_perdel_cvp_sc_n_ = alt_perdel_cvp_sc_n }
+goal setalt_perdel_cvp_mi_n_ {alt_perdel_cvp_mi_n_ = alt_perdel_cvp_mi_n }
+goal setalt_perdel_cvp_ag_n_ {alt_perdel_cvp_ag_n_ = alt_perdel_cvp_ag_n }
+
+! calculate a reduction to all CVP service contract allocations based on the difference
+! between the estimated carryover and the target. This is used in cvpcut.wresl
+define CVPSrvContCut {
+    case off   {condition simulateShastaPA <0.5 value 0.}
+    case FebMay { condition month>JAN .and. month<JUN value max(0., EOSeptShastaTgt - EOSeptShastaEst)}
+    case otherwise {condition always value 0.}
+}
+
+define CVPSrvContCut_ {alias CVPSrvContCut kind 'debug-taf' units 'taf'}
+
+

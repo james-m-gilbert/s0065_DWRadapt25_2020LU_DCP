@@ -1,0 +1,42 @@
+/*
+File Name: constraints-deliveries_Common.wresl
+Lower Yuba River System File
+
+Purpose:
+Assure continuity in delivery arcs
+
+Naming takes the following form:
+
+*/
+
+!Set Urban Conservatioin in driest years
+define TUCPyear   {
+	case OCTtoDEC {
+	     condition  month >= OCT .and. month <= DEC
+	     value wateryear-1}
+	case rest {
+		condition  always
+        value wateryear}}
+	         
+define wyt_Driest {select TUCPswitch from Driest_yr where year = TUCPyear}
+	
+define UrbanConservation {
+	case driestyear {condition simulateUrbanConservation >=0.5 .and. wyt_Driest >=0.5 value 0.5}
+	case otherwise {condition always value 1.}}
+	
+! For managed wetlands constrain groundwater pumping to minimum specified amount
+! Demand may not be met in full due to contract limits
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! WBA 15-North    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!======================================================================
+! 15N_NU
+!======================================================================
+! gross surface water diversions
+goal setDG_15N_NU   {DG_15N_NU = D_YUB003_15N_NU}
+! net surface delivery = surface diversion - conveyance losses
+goal setDN_15N_NU   {DN_15N_NU = DG_15N_NU - DL_15N_NU}
+! Total Applied Water = net surface delivery + groundwater pumping
+goal setUD_15N_NU   {UrbanConservation*UD_15N_NU = DN_15N_NU + GP_15N_NU } ! + SHRTG_15N_NU }

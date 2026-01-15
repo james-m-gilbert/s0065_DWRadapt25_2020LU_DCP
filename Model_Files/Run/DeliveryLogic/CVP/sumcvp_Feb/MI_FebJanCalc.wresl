@@ -1,0 +1,52 @@
+!**********************************************************************************
+!Define Annual Urban Demand for CVP MI Service
+!**********************************************************************************
+! Calculated in Feb for use in projecting Shasta conditions - sum of the following Mar-Feb year
+
+define UDann_FebCalc_02_PUdv {std kind 'ANNUAL-URBAN-DEMAND' units 'taf'}
+define UDann_FebCalc_02_PU{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  UD_02_PU(i)*cfs_taf(i)}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) UD_02_PU(i)*cfs_taf(i)}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  UD_02_PU(i)*cfs_taf(i)}
+    case Rest { 
+        condition always
+        value UDann_FebCalc_02_PUdv(-1) } }
+goal setUDann_FebCalc_02_PUdv {UDann_FebCalc_02_PUdv = UDann_FebCalc_02_PU}
+
+define UDann_FebCalc_03_PU1dv {std kind 'ANNUAL-URBAN-DEMAND' units 'taf'}          
+define UDann_FebCalc_03_PU1{   
+    case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  UD_03_PU1(i)*cfs_taf(i)}
+    case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) UD_03_PU1(i)*cfs_taf(i)}
+    case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  UD_03_PU1(i)*cfs_taf(i)}
+    case Rest { 
+        condition always
+        value UDann_FebCalc_03_PU1dv(-1) } }
+goal setUDann_FebCalc_03_PU1dv {UDann_FebCalc_03_PU1dv = UDann_FebCalc_03_PU1}
+
+define UDann_FebCalc_03_PU2dv {std kind 'ANNUAL-URBAN-DEMAND' units 'taf'}          
+define UDann_FebCalc_03_PU2{   
+   case octBgnWY {  ! special case for first wateryear, Sum Oct-Sep
+        condition month == OCT .and. wateryear == bgnWY
+        sum(i=0,11,1)  UD_03_PU2(i)*cfs_taf(i)}
+   case FebEndWY {  ! special case for last wateryear, Sum Oct-Sep
+        condition month == Feb .and. wateryear == EndWY
+        sum(i=prevOCT,SEP-month,1) UD_03_PU2(i)*cfs_taf(i)}
+   case February { ! February for wateryears BgnWY - year before EndWY
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1)  UD_03_PU2(i)*cfs_taf(i)}
+   case Rest { 
+        condition always
+        value UDann_FebCalc_03_PU2dv(-1) } }
+goal setUDann_FebCalc_03_PU2dv {UDann_FebCalc_03_PU2dv = UDann_FebCalc_03_PU2}

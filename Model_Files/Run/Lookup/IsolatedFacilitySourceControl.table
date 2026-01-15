@@ -1,0 +1,14 @@
+!Turn ON(1) and OFF(0) source of diversion for IF for project supplies
+!Source through Banks: 1=Excess for SWP, 2=Shift from TD for SWP, 3=Storage release for SWP
+!Source through Jones: 4=Excess for CVP, 5=Shift from TD for CVP, 6=Storage release for CVP 
+!CVP Wheeling: 7=storage release (and surplus) for CVP through Banks (CVC and JPOD)
+!Banks dedicated capacity for CVP is not controlled here, to work must adjust capacity in BanksLimits.table
+IsolatedFacilitySourceControl
+source	switch
+1		1.
+2       1.
+3       1.
+4       0.
+5		0.
+6		0.
+7		0.

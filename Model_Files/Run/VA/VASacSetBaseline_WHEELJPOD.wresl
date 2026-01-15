@@ -1,0 +1,4 @@
+! VASacSetBaseline_WHEELJPOD.wresl
+
+define S_SHSTA_VABase {value S_SHSTA[WHEELJPOD]}
+define C_KSWCK_VABase {value C_KSWCK[WHEELJPOD]}

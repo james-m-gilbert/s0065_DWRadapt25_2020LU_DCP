@@ -1,0 +1,13 @@
+!Draft WRESL for including rulecurve WRESL files
+!RULECV
+!R.WILBUR
+!12/8/00
+
+include 'swpdeliv_rulecv.wresl'
+include 'swprule.wresl'
+
+!include 'cvpdeliv_rulecv_wsidi.wresl'
+!include 'cvprule_frcst.wresl'
+include 'cvprule_wsidi.wresl'
+include 'sanluis.wresl'
+

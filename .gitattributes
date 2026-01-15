@@ -1,0 +1,5 @@
+# always convert line endings to CRLF on checkout.
+*.wresl eol=crlf
+*.table eol=crlf
+*.launch eol=crlf
+*.txt eol=crlf

@@ -1,0 +1,22 @@
+!CVP_stor_release_est.wresl
+
+! Estimate expected storage releases through the North Delta Diversion
+! Used to balance releases from storage and shifts from the Delta to mimic WaterFix operation.
+define CVPSLspacebelfull {value max(0,(S_SLUIS_CVPLEVEL5 - S_SLUIS_CVP[DELTA])) * taf_cfs}    !Space below full in CVP San Luis
+define CVPSLspacebelrule {value max(0,(CVPRULECV[DELTA] - S_SLUIS_CVP[DELTA])) * taf_cfs}  		!Space below rule curve in CVP San Luis
+define CVPzone5stor {value S_SHSTA_5[DELTA] + S_TRNTY_5[DELTA] + S_FOLSM_5[DELTA]}			!Zone 5 storage will be released even if CVP San Luis is above rule curve
+define Jonesavailable_capac {value (TracyMAXALLOW - C_DMC000[DELTA])  * taf_cfs}			!Remaining capacity at Jones
+
+!Storage release estimate only used July-Sept
+define CVP_stor_release_est {	
+	case JulSep {
+	  condition month >= Jul .and. month <= Sep
+	  value min(CVPSLspacebelfull, max(CVPzone5stor, CVPSLspacebelrule), Jonesavailable_capac)}
+	case otherwise {
+	  condition always
+	  value 0.}
+}					
+
+define CVPSLspacebelfulldv {alias CVPSLspacebelfull kind 'debug' units 'cfs'}
+define CVPSLspacebelruledv {alias CVPSLspacebelrule kind 'debug' units 'cfs'}
+define CVP_stor_release_estdv {alias CVP_stor_release_est kind 'debug' units 'cfs'}

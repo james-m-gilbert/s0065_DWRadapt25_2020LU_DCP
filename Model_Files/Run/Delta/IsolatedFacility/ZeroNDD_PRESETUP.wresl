@@ -1,0 +1,13 @@
+! ZeroNDD.wresl
+
+! Zero out the North Delta Diversion until later cycles 
+goal zeroD_SAC041_ISF001 {D_SAC041_ISF001 = 0.}
+
+! NDD Bypass Flow Elements
+define C_SAC048_IFMIN {upper 99999. lower 0. kind 'flow-channel' units 'cfs'} !Minimum flow at SAC, cannot be diverted into NDD
+define C_SAC048_ISF001 {upper 99999. kind 'flow-channel' units 'cfs'} !Max Flow that will be diverted at NDD
+goal TotalC_SAC048 {C_SAC048 = C_SAC048_IFMIN + C_SAC048_ISF001}
+goal setC_SAC048_IFmin {C_SAC048 = C_SAC048_IFMIN}
+
+goal zeroC_SAC048_ISF001 {C_SAC048_ISF001 = 0.}
+

@@ -1,0 +1,57 @@
+! MI DEMANDS *********************************************
+
+define MaySep_UD_02_PUdv {std kind 'ANNUAL-URBAN-DEMAND' units 'taf'}   
+define MaySep_UD_02_PU {
+    case Feb { 
+        condition month == Feb 
+        sum(i=May-month,Sep-month,1) UD_02_PU(i)*cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_UD_02_PUdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_UD_02_PUdv {MaySep_UD_02_PUdv = MaySep_UD_02_PU}
+
+/*define MaySep_UD_03_PU3dv {std kind 'ANNUAL-URBAN-DEMAND' units 'taf'}  
+define MaySep_UD_03_PU3 {
+    case Feb { 
+       condition month == Feb 
+       sum(i=May-month,Sep-month,1) UD_03_PU3(i)*cfs_taf(i)}
+    case MarMay {
+       condition month >= Mar .and. month <= May 
+       value MaySep_UD_03_PU3dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_UD_03_PU3dv {MaySep_UD_03_PU3dv = MaySep_UD_03_PU3}*/
+
+define MaySep_UD_03_PU1dv {std kind 'ANNUAL-URBAN-DEMAND' units 'taf'}  
+define MaySep_UD_03_PU1 {
+    case Feb { 
+        condition month == Feb 
+        sum(i=May-month,Sep-month,1) UD_03_PU1(i)*cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_UD_03_PU1dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_UD_03_PU1dv {MaySep_UD_03_PU1dv = MaySep_UD_03_PU1}
+
+define MaySep_UD_03_PU2dv {std kind 'ANNUAL-URBAN-DEMAND' units 'taf'}  
+define MaySep_UD_03_PU2 {
+    case Feb { 
+        condition month == Feb 
+        sum(i=May-month,Sep-month,1) UD_03_PU2(i)*cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_UD_03_PU2dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_UD_03_PU2dv {MaySep_UD_03_PU2dv = MaySep_UD_03_PU2}    

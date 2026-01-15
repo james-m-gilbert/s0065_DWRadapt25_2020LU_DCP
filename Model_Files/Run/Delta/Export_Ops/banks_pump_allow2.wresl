@@ -1,0 +1,14 @@
+! set up dedicated Banks pumping for Refuge
+define CVP_BanksMaxTD_Est {std kind 'FLOW' units 'CFS'}
+goal SetCVPBanksMaxTD { CVP_BanksMaxTD_Est = min(max(EstCVPSodExp-maxTracyCalc,0.),CVPDedBanksTDSwitch*BanksMaxAllowCVPTD) }
+define CVP_BanksMaxTDdv {alias CVP_BanksMaxTD_Est kind 'FLOW' units 'CFS'}
+
+! Limit CVP Dedicated Banks to the Specified Level of pumping defined in banks_limits.wresl
+goal banksCVPTDded  { C_CAA003_CVPDED_TD  < CVPDedBanksTDSwitch * BanksMaxAllowCVPTD }
+goal banksCVPIFded1 { C_CAA003_CVPDED_IF  < CVPDedBanksIFSwitch * BanksMaxAllowCVPIF }
+goal banksCVPIFded2 { C_CAA003_CVPDED_IF  < CVPDedBanksIFSwitch * BanksIFSwitch * 99999. }
+
+! Limit Banks SWP to the minimum of BanksMaxAllow and BanksCapPhys minus BanksCVPDedicate
+goal banksSWPminusCVP { C_CAA003_SWP_TD < BanksMaxAllow - CVP_BanksMaxTD_Est}
+
+

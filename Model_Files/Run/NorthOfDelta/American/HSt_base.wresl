@@ -1,0 +1,43 @@
+! Pre-CVPIA minimum flow requirement
+! see *.table for documentation
+! Dustin Jones 11/22/99
+! Revised SRS 12/14/99
+!
+! ==========================================================================
+! American River @ H Street
+
+define HMin {select HStMin
+             from   HSt_base
+             where  month=month, AmerD893=wyt_AMERd893_cvp
+}
+
+goal meet_HStQ {C_AMR004_MIF + C_AMR004_MIF_SHRTG < HMin + WFMITRELDV} 
+!WFMITRELDV ensures that WF mitigation water released by PCWA is maintained in the American River
+
+!Restructured goal SetHSttoMin to eliminate threshold affect of using a specific storage as trigger
+!Penalty is now variable and scales upward when storage in the prior month was between 500 and 250.  TF Stantec 112821
+/*define Hstminpenalty {
+	case penaltyvariable {
+		condition S_FOLSM(-1) < 500. .and. S_FOLSM(-1) > 250.
+		value (500. - S_FOLSM(-1)) / 25.  !Scales from 0 to 10
+	}
+	case fixedpenalty {
+ 	    condition S_FOLSM(-1) <= 250.
+	    value 10.}
+	case nopenalty {
+		condition always
+		value 0.}
+}
+*/
+
+goal setHSttoMin {
+    lhs C_AMR004_ADD
+    case lowfolsom {
+        condition S_FOLSM(-1) < 400.
+        rhs 0.
+! this weight is way too high - it will override COA
+!        lhs>rhs penalty 3000 }
+! this weight causes reservoir balancing to shift to Shasta if possible
+        lhs>rhs penalty  10 }!Hstminpenalty } 
+!        lhs<rhs penalty 0 }
+}

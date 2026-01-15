@@ -1,0 +1,560 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! CVP Settlement Contractors !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Calculated in Feb for use in projecting Shasta conditions - sum of the following Mar-Feb year
+
+! SumAW_FebCalc_02_SA_sv   - PeakAW_FebCalc_02_SA_sv  
+define SumAW_FebCalc_02_SA       {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_02_SA      {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_02_SA_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_02_SA(i)*cfs_taf(i)*(1+ RPF_02_SA - RUFr5_TS(i)) + AWO_02_SA(i)*cfs_taf(i)*(1+ RPF_02_SA - RUFo_02_SA)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_02_SA(i)*cfs_taf(i)*(1+ RPF_02_SA - RUFr5_TS(i)) + AWO_02_SA(i)*cfs_taf(i)*(1+ RPF_02_SA - RUFo_02_SA))
+        + AWR_02_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_02_SA - RUFr5_TS(prevOCT)) + AWO_02_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_02_SA - RUFo_02_SA)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_02_SA(i)*cfs_taf(i)*(1+ RPF_02_SA - RUFr5_TS(i)) + AWO_02_SA(i)*cfs_taf(i)*(1+ RPF_02_SA - RUFo_02_SA)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_02_SA(-1) }
+}       
+goal setSumAW_FebCalc_02_SA      {SumAW_FebCalc_02_SA = SumAW_FebCalc_02_SA_sv}
+
+! Summation of peak applied water (July-August)
+define PeakAW_FebCalc_02_SA_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Aug-month,1) AWR_02_SA(i)*cfs_taf(i)*(1+ RPF_02_SA - RUFr5_TS(i)) + AWO_02_SA(i)*cfs_taf(i)*(1+ RPF_02_SA - RUFo_02_SA)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_02_SA(-1) }
+}    
+goal setPeakAW_FebCalc_02_SA     {PeakAW_FebCalc_02_SA = PeakAW_FebCalc_02_SA_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! SumAW_FebCalc_03_SA_sv   - PeakAW_FebCalc_03_SA_sv  
+define SumAW_FebCalc_03_SA       {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_03_SA      {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_03_SA_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_03_SA(i)*cfs_taf(i)*(1+ RPF_03_SA - RUFr5_TS(i)) + AWO_03_SA(i)*cfs_taf(i)*(1+ RPF_03_SA - RUFo_03_SA)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_03_SA(i)*cfs_taf(i)*(1+ RPF_03_SA - RUFr5_TS(i)) + AWO_03_SA(i)*cfs_taf(i)*(1+ RPF_03_SA - RUFo_03_SA))
+        + AWR_03_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_03_SA - RUFr5_TS(prevOCT)) + AWO_03_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_03_SA - RUFo_03_SA)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_03_SA(i)*cfs_taf(i)*(1+ RPF_03_SA - RUFr5_TS(i)) + AWO_03_SA(i)*cfs_taf(i)*(1+ RPF_03_SA - RUFo_03_SA)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_03_SA(-1) }
+}      
+goal setSumAW_FebCalc_03_SA      {SumAW_FebCalc_03_SA = SumAW_FebCalc_03_SA_sv}
+
+! Summation of peak applied water (July-August)
+define PeakAW_FebCalc_03_SA_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Aug-month,1) AWR_03_SA(i)*cfs_taf(i)*(1+ RPF_03_SA - RUFr5_TS(i)) + AWO_03_SA(i)*cfs_taf(i)*(1+ RPF_03_SA - RUFo_03_SA)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_03_SA(-1) }
+}   
+goal setPeakAW_FebCalc_03_SA     {PeakAW_FebCalc_03_SA = PeakAW_FebCalc_03_SA_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! SumUD_FebCalc_03_SU_sv   - PeakUD_FebCalc_03_SU_sv  
+! Assume Redding urban settlement contract is not restricted to April-October         
+define SumUD_FebCalc_03_SU  {std kind 'URBAN-DEMAND' units 'TAF'} ! Annual demand
+define PeakUD_FebCalc_03_SU {std kind 'URBAN-DEMAND' units 'TAF'} ! Peak demand
+
+! Summation of annual urban demand (March-February)
+define SumUD_FebCalc_03_SU_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=0,11,1) UD_03_SU(i)*cfs_taf(i) }
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        sum(i=prevOCT,SEP-month,1) UD_03_SU(i)*cfs_taf(i) }
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1) UD_03_SU(i)*cfs_taf(i) }
+    case otherwise {
+        condition   always
+        value SumUD_FebCalc_03_SU(-1) }
+}
+goal setSumUD_FebCalc_03_SU      {SumUD_FebCalc_03_SU = SumUD_FebCalc_03_SU_sv}
+
+! Summation of peak urban demand (July-August)
+define PeakUD_FebCalc_03_SU_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Aug-month,1) UD_03_SU(i)*cfs_taf(i) }
+    case otherwise {
+        condition   always
+        value PeakUD_FebCalc_03_SU(-1) }
+}
+goal setPeakUD_FebCalc_03_SU     {PeakUD_FebCalc_03_SU = PeakUD_FebCalc_03_SU_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! SumUD_FebCalc_02_SU_sv   - PeakUD_FebCalc_02_SU_sv  
+! Assume Redding urban settlement contract is not restricted to April-October 
+define SumUD_FebCalc_02_SU  {std kind 'URBAN-DEMAND' units 'TAF'} ! Annual demand
+define PeakUD_FebCalc_02_SU {std kind 'URBAN-DEMAND' units 'TAF'} ! Peak demand
+
+! Summation of annual urban demand (March-February)
+define SumUD_FebCalc_02_SU_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=0,11,1) UD_02_SU(i)*cfs_taf(i) }
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        sum(i=prevOCT,SEP-month,1) UD_02_SU(i)*cfs_taf(i) }
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Mar-month,Feb-month+12,1) UD_02_SU(i)*cfs_taf(i) }
+    case otherwise {
+        condition   always
+        value SumUD_FebCalc_02_SU(-1) }
+}   
+goal setSumUD_FebCalc_02_SU      {SumUD_FebCalc_02_SU = SumUD_FebCalc_02_SU_sv}
+
+! Summation of peak urban demand (July-August)
+define PeakUD_FebCalc_02_SU_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Aug-month,1) UD_02_SU(i)*cfs_taf(i) }
+    case otherwise {
+        condition   always
+        value PeakUD_FebCalc_02_SU(-1) }
+}
+goal setPeakUD_FebCalc_02_SU     {PeakUD_FebCalc_02_SU = PeakUD_FebCalc_02_SU_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! SumAW_FebCalc_08N_SA1_sv - PeakAW_FebCalc_08N_SA1_sv
+define SumAW_FebCalc_08N_SA1          {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_08N_SA1         {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_08N_SA1_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFr5_TS(i)) + AWO_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFo_08N_SA1)+ AWW_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFw_08N_SA1)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFr5_TS(i)) + AWO_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFo_08N_SA1) + AWW_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFw_08N_SA1))
+        + AWR_08N_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08N_SA1 - RUFr5_TS(prevOCT)) + AWO_08N_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08N_SA1 - RUFo_08N_SA1) + AWW_08N_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08N_SA1 - RUFw_08N_SA1)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFr5_TS(i)) + AWO_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFo_08N_SA1) + AWW_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFw_08N_SA1)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_08N_SA1(-1) }
+}     
+goal setSumAW_FebCalc_08N_SA1    {SumAW_FebCalc_08N_SA1 = SumAW_FebCalc_08N_SA1_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_08N_SA1_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFr5_TS(i)) + AWO_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFo_08N_SA1) + AWW_08N_SA1(i)*cfs_taf(i)*(1+ RPF_08N_SA1 - RUFw_08N_SA1)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_08N_SA1(-1) }
+} 
+goal setPeakAW_FebCalc_08N_SA1   {PeakAW_FebCalc_08N_SA1 = PeakAW_FebCalc_08N_SA1_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+! SumAW_FebCalc_08N_SA2_sv - PeakAW_FebCalc_08N_SA2_sv
+define SumAW_FebCalc_08N_SA2          {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_08N_SA2    {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_08N_SA2_sv {
+    case octBgnWY{
+     condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_08N_SA2(i)*RiceFact_08N_SA2*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFR4_TS(i)) + AWO_08N_SA2(i)*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFo_08N_SA2) + AWW_08N_SA2(i)*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFw_08N_SA2)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_08N_SA2(i)*RiceFact_08N_SA2*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFR4_TS(i)) + AWO_08N_SA2(i)*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFo_08N_SA2) + AWW_08N_SA2(i)*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFw_08N_SA2)) 
+        + AWR_08N_SA2(prevOCT)*RiceFact_08N_SA2*cfs_taf(prevOCT)*(1+ RPF_08N_SA2 - RUFR4_TS(prevOCT)) + AWO_08N_SA2(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08N_SA2 - RUFo_08N_SA2) + AWW_08N_SA2(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08N_SA2 - RUFw_08N_SA2)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_08N_SA2(i)*RiceFact_08N_SA2*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFR4_TS(i)) + AWO_08N_SA2(i)*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFo_08N_SA2) + AWW_08N_SA2(i)*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFw_08N_SA2)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_08N_SA2(-1) }
+}    
+goal setSumAW_FebCalc_08N_SA2    {SumAW_FebCalc_08N_SA2 = SumAW_FebCalc_08N_SA2_sv}
+
+! Summation of peak applied water (July-August)
+define PeakAW_FebCalc_08N_SA2_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Aug-month,1) AWR_08N_SA2(i)*RiceFact_08N_SA2*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFR4_TS(i)) + AWO_08N_SA2(i)*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFo_08N_SA2) + AWW_08N_SA2(i)*cfs_taf(i)*(1+ RPF_08N_SA2 - RUFw_08N_SA2)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_08N_SA2(-1) }
+}     
+goal setPeakAW_FebCalc_08N_SA2   {PeakAW_FebCalc_08N_SA2 = PeakAW_FebCalc_08N_SA2_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! SumAW_FebCalc_08S_SA1_sv - PeakAW_FebCalc_08S_SA1_sv
+define SumAW_FebCalc_08S_SA1          {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_08S_SA1         {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_08S_SA1_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFr5_TS(i)) + AWO_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFo_08S_SA1)+ AWW_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFw_08S_SA1)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFr5_TS(i)) + AWO_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFo_08S_SA1) + AWW_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFw_08S_SA1))
+        + AWR_08S_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08S_SA1 - RUFr5_TS(prevOCT)) + AWO_08S_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08S_SA1 - RUFo_08S_SA1) + AWW_08S_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08S_SA1 - RUFw_08S_SA1)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFr5_TS(i)) + AWO_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFo_08S_SA1) + AWW_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFw_08S_SA1)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_08S_SA1(-1) }
+}     
+goal setSumAW_FebCalc_08S_SA1    {SumAW_FebCalc_08S_SA1 = SumAW_FebCalc_08S_SA1_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_08S_SA1_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFr5_TS(i)) + AWO_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFo_08S_SA1)+AWW_08S_SA1(i)*cfs_taf(i)*(1+ RPF_08S_SA1 - RUFw_08S_SA1)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_08S_SA1(-1) }
+}   
+goal setPeakAW_FebCalc_08S_SA1   {PeakAW_FebCalc_08S_SA1 = PeakAW_FebCalc_08S_SA1_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! SumAW_FebCalc_08S_SA2_sv - PeakAW_FebCalc_08S_SA2_sv
+define SumAW_FebCalc_08S_SA2          {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_08S_SA2         {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_08S_SA2_sv {
+    case octBgnWY{
+     condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_08S_SA2(i)*RiceFact_08S_SA2*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFR4_TS(i)) + AWO_08S_SA2(i)*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFo_08S_SA2)+AWW_08S_SA2(i)*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFw_08S_SA2)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_08S_SA2(i)*RiceFact_08S_SA2*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFR4_TS(i)) + AWO_08S_SA2(i)*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFo_08S_SA2) + AWW_08S_SA2(i)*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFw_08S_SA2))
+        + AWR_08S_SA2(prevOCT)*RiceFact_08S_SA2*cfs_taf(prevOCT)*(1+ RPF_08S_SA2 - RUFR4_TS(prevOCT)) + AWO_08S_SA2(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08S_SA2 - RUFo_08S_SA2) + AWW_08S_SA2(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08S_SA2 - RUFw_08S_SA2)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_08S_SA2(i)*RiceFact_08S_SA2*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFR4_TS(i)) + AWO_08S_SA2(i)*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFo_08S_SA2) + AWW_08S_SA2(i)*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFw_08S_SA2)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_08S_SA2(-1) }
+}    
+goal setSumAW_FebCalc_08S_SA2    {SumAW_FebCalc_08S_SA2 = SumAW_FebCalc_08S_SA2_sv}
+
+! Summation of peak applied water (July-August)
+define PeakAW_FebCalc_08S_SA2_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Aug-month,1) AWR_08S_SA2(i)*RiceFact_08S_SA2*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFR4_TS(i)) + AWO_08S_SA2(i)*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFo_08S_SA2) + AWW_08S_SA2(i)*cfs_taf(i)*(1+ RPF_08S_SA2 - RUFw_08S_SA2) }
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_08S_SA2(-1) }
+}   
+goal setPeakAW_FebCalc_08S_SA2   {PeakAW_FebCalc_08S_SA2 = PeakAW_FebCalc_08S_SA2_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! SumAW_FebCalc_08S_SA3_sv - PeakAW_FebCalc_08S_SA3_sv
+define SumAW_FebCalc_08S_SA3          {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_08S_SA3         {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_08S_SA3_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_08S_SA3(i)*cfs_taf(i)*(1+ RPF_08S_SA3 - RUFr6_TS(i)) + AWO_08S_SA3(i)*cfs_taf(i)*(1+ RPF_08S_SA3 - RUFo_08S_SA3)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_08S_SA3(i)*cfs_taf(i)*(1+ RPF_08S_SA3 - RUFr6_TS(i)) + AWO_08S_SA3(i)*cfs_taf(i)*(1+ RPF_08S_SA3 - RUFo_08S_SA3))
+        + AWR_08S_SA3(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08S_SA3 - RUFr6_TS(prevOCT)) + AWO_08S_SA3(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_08S_SA3 - RUFo_08S_SA3)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_08S_SA3(i)*cfs_taf(i)*(1+ RPF_08S_SA3 - RUFr6_TS(i)) + AWO_08S_SA3(i)*cfs_taf(i)*(1+ RPF_08S_SA3 - RUFo_08S_SA3)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_08S_SA3(-1) }
+}   
+goal setSumAW_FebCalc_08S_SA3    {SumAW_FebCalc_08S_SA3 = SumAW_FebCalc_08S_SA3_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_08S_SA3_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_08S_SA3(i)*cfs_taf(i)*(1+ RPF_08S_SA3 - RUFr6_TS(i)) + AWO_08S_SA3(i)*cfs_taf(i)*(1+ RPF_08S_SA3 - RUFo_08S_SA3)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_08S_SA3(-1) }
+}      
+goal setPeakAW_FebCalc_08S_SA3   {PeakAW_FebCalc_08S_SA3 = PeakAW_FebCalc_08S_SA3_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! SumAW_FebCalc_09_SA1_sv  - PeakAW_FebCalc_09_SA1_sv 
+define SumAW_FebCalc_09_SA1      {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_09_SA1          {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)   ! changed to RUFR2 for 09_SA1 3/24/2016 Idy
+define SumAW_FebCalc_09_SA1_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_09_SA1(i)*cfs_taf(i)*(1+ RPF_09_SA1 - RUFr2_TS(i)) + AWO_09_SA1(i)*cfs_taf(i)*(1+ RPF_09_SA1 - RUFo_09_SA1)}
+    case FebEndWY { 
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_09_SA1(i)*cfs_taf(i)*(1+ RPF_09_SA1 - RUFr2_TS(i)) + AWO_09_SA1(i)*cfs_taf(i)*(1+ RPF_09_SA1 - RUFo_09_SA1))
+        + AWR_09_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_09_SA1 - RUFr2_TS(prevOCT)) + AWO_09_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_09_SA1 - RUFo_09_SA1)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_09_SA1(i)*cfs_taf(i)*(1+ RPF_09_SA1 - RUFr2_TS(i)) + AWO_09_SA1(i)*cfs_taf(i)*(1+ RPF_09_SA1 - RUFo_09_SA1)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_09_SA1(-1) }
+}   
+goal setSumAW_FebCalc_09_SA1     {SumAW_FebCalc_09_SA1 = SumAW_FebCalc_09_SA1_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_09_SA1_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_09_SA1(i)*cfs_taf(i)*(1+ RPF_09_SA1 - RUFr2_TS(i)) + AWO_09_SA1(i)*cfs_taf(i)*(1+ RPF_09_SA1 - RUFo_09_SA1)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_09_SA1(-1) }
+}    
+goal setPeakAW_FebCalc_09_SA1    {PeakAW_FebCalc_09_SA1 = PeakAW_FebCalc_09_SA1_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! SumAW_FebCalc_09_SA2_sv  - PeakAW_FebCalc_09_SA2_sv 
+define SumAW_FebCalc_09_SA2      {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_09_SA2          {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)    Changed to RUFR6 for 09_SA2 3/24/2016 Idy
+define SumAW_FebCalc_09_SA2_sv {
+    case octBgnWY{
+     condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFr6_TS(i)) + AWO_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFo_09_SA2)+ AWW_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFw_09_SA2)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFr6_TS(i)) + AWO_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFo_09_SA2) + AWW_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFw_09_SA2))
+        + AWR_09_SA2(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_09_SA2 - RUFr6_TS(prevOCT)) + AWO_09_SA2(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_09_SA2 - RUFo_09_SA2) + AWW_09_SA2(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_09_SA2 - RUFw_09_SA2)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFr6_TS(i)) + AWO_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFo_09_SA2) + AWW_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFw_09_SA2)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_09_SA2(-1) }
+}     
+goal setSumAW_FebCalc_09_SA2     {SumAW_FebCalc_09_SA2 = SumAW_FebCalc_09_SA2_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_09_SA2_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFr6_TS(i)) + AWO_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFo_09_SA2) + AWW_09_SA2(i)*cfs_taf(i)*(1+ RPF_09_SA2 - RUFw_09_SA2)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_09_SA2(-1) }
+}    
+goal setPeakAW_FebCalc_09_SA2    {PeakAW_FebCalc_09_SA2 = PeakAW_FebCalc_09_SA2_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! SumAW_FebCalc_18_SA_sv   - PeakAW_FebCalc_18_SA_sv  
+define SumAW_FebCalc_18_SA       {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_18_SA      {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_18_SA_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_18_SA(i)*cfs_taf(i)*(1+ RPF_18_SA - RUFr5_TS(i)) + AWO_18_SA(i)*cfs_taf(i)*(1+ RPF_18_SA - RUFo_18_SA)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_18_SA(i)*cfs_taf(i)*(1+ RPF_18_SA - RUFr5_TS(i)) + AWO_18_SA(i)*cfs_taf(i)*(1+ RPF_18_SA - RUFo_18_SA))
+        + AWR_18_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_18_SA - RUFr5_TS(prevOCT)) + AWO_18_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_18_SA - RUFo_18_SA)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_18_SA(i)*cfs_taf(i)*(1+ RPF_18_SA - RUFr5_TS(i)) + AWO_18_SA(i)*cfs_taf(i)*(1+ RPF_18_SA - RUFo_18_SA)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_18_SA(-1) }
+}     
+goal setSumAW_FebCalc_18_SA      {SumAW_FebCalc_18_SA = SumAW_FebCalc_18_SA_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_18_SA_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_18_SA(i)*cfs_taf(i)*(1+ RPF_18_SA - RUFr5_TS(i)) + AWO_18_SA(i)*cfs_taf(i)*(1+ RPF_18_SA - RUFo_18_SA)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_18_SA(-1) }
+}    
+goal setPeakAW_FebCalc_18_SA     {PeakAW_FebCalc_18_SA = PeakAW_FebCalc_18_SA_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  
+define SumAW_FebCalc_19_SA       {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_19_SA      {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)      Changed to FUFR2 for 19_SA 3/24/2016 Idy
+define SumAW_FebCalc_19_SA_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_19_SA(i)*cfs_taf(i)*(1+ RPF_19_SA - RUFr2_TS(i)) + AWO_19_SA(i)*cfs_taf(i)*(1+ RPF_19_SA - RUFo_19_SA)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_19_SA(i)*cfs_taf(i)*(1+ RPF_19_SA - RUFr2_TS(i)) + AWO_19_SA(i)*cfs_taf(i)*(1+ RPF_19_SA - RUFo_19_SA))
+        + AWR_19_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_19_SA - RUFr2_TS(prevOCT)) + AWO_19_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_19_SA - RUFo_19_SA)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_19_SA(i)*cfs_taf(i)*(1+ RPF_19_SA - RUFr2_TS(i)) + AWO_19_SA(i)*cfs_taf(i)*(1+ RPF_19_SA - RUFo_19_SA)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_19_SA(-1) }
+}     
+goal setSumAW_FebCalc_19_SA      {SumAW_FebCalc_19_SA = SumAW_FebCalc_19_SA_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_19_SA_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_19_SA(i)*cfs_taf(i)*(1+ RPF_19_SA - RUFr2_TS(i)) + AWO_19_SA(i)*cfs_taf(i)*(1+ RPF_19_SA - RUFo_19_SA)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_19_SA(-1) }
+}      
+goal setPeakAW_FebCalc_19_SA     {PeakAW_FebCalc_19_SA = PeakAW_FebCalc_19_SA_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! SumAW_FebCalc_21_SA_sv   - PeakAW_FebCalc_21_SA_sv  
+define SumAW_FebCalc_21_SA       {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_21_SA      {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_21_SA_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_21_SA(i)*cfs_taf(i)*(1+ RPF_21_SA - RUFr5_TS(i)) + AWO_21_SA(i)*cfs_taf(i)*(1+ RPF_21_SA - RUFo_21_SA)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_21_SA(i)*cfs_taf(i)*(1+ RPF_21_SA - RUFr5_TS(i)) + AWO_21_SA(i)*cfs_taf(i)*(1+ RPF_21_SA - RUFo_21_SA))
+        + AWR_21_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_21_SA - RUFr5_TS(prevOCT)) + AWO_21_SA(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_21_SA - RUFo_21_SA)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_21_SA(i)*cfs_taf(i)*(1+ RPF_21_SA - RUFr5_TS(i)) + AWO_21_SA(i)*cfs_taf(i)*(1+ RPF_21_SA - RUFo_21_SA)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_21_SA(-1) }
+}    
+goal setSumAW_FebCalc_21_SA      {SumAW_FebCalc_21_SA = SumAW_FebCalc_21_SA_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_21_SA_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_21_SA(i)*cfs_taf(i)*(1+ RPF_21_SA - RUFr5_TS(i)) + AWO_21_SA(i)*cfs_taf(i)*(1+ RPF_21_SA - RUFo_21_SA)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_21_SA(-1) }
+}     
+goal setPeakAW_FebCalc_21_SA     {PeakAW_FebCalc_21_SA = PeakAW_FebCalc_21_SA_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! SumAW_FebCalc_22_SA1_sv  - PeakAW_FebCalc_22_SA1_sv 
+define SumAW_FebCalc_22_SA1      {std kind 'ANNUAL-APPLIED-WATER' units 'TAF'} ! Annual demand
+define PeakAW_FebCalc_22_SA1          {std kind 'PEAK-APPLIED-WATER' units 'TAF'} ! Peak demand
+
+! Summation of annual applied water (April-October)
+define SumAW_FebCalc_22_SA1_sv {
+    case octBgnWY{
+        condition month == oct .and. wateryear==bgnWY
+        sum(i=6,12,1) AWR_22_SA1(i)*cfs_taf(i)*(1+ RPF_22_SA1 - RUFr5_TS(i)) + AWO_22_SA1(i)*cfs_taf(i)*(1+ RPF_22_SA1 - RUFo_22_SA1)}
+    case FebEndWY {
+        condition month == Feb .and. wateryear==EndWY
+        value (sum(i=Apr-month,Sep-month,1) AWR_22_SA1(i)*cfs_taf(i)*(1+ RPF_22_SA1 - RUFr5_TS(i)) + AWO_22_SA1(i)*cfs_taf(i)*(1+ RPF_22_SA1 - RUFo_22_SA1))
+              + AWR_22_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_22_SA1 - RUFr5_TS(prevOCT)) + AWO_22_SA1(prevOCT)*cfs_taf(prevOCT)*(1+ RPF_22_SA1 - RUFo_22_SA1)}
+    case February {
+        condition month == Feb .and. wateryear < EndWY
+        sum(i=Apr-month,Oct+12-month,1) AWR_22_SA1(i)*cfs_taf(i)*(1+ RPF_22_SA1 - RUFr5_TS(i)) + AWO_22_SA1(i)*cfs_taf(i)*(1+ RPF_22_SA1 - RUFo_22_SA1)}
+    case otherwise {
+        condition   always
+        value SumAW_FebCalc_22_SA1(-1) }
+}
+goal setSumAW_FebCalc_22_SA1     {SumAW_FebCalc_22_SA1 = SumAW_FebCalc_22_SA1_sv}
+
+! Summation of peak applied water (July-September)
+define PeakAW_FebCalc_22_SA1_sv {
+    case begin {
+        condition month == oct .and. wateryear == bgnWY
+        value 0.0 }
+    case February {
+        condition month == Feb
+        sum(i=Jul-month,Sep-month,1) AWR_22_SA1(i)*cfs_taf(i)*(1+ RPF_22_SA1 - RUFr5_TS(i)) + AWO_22_SA1(i)*cfs_taf(i)*(1+ RPF_22_SA1 - RUFo_22_SA1)}
+    case otherwise {
+        condition   always
+        value PeakAW_FebCalc_22_SA1(-1) }
+}     
+goal setPeakAW_FebCalc_22_SA1    {PeakAW_FebCalc_22_SA1 = PeakAW_FebCalc_22_SA1_sv}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -1,0 +1,629 @@
+
+!! This file includes logic that makes delivery shortages equal amongst Pool deliveries with multiple 
+!! contract types being diverted out of each pool. 
+
+! Pool 22 Equal Delivery Percentage
+define perdel_p22_swp_ag1 { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p22_swp_ag2 { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p22_swp_ag3 { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p22_swp_ag4 { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal perdel_p22_swp_ag_1 { 
+	lhs perdel_p22_swp_ag1
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_14 == 0.0 .or. DEM_14_PA == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA185_EMPIRE_PAG / (DEM_14_PA *taf_cfs*perdel_14) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+goal perdel_p22_swp_ag_2 { 
+	lhs perdel_p22_swp_ag2
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_10 == 0.0 .or. DEM_10_PA == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA185_KINGS_PAG / (DEM_10_PA *taf_cfs*perdel_10) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+goal perdel_p22_swp_ag_3 { 
+	lhs perdel_p22_swp_ag3
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_37 == 0.0 .or. DEM_37_PA == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA185_TULARE_PAG / (DEM_37_PA *taf_cfs*perdel_37) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+goal perdel_p22_swp_ag_4 { 
+	lhs perdel_p22_swp_ag4
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_13 == 0.0 .or. DEM_13_PA == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA185_DUDLEY_PAG / (DEM_13_PA *taf_cfs*perdel_13) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_pool22_evendel_1 { !Equal distribution of deliveries percentwise when all contract types have demand
+	lhs perdel_p22_swp_ag1
+	case demabv0 { 
+		condition min( perdel_14, perdel_10, perdel_37, perdel_13, DEM_14_PA, DEM_10_PA, DEM_37_PA, DEM_13_PA ) > 0.0 
+		rhs perdel_p22_swp_ag2
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other { 
+		condition always
+		rhs perdel_p22_swp_ag1
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_pool22_evendel_2 { !Equal distribution of deliveries percentwise when all contract types have demand
+	lhs perdel_p22_swp_ag2
+	case demabv0 { 
+		condition min( perdel_14, perdel_10, perdel_37, perdel_13, DEM_14_PA, DEM_10_PA, DEM_37_PA, DEM_13_PA ) > 0.0 
+		rhs perdel_p22_swp_ag3
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other { 
+		condition always
+		rhs perdel_p22_swp_ag2
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_pool22_evendel_3 { !Equal distribution of deliveries percentwise when all contract types have demand
+	lhs perdel_p22_swp_ag3
+	case demabv0 { 
+		condition min( perdel_14, perdel_10, perdel_37, perdel_13, DEM_14_PA, DEM_10_PA, DEM_37_PA, DEM_13_PA ) > 0.0
+		rhs perdel_p22_swp_ag4
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other { 
+		condition always
+		rhs perdel_p22_swp_ag3
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+! Pool 23 Equal Delivery Percentage
+define perdel_p23_swp_ag { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p23_swp_mi { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal setperdel_p23_swp_ag { 
+	lhs perdel_p23_swp_ag
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_16 == 0.0 .or. DEM_CAA197_16_PAG == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA197_16_PAG  / (DEM_CAA197_16_PAG*taf_cfs*perdel_16) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setperdel_p23_swp_mi { 
+	lhs perdel_p23_swp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_15 == 0.0 .or. DEM_CAA197_15_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA197_15_PU / (DEM_CAA197_15_PU*taf_cfs*perdel_15)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p23 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p23_swp_ag
+	case dem0_ag { 
+		condition perdel_16 == 0.0 .or. DEM_CAA197_16_PAG == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_15 == 0.0 .or. DEM_CAA197_15_PU == 0.0
+		rhs perdel_p23_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p23_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+! Pool 24 Equal Delivery Percentage
+define perdel_p24_swp_ag { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p24_swp_mi { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal setperdel_p24_swp_ag { 
+	lhs perdel_p24_swp_ag
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_16 == 0.0 .or. DEM_CAA208_16_PAG == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA208_16_PAG  / (DEM_CAA208_16_PAG*taf_cfs*perdel_16) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setperdel_p24_swp_mi { 
+	lhs perdel_p24_swp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_15 == 0.0 .or. DEM_CAA208_15_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA208_15_PU / (DEM_CAA208_15_PU*taf_cfs*perdel_15)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p24 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p24_swp_ag
+	case dem0_ag { 
+		condition perdel_16 == 0.0 .or. DEM_CAA208_16_PAG == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_15 == 0.0 .or. DEM_CAA208_15_PU == 0.0
+		rhs perdel_p24_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p24_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+! Pool 25 Equal Delivery Percentage
+define perdel_p25_swp_ag { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p25_swp_mi { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal setperdel_p25_swp_ag { 
+	lhs perdel_p25_swp_ag
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_16 == 0.0 .or. DEM_CAA217_16_PAG == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA217_16_PAG  / (DEM_CAA217_16_PAG*taf_cfs*perdel_16) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setperdel_p25_swp_mi { 
+	lhs perdel_p25_swp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_15 == 0.0 .or. DEM_CAA217_15_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA217_15_PU / (DEM_CAA217_15_PU*taf_cfs*perdel_15)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p25 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p25_swp_ag
+	case dem0_ag { 
+		condition perdel_16 == 0.0 .or. DEM_CAA217_16_PAG == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_15 == 0.0 .or. DEM_CAA217_15_PU == 0.0
+		rhs perdel_p25_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p25_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+! Pool 26 Equal Delivery Percentage
+define perdel_p26_swp_ag { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p26_swp_mi { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal setperdel_p26_swp_ag { 
+	lhs perdel_p26_swp_ag
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_16 == 0.0 .or. DEM_CAA225_16_PAG == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA225_16_PAG  / (DEM_CAA225_16_PAG*taf_cfs*perdel_16) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setperdel_p26_swp_mi { 
+	lhs perdel_p26_swp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_15 == 0.0 .or. DEM_CAA225_15_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA225_15_PU / (DEM_CAA225_15_PU*taf_cfs*perdel_15)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p26 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p26_swp_ag
+	case dem0_ag { 
+		condition perdel_16 == 0.0 .or. DEM_CAA225_16_PAG == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_15 == 0.0 .or. DEM_CAA225_15_PU == 0.0
+		rhs perdel_p26_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p26_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+! Pool 27 Equal Delivery Percentage
+define perdel_p27_swp_ag { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p27_swp_mi { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal setperdel_p27_swp_ag { 
+	lhs perdel_p27_swp_ag
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_16 == 0.0 .or. DEM_CAA232_16_PAG == 0.0 
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA232_16_PAG  / (DEM_CAA232_16_PAG*taf_cfs*perdel_16) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setperdel_p27_swp_mi { 
+	lhs perdel_p27_swp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_15 == 0.0 .or. DEM_CAA232_15_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA232_15_PU / (DEM_CAA232_15_PU*taf_cfs*perdel_15)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p27 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p27_swp_ag
+	case dem0_ag { 
+		condition perdel_16 == 0.0 .or. DEM_CAA232_16_PAG == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_15 == 0.0 .or. DEM_CAA232_15_PU == 0.0
+		rhs perdel_p27_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p27_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+! Pool 28 Equal Delivery Percentage
+define perdel_p28_swp_ag { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p28_swp_mi { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+!define perdel_p28_swp_mwd { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal setperdel_p28_swp_ag { 
+	lhs perdel_p28_swp_ag
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_16 == 0.0 .or. DEM_CAA238_16_PAG == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA238_16_PAG  / (DEM_CAA238_16_PAG*taf_cfs*perdel_16) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setperdel_p28_swp_mi { 
+	lhs perdel_p28_swp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_15 == 0.0 .or. DEM_CAA238_15_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA238_15_PU / (DEM_CAA238_15_PU*taf_cfs*perdel_15)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p28 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p28_swp_ag
+	case dem0_ag { 
+		condition perdel_16 == 0.0 .or. DEM_CAA238_16_PAG == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_15 == 0.0 .or. DEM_CAA238_15_PU == 0.0
+		rhs perdel_p28_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p28_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+/*goal setperdel_p28_swp_mwd { 
+	lhs perdel_p28_swp_mwd
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_22 == 0.0 .or. dem_D851B_PMI == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D851B_PMI / (dem_D851B_PMI*taf_cfs*perdel_22)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p28_1 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p28_swp_ag
+	case dem0 { 
+		condition min( perdel_15, perdel_16, perdel_22, dem_D851_PAG, dem_D851A_PMI, dem_D851B_PMI ) > 0.0 
+		rhs perdel_p28_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p28_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_p28_2 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p28_swp_mi
+	case dem0 { 
+		condition min( perdel_15, perdel_16, perdel_22, dem_D851_PAG, dem_D851A_PMI, dem_D851B_PMI ) > 0.0 
+		rhs perdel_p28_swp_mwd
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p28_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_p28_3 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p28_swp_ag
+	case dem0_mwd { 
+		condition perdel_22 == 0.0 .or. dem_D851B_PMI == 0.0 
+		rhs perdel_p28_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p28_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}*/
+
+
+! Pool 29 Equal Delivery Percentage
+define perdel_p29_swp_ag { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p29_swp_mi { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p29_swp_mwd { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal setperdel_p29_swp_ag { 
+	lhs perdel_p29_swp_ag
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_16 == 0.0 .or. DEM_CAA244_16_PAG == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA244_16_PAG  / (DEM_CAA244_16_PAG*taf_cfs*perdel_16) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setperdel_p29_swp_mi { 
+	lhs perdel_p29_swp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_15 == 0.0 .or. DEM_CAA244_15_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA244_15_PU / (DEM_CAA244_15_PU*taf_cfs*perdel_15)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+
+goal setperdel_p29_swp_mwd { 
+	lhs perdel_p29_swp_mwd
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_22 == 0.0 .or. DEM_22_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA244_22_PU / (DEM_22_PU*taf_cfs*perdel_22)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p29_1 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p29_swp_ag
+	case dem0 { 
+		condition min( perdel_15, perdel_16, perdel_22, DEM_CAA244_15_PU, DEM_CAA244_16_PAG, DEM_22_PU ) > 0.0 
+		rhs perdel_p29_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p29_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_p29_2 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p29_swp_mi
+	case dem0 { 
+		condition min( perdel_15, perdel_16, perdel_22, DEM_CAA244_15_PU, DEM_CAA244_16_PAG, DEM_22_PU ) > 0.0 
+		rhs perdel_p29_swp_mwd
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p29_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+goal setequal_p29_3 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p29_swp_ag
+	case dem0_mwd { 
+		condition perdel_22 == 0.0 .or. DEM_22_PU == 0.0 
+		rhs perdel_p29_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p29_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+
+goal setequal_p29 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p29_swp_ag
+	case dem0_ag { 
+		condition perdel_16 == 0.0 .or. DEM_CAA244_16_PAG == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_15 == 0.0 .or. DEM_CAA244_15_PU == 0.0
+		rhs perdel_p29_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p29_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}
+
+! Pool 30 Equal Delivery Percentage
+define perdel_p30_swp_ag { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+define perdel_p30_swp_mi { std kind 'DELIVERY-PERC-SWP-AG' units 'none'}
+
+goal setperdel_p30_swp_ag { 
+	lhs perdel_p30_swp_ag
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_16 == 0.0 .or. DEM_CAA251_16_PAG == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA251_16_PAG  / (DEM_CAA251_16_PAG*taf_cfs*perdel_16) 
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setperdel_p30_swp_mi { 
+	lhs perdel_p30_swp_mi
+	case dem0 { !If demand is 0, then perdel = 0
+		condition perdel_15 == 0.0 .or. DEM_CAA251_15_PU == 0.0
+		rhs 0.0	
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs D_CAA251_15_PU / (DEM_CAA251_15_PU*taf_cfs*perdel_15)
+		lhs>rhs constrain
+		lhs<rhs constrain}
+}
+
+goal setequal_p30 { !Equal distribution of deliveries percetwise when all contract types have demand
+	lhs perdel_p30_swp_ag
+	case dem0_ag { 
+		condition perdel_16 == 0.0 .or. DEM_CAA251_16_PAG == 0.0 
+		rhs 0.0
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case dem0_mi { 
+		condition perdel_15 == 0.0 .or. DEM_CAA251_15_PU == 0.0
+		rhs perdel_p30_swp_ag
+		lhs>rhs constrain
+		lhs<rhs constrain }
+	case other {
+		condition always
+		rhs perdel_p30_swp_mi
+		lhs>rhs constrain
+		lhs<rhs constrain }
+}

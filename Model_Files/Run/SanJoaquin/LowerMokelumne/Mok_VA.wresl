@@ -1,0 +1,189 @@
+! Mok_VA.wresl.wresl
+
+
+!******************************************************************************
+!EBMUD Voluntary Agreement
+!******************************************************************************
+
+/*
+In years when EBMUD’s March 1st median forecast of Total Combined Pardee and Camanche (P+C) storage
+by End-of-September is projected to be less than 350 thousand acre-feet, then no VA flow requirement
+applies, but JSA-required flows would be provided.
+
+*/
+
+! Inflows Mar-Sep
+define EBMUD_WS1_VA {
+	case MartoSep	{
+		condition month == MAR
+	  	sum(i=0,6) (I_COL003(i)+I_TGC003(i)+I_NFM010(i)+I_SFM005(i)+I_MFM008(i)+I_BCM003(i)+I_SLTSP(i)+I_UBEAR(i)+I_MOK079(i))*cfs_taf(i) + I_PARDE(i)*cfs_taf(i) + I_CMCHE(i)*cfs_taf(i)}
+	case other {
+	  	condition always
+	  	value 0.0}
+}
+
+define EBMUD_WS2_VA1 {				!Assume no deliveries to JVID under drought
+	case MartoSep	{
+		condition month == MAR
+	  	value
+	  	+ AnnualAMADR_AWS  * AnnualAMADR_AWS_AprSep_Ratio     !Upstream demand Apr-Sep
+	  	+ AnnualAMADR_CAWP * AnnualAMADR_AWS_AprSep_Ratio     !Upstream demand Apr-Se
+	  	+ AnnualCPUD       * AnnualCPUD_AprSep_Ratio          !Upstream demand Apr-Sep
+	  	+ AnnualCACWD      * AnnualCACWD_AprSep_Ratio          !Upstream demand Apr-Sep
+	  	 }
+	case other {
+	  condition always
+	  value	0.0}
+}
+define EBMUD_WS2_VA2 {				!Assume no deliveries to JVID under drought
+	case MartoSep	{
+		condition month == MAR
+	  	value
+                + AnnAlloc60N_NA4 * 0.975 !Woodbridge ID demand Apr-Sep based on average of 1922-2015
+                + AnnAlloc60N_NU1 * Lodi_AprSep_Ratio !City of Lodi demand Apr-Sep
+                + AnnAlloc60N_NU1 * Stockton_AprSep_Ratio !City of Stockton demand Apr-Sep
+                + AnnAlloc60N_NA5 * 0.965 !Riparian Diversions Apr-Sep based on average of 1922-2015
+                }
+	case other {
+	  condition always
+	  value	0.0}
+}
+define minflow_C_CMCHE_Mar_VA    { select minCamanche   from Mok_JSAFlow where month=MAR, wyt=wyt_MokJSA}
+define Seepage1_Mar_VA			  {select Seepage1 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Mar_VA use linear}
+define Seepage2_Mar_VA			  {select Seepage2 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Mar_VA use linear}
+define minflow_C_CMCHE_Apr_VA    { select minCamanche   from Mok_JSAFlow where month=APR, wyt=wyt_MokJSA}
+define Seepage1_Apr_VA			  {select Seepage1 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Apr_VA use linear}
+define Seepage2_Apr_VA			  {select Seepage2 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Apr_VA use linear}
+define minflow_C_CMCHE_May_VA    { select minCamanche   from Mok_JSAFlow where month=May, wyt=wyt_MokJSA}
+define Seepage1_May_VA			  {select Seepage1 from Mok_GWSeepage given Flow = minflow_C_CMCHE_May_VA use linear}
+define Seepage2_May_VA			  {select Seepage2 from Mok_GWSeepage given Flow = minflow_C_CMCHE_May_VA use linear}
+define minflow_C_CMCHE_Jun_VA   { select minCamanche   from Mok_JSAFlow where month=Jun, wyt=wyt_MokJSA}
+define Seepage1_Jun_VA			  {select Seepage1 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Jun_VA use linear}
+define Seepage2_Jun_VA			  {select Seepage2 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Jun_VA use linear}
+define minflow_C_CMCHE_Jul_VA    { select minCamanche   from Mok_JSAFlow where month=Jul, wyt=wyt_MokJSA}
+define Seepage1_Jul_VA			  {select Seepage1 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Jul_VA use linear}
+define Seepage2_Jul_VA			  {select Seepage2 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Jul_VA use linear}
+define minflow_C_CMCHE_Aug_VA    { select minCamanche   from Mok_JSAFlow where month=Aug, wyt=wyt_MokJSA}
+define Seepage1_Aug_VA			  {select Seepage1 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Aug_VA use linear}
+define Seepage2_Aug_VA			  {select Seepage2 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Aug_VA use linear}
+define minflow_C_CMCHE_Sep_VA    { select minCamanche   from Mok_JSAFlow where month=Sep, wyt=wyt_MokJSA}
+define Seepage1_Sep_VA			  {select Seepage1 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Sep_VA use linear}
+define Seepage2_Sep_VA			  {select Seepage2 from Mok_GWSeepage given Flow = minflow_C_CMCHE_Sep_VA use linear}
+
+define Seepage_Est_VA	 {value (Seepage1_Mar_VA+Seepage2_Mar_VA
+                                +Seepage1_Apr_VA+Seepage2_Apr_VA
+				                +Seepage1_May_VA+Seepage2_May_VA
+				                +Seepage1_Jun_VA+Seepage2_Jun_VA
+				                +Seepage1_Jul_VA+Seepage2_Jul_VA
+				                +Seepage1_Aug_VA+Seepage2_Aug_VA
+				                +Seepage1_Sep_VA+Seepage2_Sep_VA)*cfs_taf}
+
+define EBMUD_WS2_VA3 {				!Assume no deliveries to JVID under drought
+	case AprtoSep	{
+		condition month == MAR
+	  	value
+                  7*SL_PARDE_SV*cfs_taf
+                + 7*SL_CMCHE_SV*cfs_taf
+                + Seepage_Est_VA + 7*40*cfs_taf}
+	case other {
+	  condition always
+	  value	0.0}
+}
+
+
+define EBMUD_WS2_VA {value EBMUD_WS2_VA1 + EBMUD_WS2_VA2 + EBMUD_WS2_VA3}
+
+define EBMUD_WS3_VA {
+	case MartoSep	{
+		condition month == MAR
+    		select WBAprSepTAF from Mok_JSAFlow where month=month, wyt=wyt_MokJSA}
+	case other {
+		condition always
+	  	value 0.0}
+}
+
+define EBMUD_WS4_VA { !evaporative loss
+	case FirstyYear	{
+		condition wateryear == BgnWY .and. month == MAR
+    		value 32.}
+    	case March {
+    		condition month == MAR
+    		sum(i=-12,-8) (E_SLTSP(i)+E_LBEAR(i)+E_PARDE(i)+E_CMCHE(i))*cfs_taf(i)}
+	case other {
+		condition always
+	  	value 0.0}
+}
+
+define EBMUD_WS5_VA { !PG&E release from storage
+    	case April {
+    		condition month == APR
+    		value min(0., S_SLTSP(-1) + S_LBEAR(-1) - 110.)} !Analysis of historical data shows a lareg range of possible carryover storage. 110 TAF seems to be the maximum. Do not rely on positive contributions from PG&E
+	case other {
+		condition always
+	  	value 0.0}
+}
+
+! Calculate the supply index for Mokelumne River for end of September
+! Sum of End of Mar storage and available inflows from Apr-Sep
+define EBMUD_SI_VAdv {std kind 'SUPPLY-INDEX' units 'TAF'}
+
+define EBMUD_SI_VA   {
+	case Initialize {
+		condition month == BgnMo .and. wateryear == BgnWY
+		value 1000.}
+	case March {
+		condition month == MAR
+		value min(650.,0.95*max(0, S_PARDE(-1) + S_CMCHE(-1) + EBMUD_WS1_VA - EBMUD_WS2_VA - EBMUD_WS3_VA - EBMUD_WS4_VA + EBMUD_WS5_VA)) } !0.95 is an efficiency factor based on model simulation
+	case other {
+		condition always
+	  	value EBMUD_SI_VAdv(-1)	}
+}
+
+goal set_EBMUD_SI_VAdv {EBMUD_SI_VAdv = EBMUD_SI_VA }
+
+!EOS-TSS 450
+define EBMUD_SI_2_VAdv {std kind 'SUPPLY-INDEX' units 'TAF'}
+
+define EBMUD_SI_VA_2   {
+	case Initialize {
+		condition month == BgnMo .and. wateryear == BgnWY
+		value 1000.}
+	case March {
+		condition month == MAR
+		value min(650.,0.95*max(0, S_PARDE(-1) + S_CMCHE(-1) + S_EBTML(-1) + EBMUD_WS1_VA - EBMUD_WS2_VA - EBMUD_WS3_VA - EBMUD_WS4_VA + EBMUD_WS5_VA)) } !0.95 is an efficiency factor based on model simulation
+	case other {
+		condition always
+	  	value EBMUD_SI_2_VAdv(-1)	}
+}
+
+goal set_EBMUD_SI_2_VAdv {EBMUD_SI_2_VAdv = EBMUD_SI_VA_2}
+
+! If the supply index calculated above is below 350 TAF, then there is no VA contribution.
+! The flag number of '0' indicates no VA contribution.
+define EBMUD_VAFlagdv {std kind 'FLAG' units 'NONE'}
+
+define EBMUD_VAFlag  {
+	case Initialize {
+	        condition month == BgnMo .and. wateryear == BgnWY
+		value 1.}
+	case March_OffRamp {
+    		condition month == MAR .and. EBMUD_SI_VA <= 350.
+    		value 0.}
+	case March_OffRamp_2 {
+    		condition month == MAR .and. EBMUD_SI_VA_2 <= 450.
+    		value 0.}
+	case March {
+    		condition month == MAR .and. EBMUD_SI_VA > 350.
+    		value 1.}
+	case Oct_OffRamp {
+    		condition month == OCT .and. (S_PARDE(-1) + S_CMCHE(-1)) <= 350.
+    		value 0.}
+	case Oct_OffRamp_2 {
+    		condition month == OCT .and. (S_PARDE(-1) + S_CMCHE(-1) + S_EBTML(-1)) <= 450.
+    		value 0.}
+     	case Otherwise {
+     	 	condition always
+     	 	value EBMUD_VAFlagdv(-1) }
+}
+
+goal set_EBMUD_VAFlagdv {EBMUD_VAFlagdv = EBMUD_VAFlag }

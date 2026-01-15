@@ -1,0 +1,69 @@
+! REFUGE DEMANDS *********************************************
+
+define MaySep_AW_08N_PR1dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+define MaySep_AW_08N_PR1 {
+    case Feb { 
+        condition month == Feb 
+        sum(i=May-month,Sep-month,1) (AWR_08N_PR1(i)*(1+ RPF_08N_PR1 - RUFr5_TS(i)) 
+                                    + AWO_08N_PR1(i)*(1+ RPF_08N_PR1 - RUFo_08N_PR1)
+                                    + AWW_08N_PR1(i)*(1+ RPF_08N_PR1 - RUFw_08N_PR1))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_08N_PR1dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_08N_PR1dv {MaySep_AW_08N_PR1dv = MaySep_AW_08N_PR1}
+
+define MaySep_AW_08N_PR2dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+define MaySep_AW_08N_PR2 {
+    case Feb { 
+        condition month == Feb 
+        sum(i=May-month,Sep-month,1) (AWR_08N_PR2(i)*(1+ RPF_08N_PR2 - RUFr5_TS(i)) 
+                                    + AWO_08N_PR2(i)*(1+ RPF_08N_PR2 - RUFo_08N_PR2)
+                                    + AWW_08N_PR2(i)*(1+ RPF_08N_PR2 - RUFw_08N_PR2))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_08N_PR2dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_08N_PR2dv {MaySep_AW_08N_PR2dv = MaySep_AW_08N_PR2}
+
+define MaySep_AW_08S_PRdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define MaySep_AW_08S_PR {
+    case Feb { 
+        condition month == Feb 
+        sum(i=May-month,Sep-month,1) (AWR_08S_PR(i)*(1+ RPF_08S_PR - RUFr5_TS(i)) 
+                                    + AWO_08S_PR(i)*(1+ RPF_08S_PR - RUFo_08S_PR)
+                                    + AWW_08S_PR(i)*(1+ RPF_08S_PR - RUFw_08S_PR))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_08S_PRdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_08S_PRdv {MaySep_AW_08S_PRdv = MaySep_AW_08S_PR}
+
+define MaySep_AW_17N_PRdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define MaySep_AW_17N_PR {
+    case Feb { 
+        condition month == Feb 
+        sum(i=May-month,Sep-month,1) (AWR_17N_PR(i)*(1+ RPF_17N_PR - RUFr5_TS(i)) 
+                                    + AWO_17N_PR(i)*(1+ RPF_17N_PR - RUFo_17N_PR)
+                                    + AWW_17N_PR(i)*(1+ RPF_17N_PR - RUFw_17N_PR))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_17N_PRdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_17N_PRdv {MaySep_AW_17N_PRdv = MaySep_AW_17N_PR}

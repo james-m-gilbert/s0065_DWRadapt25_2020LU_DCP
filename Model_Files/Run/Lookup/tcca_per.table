@@ -1,0 +1,24 @@
+! Monthly distribution pattern for TCCA demands
+!
+! An April 1, 1996 order ammending Permit 13776 allows release of CVP water from Black Butte Reservoir
+! for rediversion at the Constant Head Orofice of up to 38.293 taf annually, during 45 days in each 
+! period Apr1-May15 and Sept15-Oct29.  
+!
+! The annual volume is computed in CalSim as a function of available water in Stony Creek.
+! The values below distribute this volume among the months of April, May, and September, based
+! upon the number of days in each month and typical TCCA demand.
+!
+tcca_per
+month   per_tcca
+1       0.0
+2       0.0
+3       0.0
+4       0.0
+5       0.0
+6       0.0
+7       0.466
+8       0.234
+9       0.0
+10      0.0
+11      0.0
+12      0.3

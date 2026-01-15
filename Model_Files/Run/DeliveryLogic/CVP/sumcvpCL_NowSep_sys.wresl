@@ -1,0 +1,12 @@
+! Calculate now to Apr and May to Sep contract demands
+include 'sumcvp_Feb\AG_NowApr.wresl'
+include 'sumcvp_Feb\MI_NowApr.wresl'
+include 'sumcvp_Feb\SC_NowApr.wresl'
+include 'sumcvp_Feb\RF_NowApr.wresl'
+
+include 'sumcvp_Feb\AG_MaySep.wresl'
+include 'sumcvp_Feb\MI_MaySep.wresl'
+include 'sumcvp_Feb\SC_MaySep.wresl'
+include 'sumcvp_Feb\RF_MaySep.wresl'
+
+include 'sumcvp_Feb\AggDU_all.wresl'

@@ -1,0 +1,13 @@
+! D1641 + ESA Regulatory Cost in May-Sept as a function of Fill
+! computed from cost analysis of LTO_NAA_07202023
+MaySepRegCostEst				
+Fill	avg		med		high	low
+0		842		865		973		736
+3000	687		703		885		557
+3700	1023	612		1775	407
+4000	1212	1135	1754	685
+4200	950		758		1064	601
+4400	1180	823		1857	555
+4552	1263	1196	1531	968
+5000	1263	1196	1531	968
+

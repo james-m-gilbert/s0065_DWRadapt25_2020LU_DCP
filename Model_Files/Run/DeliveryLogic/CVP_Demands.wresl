@@ -1,0 +1,18 @@
+include 'CVP\sumcvpCL_sys.wresl'
+include 'CVP\sumcvpDR_sys.wresl'
+include 'CVP\EstCvpExpSAdj.wresl'
+
+include 'CVP\sumcvp_Feb\AG_FebJanCalc.wresl'
+include 'CVP\sumcvp_Feb\MI_FebJanCalc.wresl'
+include 'CVP\sumcvp_Feb\SC_FebJanCalc.wresl'
+include '..\System\systemtables_Sac\arcs-Contracts.wresl'
+include 'CVP\sumcvp_Feb\RF_FebJanCalc.wresl'
+include '..\System\systemtables_Sac\arcs-Contracts-Refuges.wresl'
+
+include 'CVP\sumcvpCL_NowSep_sys.wresl'
+
+!********** Define Allocation DVARS *********
+define perdv_cvpag_sys { std kind 'percent-delivery' units 'none'}
+define perdv_cvpmi_sys { std kind 'percent-delivery' units 'none'}
+define perdv_cvpsc_sys { std kind 'percent-delivery' units 'none'}
+define perdv_cvprf_sys { std kind 'percent-delivery' units 'none'}

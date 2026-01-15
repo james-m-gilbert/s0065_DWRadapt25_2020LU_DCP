@@ -1,0 +1,234 @@
+! SETTLEMENT CONTRACT DEMANDS *********************************************
+
+define Apr_AW_02_SAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}  
+define Apr_AW_02_SA {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_02_SA(Apr-month)*(1+ RPF_02_SA - RUFr5_TS(Apr-month)) 
+             + AWO_02_SA(Apr-month)*(1+ RPF_02_SA - RUFo_02_SA))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_02_SAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_02_SAdv {Apr_AW_02_SAdv = Apr_AW_02_SA}
+
+define Apr_AW_03_SAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}  
+define Apr_AW_03_SA {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_03_SA(Apr-month)*(1+ RPF_03_SA - RUFr5_TS(Apr-month)) 
+             + AWO_03_SA(Apr-month)*(1+ RPF_03_SA - RUFo_03_SA))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_03_SAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_03_SAdv {Apr_AW_03_SAdv = Apr_AW_03_SA}
+
+define NowApr_UD_03_SU {
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        sum(i=0,Apr-month,1) UD_03_SU(i) * cfs_taf(i)}
+    case otherwise {
+        condition always
+        value 0 }
+}
+define NowApr_UD_03_SUdv {alias NowApr_UD_03_SU kind 'URBAN-DEMAND' units 'taf'}
+
+define NowApr_UD_02_SU {
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        sum(i=0,Apr-month,1) UD_02_SU(i) * cfs_taf(i)}
+    case otherwise {
+        condition always
+        value 0 }
+}
+define NowApr_UD_02_SUdv {alias NowApr_UD_02_SU kind 'URBAN-DEMAND' units 'taf'} 
+
+define Apr_AW_08N_SA1dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+define Apr_AW_08N_SA1 {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_08N_SA1(Apr-month)*(1+ RPF_08N_SA1 - RUFr5_TS(Apr-month)) 
+             + AWO_08N_SA1(Apr-month)*(1+ RPF_08N_SA1 - RUFo_08N_SA1)
+             + AWW_08N_SA1(Apr-month)*(1+ RPF_08N_SA1 - RUFw_08N_SA1))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_08N_SA1dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_08N_SA1dv {Apr_AW_08N_SA1dv = Apr_AW_08N_SA1}
+
+define Apr_AW_08N_SA2dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+define Apr_AW_08N_SA2 {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_08N_SA2(Apr-month)*(1+ RPF_08N_SA2 - RUFR4_TS(Apr-month)) 
+             + AWO_08N_SA2(Apr-month)*(1+ RPF_08N_SA2 - RUFo_08N_SA2)
+             + AWW_08N_SA2(Apr-month)*(1+ RPF_08N_SA2 - RUFw_08N_SA2))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_08N_SA2dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_08N_SA2dv {Apr_AW_08N_SA2dv = Apr_AW_08N_SA2}
+
+define Apr_AW_08S_SA1dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+define Apr_AW_08S_SA1 {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_08S_SA1(Apr-month)*(1+ RPF_08S_SA1 - RUFr5_TS(Apr-month)) 
+             + AWO_08S_SA1(Apr-month)*(1+ RPF_08S_SA1 - RUFo_08S_SA1)
+             + AWW_08S_SA1(Apr-month)*(1+ RPF_08S_SA1 - RUFw_08S_SA1))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_08S_SA1dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_08S_SA1dv {Apr_AW_08S_SA1dv = Apr_AW_08S_SA1}
+
+define Apr_AW_08S_SA2dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+define Apr_AW_08S_SA2 {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_08S_SA2(Apr-month)*(1+ RPF_08S_SA2 - RUFR4_TS(Apr-month)) 
+             + AWO_08S_SA2(Apr-month)*(1+ RPF_08S_SA2 - RUFo_08S_SA2)
+             + AWW_08S_SA2(Apr-month)*(1+ RPF_08S_SA2 - RUFw_08S_SA2))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_08S_SA2dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_08S_SA2dv {Apr_AW_08S_SA2dv = Apr_AW_08S_SA2}
+
+define Apr_AW_08S_SA3dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+define Apr_AW_08S_SA3 {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_08S_SA3(Apr-month)*(1+ RPF_08S_SA3 - RUFr6_TS(Apr-month)) 
+             + AWO_08S_SA3(Apr-month)*(1+ RPF_08S_SA3 - RUFo_08S_SA3))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_08S_SA3dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_08S_SA3dv {Apr_AW_08S_SA3dv = Apr_AW_08S_SA3}
+
+define Apr_AW_09_SA1dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define Apr_AW_09_SA1 {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_09_SA1(Apr-month)*(1+ RPF_09_SA1 - RUFr2_TS(Apr-month)) 
+             + AWO_09_SA1(Apr-month)*(1+ RPF_09_SA1 - RUFo_09_SA1))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_09_SA1dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_09_SA1dv {Apr_AW_09_SA1dv = Apr_AW_09_SA1}
+
+define Apr_AW_09_SA2dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define Apr_AW_09_SA2 {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_09_SA2(Apr-month)*(1+ RPF_09_SA2 - RUFr6_TS(Apr-month)) 
+             + AWO_09_SA2(Apr-month)*(1+ RPF_09_SA2 - RUFo_09_SA2)
+             + AWW_09_SA2(Apr-month)*(1+ RPF_09_SA2 - RUFw_09_SA2))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_09_SA2dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_09_SA2dv {Apr_AW_09_SA2dv = Apr_AW_09_SA2}
+
+define Apr_AW_18_SAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}  
+define Apr_AW_18_SA {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_18_SA(Apr-month)*(1+ RPF_18_SA - RUFr5_TS(Apr-month)) 
+             + AWO_18_SA(Apr-month)*(1+ RPF_18_SA - RUFo_18_SA))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_18_SAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_18_SAdv {Apr_AW_18_SAdv = Apr_AW_18_SA}
+
+define Apr_AW_19_SAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}  
+define Apr_AW_19_SA {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_19_SA(Apr-month)*(1+ RPF_19_SA - RUFr2_TS(Apr-month)) 
+             + AWO_19_SA(Apr-month)*(1+ RPF_19_SA - RUFo_19_SA))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_19_SAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_19_SAdv {Apr_AW_19_SAdv = Apr_AW_19_SA}
+
+define Apr_AW_21_SAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}  
+define Apr_AW_21_SA {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_21_SA(Apr-month)*(1+ RPF_21_SA - RUFr5_TS(Apr-month)) 
+             + AWO_21_SA(Apr-month)*(1+ RPF_21_SA - RUFo_21_SA))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_21_SAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_21_SAdv {Apr_AW_21_SAdv = Apr_AW_21_SA}
+
+define Apr_AW_22_SA1dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define Apr_AW_22_SA1 {
+    case Feb { 
+        condition month == Feb 
+        value (AWR_22_SA1(Apr-month)*(1+ RPF_22_SA1 - RUFr5_TS(Apr-month)) 
+             + AWO_22_SA1(Apr-month)*(1+ RPF_22_SA1 - RUFo_22_SA1))
+             * cfs_taf(Apr-month)}
+    case MarApr {
+        condition month >= Mar .and. month <= Apr 
+        value Apr_AW_22_SA1dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setApr_AW_22_SA1dv {Apr_AW_22_SA1dv = Apr_AW_22_SA1}

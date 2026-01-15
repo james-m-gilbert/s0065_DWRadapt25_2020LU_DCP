@@ -1,0 +1,68 @@
+! Shasta SRSC_Ops.wresl
+
+! Accounting for SRSC delivery actions in LTO PA
+
+! I_Shsta_SRSC is the difference between a baseline delivery and reduced delivery
+! in the proposed action.  This is not necessarily a direct reduction in release
+! from Shasta.  C_Shsta_SRSC would be release from the account for SRSC delivery
+! in critically dry years (not currently implemented).  SP_Shsta_SRSC is spill from
+! the Shasta account.
+define I_Shsta_SRSC {std kind 'INFLOW' units 'CFS'} 
+define C_Shsta_SRSC {std kind 'CHANNEL' UNITS 'CFS'} ! Release of SRSC water 
+define SP_SHSTA_SRSC {std kind 'VOLUME-SPILL' units 'TAF'} ! Spill of SRSC water from Shasta
+
+! Available capacity in Shasta Lake - this drives a spill if there is not enough capacity for SRSC water
+!define S_SHSTA_AvailCap {value min(280., max(0., S_SHSTALevel5-S_SHSTA[-1]))} 
+!define S_SHSTA_AvailCapDV {alias S_SHSTA_AvailCap kind 'storage' units 'taf'}
+
+! take results from a CalSim run which treats SRSC delivery as highest priority
+define del_srsc_sv {timeseries kind 'delivery-tot' units 'cfs'} 
+define del_srsc_svOUT {alias del_srsc_sv kind 'debug' units 'CFS'}
+
+! Track differences in SRSC delivery between the "high priority" results and current scenario
+! Lower deliveries will result in SRSCLess - these become inflows to the SRSC account in Shasta
+! Higher deliveries will result in SRSCMore - logic to be implemented for makeup delivery to SRSC or other actions
+define SRSCLess {std kind 'FLOW' units 'cfs'}
+define SRSCMore {lower -99999 upper 0 kind 'FLOW' units 'cfs'} 
+
+! SRSCLess AND SRSCMore CANT HAPPEN SIMULTANEOUSLY
+!define int_SRSC {INTEGER std kind 'INTEGER' UNITS 'NONE'}
+!goal SRSCLess_ {SRSCLess < int_SRSC * 99999.}         ! if int=1, SRSCLess=+ve
+!goal SRSCMore_ {SRSCMore > int_SRSC * 99999. - 99999.}! if int=0, SRSCMore=-ve
+
+goal set_redSRSCdel {
+    lhs SRSCLess + SRSCMore
+    case NovMar {
+        condition month>=NOV .and. month<=MAR
+        rhs 0.}
+    case AprOct {
+        condition month>MAR .or. month==OCT
+        rhs del_srsc_sv - del_cvp_psc_n}
+}
+
+! Backed up SRSC water into Shasta SRSC account
+goal set_I_SHSTA_SRSC { I_SHSTA_SRSC = 0. }
+   /*  lhs I_SHSTA_SRSC
+    case OctMar22 {
+        condition month<APR .and. wateryear==BgnWY
+        rhs 0.}
+    case SRSC_Backup_AprSep {
+        condition  month>MAR .and. ShastaBin > 5.1  
+        rhs SRSCLess}
+    case SRSC_Backup_Oct {
+        condition  month==OCT .and. ShastaBin_(-1) > 5.1
+        rhs SRSCLess}
+    case Otherwise{ 
+        condition always 
+        rhs 0.}
+} */
+
+! Shasta Backed Up Water and addition to STORSRSC Account 
+goal set_S_Shsta_SRSC {S_Shsta_SRSC = S_Shsta_SRSC(-1) + I_Shsta_SRSC*cfs_taf - C_Shsta_SRSC*cfs_taf - SP_Shsta_SRSC}
+goal set_S_Shsta_CAP {S_Shsta_SRSC < S_Shsta_AvailCap} 
+goal discourage_SRSCspill {lhs sp_shsta_srsc rhs 0. lhs>rhs penalty 10000}
+!---------------------------------------------------------------------
+! Release from Shasta SRSC account during Shasta Critical years to SRSC
+! Not currently implemented
+goal setShastaRel_SRSC {C_Shsta_SRSC = 0.} ! -1* SRSCMore}
+

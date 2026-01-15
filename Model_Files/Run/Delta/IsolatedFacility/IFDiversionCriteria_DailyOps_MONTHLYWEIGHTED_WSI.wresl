@@ -1,0 +1,383 @@
+
+!Estimate Daily flow conditions, bypass requirements and bounds on IF Diversion
+!include 'IFDiversionCriteria_DailyOps.wresl'    Moved to main file to be included earlier
+
+!Meet bypass criteria and cap the ND diversion
+goal setndd { 
+    lhs C_SAC048_ISF001
+    case less20K {
+        condition Q_SAC048corr <= 20000.
+        rhs max(0.,min(ndd,(0.2827*Q_SAC048corr + 2671.3)))  !limiting summer ndd pumping for sweeping velocity constraints !reducing intercept by 200 cfs to cover most of the months with shortage in DSM2
+    }
+    case great20K {
+        condition Q_SAC048corr > 20000.
+        rhs max(0.,min(ndd,(0.1006*Q_SAC048corr + 6337.8)))  !limiting summer ndd pumping for sweeping velocity constraints !reducing intercept by 200 cfs to cover most of the months with shortage in DSM2
+    }
+    case other {
+        condition always
+        rhs max(0.,ndd)
+        }
+}
+
+/*define nddlimitest {  !Moved to ExportEstimate1 files
+   case less20K {
+        condition Q_SAC048corr <= 20000.
+ 		value max(0.,min(ndd,(0.2827*Q_SAC048corr + 2671.3))) }
+    case great20K {
+        condition Q_SAC048corr > 20000.
+        value max(0.,min(ndd,(0.1006*Q_SAC048corr + 6337.8))) }
+ }*/	
+
+goal limitNDD {D_SAC041_ISF001 < C_SAC048_ISF001 }
+
+!Split capacity under bypass flow export cap between projects according to capacities
+define SWPbypasscapshare {value max_IF_cap_SWP/(max_IF_cap_SWP + max_IF_cap_CVP)}
+define CVPbypasscapshare {value max_IF_cap_CVP/(max_IF_cap_SWP + max_IF_cap_CVP)}
+!Weighted so that one project can use the others share if it is not used
+goal limitNDDSWP {
+	lhs C_CAA003_SWP_IF + C_CAA003_CVP_IF
+	rhs C_SAC048_ISF001 * SWPbypasscapshare
+	lhs > rhs penalty 800.
+	lhs < rhs penalty 0.
+}
+goal limitNDDCVP {
+	lhs C_DMC000_IF 
+	rhs C_SAC048_ISF001 * CVPbypasscapshare
+	lhs > rhs penalty 800.
+	lhs < rhs penalty 0.
+}
+define SWPbypasscapsharedv {alias SWPbypasscapshare kind 'debug' units 'cfs'}
+define CVPbypasscapsharedv {alias CVPbypasscapshare kind 'debug' units 'cfs'}
+
+! calculate excess flow from previous cycle as unrequired DO
+define ExcessDO    {value NDOI_ADD[MONTHLYWEIGHTED] - NDOI_ADD_ANN[MONTHLYWEIGHTED]}
+goal Excess_for_NDD1 {D_SAC041_ISF001_excess < ExcessDO}
+
+!goal fix11 {D_SAC041_ISF001_excess > 100.}
+
+define ExcessDOforNDD {alias ExcessDO kind 'debug' units 'cfs'}
+
+!ensure that excess is actually taken (in some cases storage was being used instead)
+goal Excess_for_NDD2 {D_SAC041_ISF001_excess = (NDOI_ADD_SWP[MONTHLYWEIGHTED] + NDOI_ADD_CVP[MONTHLYWEIGHTED]) - (NDOI_ADD_SWP + NDOI_ADD_CVP)}
+
+! Limit below was to preserve storage, not currently necessary
+/*define D_SAC041_ISF001_excess_limit {select ndd_limit6 from excess_limit given excess=ExcessDO use linear}
+goal MaintainDO {
+	lhs D_SAC041_ISF001_excess
+	case LoExcess {
+		condition month>=DEC .and. month<=MAY 
+		rhs D_SAC041_ISF001_excess_limit
+		lhs<rhs penalty 0} 
+}
+define D_SAC041_ISF001_excess_limitdv {alias D_SAC041_ISF001_excess_limit kind 'debug' units 'cfs'}
+*/
+
+! There is a small possibility that DO could increase due to a change in 
+! operations of the DXC, which would limit exports and cause higher DO.  
+! This goal accommodates that.  
+/*goal Excess_for_NDD2 {
+	lhs D_SAC041_ISF001_excess 
+    rhs C406_chgndd
+    lhs<rhs penalty 0
+    lhs>rhs penalty 9999
+}*/  !commented out for now since was preventing export in some months -TF
+
+! Elective North Delta Diversion would be the model's decision to export
+! water at D_SAC041_ISF001 instead of the through-delta pathway, or to pull water from
+! storage that otherwise could not have been exported due to restrictions.
+
+! Elective switch from TD to ND diversion will occur only in situations where there is a carriage water benefit 
+! Additional supplies from the carriage water benefit can be exported or backed up into storage
+! Exports will occur when there is capacity at the pumps and San Luis is below rule, otherwise will be backed up into storage 
+! Ideally benefits should be shared according to COA UWFE sharing formula, but in many cases this is not possible because of lack of export capacity
+! and/or lack of ability to back off on releases.  If one project cannot make use of its share of benefits, the other one will get them
+! Only allow shift in cases where salinity requirements are controlling outflow in DELTA cycle, since that is the only situation where there could be a carriage water benefit
+! Added additional case to cover situation when small amounts of excess can be taken, leaving salinity controlling, then shift can happen
+! Added second case to cover situation when small amounts of excess can be taken, leaving salinity controlling, then shift can happen
+! Logic also excludes situation when there is water in the ANN variable that is really surplus, which can happen when salinity is not controlling
+define SurpDivest {value max(0.,min(nddlimitest,EIexpctrl[MONTHLYWEIGHTED] - TOTAL_EXP_A[MONTHLYWEIGHTED]))}
+
+define TDshift {
+	case salinityctrl {
+      condition NDOI_ADD_ANN[MONTHLYWEIGHTED] > 0.1 .and. (NDOI_ADD_CVP[MONTHLYWEIGHTED] + NDOI_ADD_SWP[MONTHLYWEIGHTED]) < 0.1 .and. max(JPcontrol, EMcontrol, RScontrol) > 0.5 .and. (JonesIFSwitch > 0.5 .or. BanksIFSwitch > 0.5)
+      value 1.}
+/* 	case salinityctrlpossible { !less common case when some excess is taken then can shift to salinity control
+      condition NDOI_ADD_ANN[MONTHLYWEIGHTED] > 0.1 .and. (NDOI_ADD_CVP[MONTHLYWEIGHTED] + NDOI_ADD_SWP[MONTHLYWEIGHTED]) > 0.1 .and. max(JP_MRDO[MONTHLYWEIGHTED],EM_MRDO[MONTHLYWEIGHTED],RS_MRDO_1[MONTHLYWEIGHTED],RS_MRDO_2[MONTHLYWEIGHTED],RS_MRDO_3[MONTHLYWEIGHTED]) > NDOI_MIN[MONTHLYWEIGHTED] .and. ExcessDO < SurpDivest
+      value 1.}*/  ! deactivated for now since this operation doesn't always work right
+    case otherwise {
+      condition always
+      value 0.}
+}
+goal Shiftlimit {
+	lhs D_SAC041_ISF001_elect_tdnd 
+	case nosalinityctrl {
+	  condition TDshift < 0.5
+	  rhs 0 
+	  lhs<rhs penalty 999999.
+	  lhs>rhs penalty 999999.}
+}
+!If same criteria apply hold NDOI_ADD_ANN constant (sometimes it seems to shift)
+goal salinityflowhold {
+	lhs NDOI_ADD_ANN 
+	case nosalinityctrl {
+	  condition TDshift < 0.5
+	  rhs NDOI_ADD_ANN[MONTHLYWEIGHTED] 
+	  lhs<rhs penalty 999999.
+	  lhs>rhs penalty 999999.}
+}
+! And also hold TD exports the same
+goal CAATDhold {
+	lhs C_CAA003_TD
+	case nosalinityctrl {
+	  condition TDshift < 0.5
+	  rhs C_CAA003_TD[MONTHLYWEIGHTED] 
+	  lhs<rhs penalty 999999.
+	  lhs>rhs penalty 999999.}
+}
+goal CAATDEXP1hold {
+	lhs C_CAA003_EXP1_TD
+	case nosalinityctrl {
+	  condition TDshift < 0.5
+	  rhs C_CAA003_EXP1_TD[MONTHLYWEIGHTED] 
+	  lhs<rhs penalty 999999.
+	  lhs>rhs penalty 999999.}
+}
+goal CAATDEXP2hold {
+	lhs C_CAA003_EXP2_TD
+	case nosalinityctrl {
+	  condition TDshift < 0.5
+	  rhs C_CAA003_EXP2_TD[MONTHLYWEIGHTED] 
+	  lhs<rhs penalty 999999.
+	  lhs>rhs penalty 999999.}
+}
+goal DMCTDhold {
+	lhs C_DMC000_TD 
+	case nosalinityctrl {
+	  condition TDshift < 0.5
+	  rhs C_DMC000_TD[MONTHLYWEIGHTED] 
+	  lhs<rhs penalty 999999.
+	  lhs>rhs penalty 999999.}
+}
+
+goal Elect_TDNDset  {D_SAC041_ISF001_elect_tdnd = C_CAA003_SWP_IF_ElectT + C_DMC000_IF_electT} 
+
+!Reduction in carriage water due to shift from TD to NDD has to balance out with increase in exports or backed up storage
+goal CarriageWaterbalance  {
+	lhs NDOI_ADD_ANN[MONTHLYWEIGHTED] - NDOI_ADD_ANN 
+	case TDshift {
+	condition TDshift > 0.5
+	rhs D_SAC041_ISF001_elect_tdnd - (ExportActualTD[MONTHLYWEIGHTED] - ExportActualTD) !This is difference between shifted water NDD and change in exports TD, which will be = carriage water savings that are exported
+								  + swpds[MONTHLYWEIGHTED] - swpds + stored_fs - stored_fs[MONTHLYWEIGHTED]		   !Next few terms account for backed up water into storage
+	                              + shads[MONTHLYWEIGHTED] - shads + stored_ss_sha - stored_ss_sha[MONTHLYWEIGHTED]
+	                              + folds[MONTHLYWEIGHTED] - folds + stored_ss_fol - stored_ss_fol[MONTHLYWEIGHTED]
+	                              + whssw[MONTHLYWEIGHTED] - whssw
+	lhs<rhs penalty 999999.
+	lhs>rhs penalty 999999.
+}}
+
+!Had some issues with Jersey Point outflow req for salinity not matching ANN outflow, so keep these consistent
+goal manageoutflow {
+	lhs NDOI_ADD_ANN[MONTHLYWEIGHTED] - NDOI_ADD_ANN
+	case JPcontrol {
+	condition JPcontrol > 0.5 .and. TDshift > 0.5
+		rhs JP_MRDO[MONTHLYWEIGHTED] - JP_MRDO
+		lhs>rhs penalty 999999.
+		lhs<rhs penalty 999999.	
+	}}
+
+!Goals to prevent storage withdrawals from increasing, so only change in storage will be backing up carriage water benefits that can't be exported
+goal Shastanostoragedec {shads < shads[MONTHLYWEIGHTED]}
+goal Folsomnostoragedec {folds < folds[MONTHLYWEIGHTED]}
+goal Orovillenostoragedec {swpds < swpds[MONTHLYWEIGHTED]}
+goal Whiskeytownnostoragedec {whssw < whssw[MONTHLYWEIGHTED]}
+goal Storedfsnostorinc {stored_fs > stored_fs[MONTHLYWEIGHTED]}
+goal Storedssshanostorinc {stored_ss_sha > stored_ss_sha[MONTHLYWEIGHTED]}
+goal Storedssfolnostorinc {stored_ss_fol > stored_ss_fol[MONTHLYWEIGHTED]}
+
+!Split carriage water benefits between projects.  Not too large a penalty, so benefits that cannot be used by one project can still go to the other project 
+goal CarriageWatersplitSWP  {
+	lhs (NDOI_ADD_ANN[MONTHLYWEIGHTED] - NDOI_ADD_ANN) * SWP_Share[MONTHLYWEIGHTED]
+	case TDshift {
+	condition TDshift > 0.5
+	rhs (C_CAA003_SWP - C_CAA003_SWP[MONTHLYWEIGHTED]) + swpds[MONTHLYWEIGHTED] - swpds
+	lhs<rhs penalty 100.
+	lhs>rhs penalty 100.
+}}
+goal CarriageWatersplitCVP  {
+	lhs (NDOI_ADD_ANN[MONTHLYWEIGHTED] - NDOI_ADD_ANN) * CVP_Share[MONTHLYWEIGHTED]
+	case TDshift {
+	condition TDshift > 0.5
+	rhs (C_DMC000 - C_DMC000[MONTHLYWEIGHTED]) + shads[MONTHLYWEIGHTED] - shads
+									 + folds[MONTHLYWEIGHTED] - folds
+	                                 + whssw[MONTHLYWEIGHTED] - whssw
+	lhs<rhs penalty 100.
+	lhs>rhs penalty 100.
+}}
+
+!For both projects the preferred use of CW benefits is to export them, weight (using negative penalty) here is to override the difference between NOD storage and San Luis when above rule curve.
+goal CVPexportpreference {
+	lhs C_DMC000 - C_DMC000[MONTHLYWEIGHTED]
+	case TDshift {
+	condition TDShiftest > 0.5
+	rhs 0  
+	lhs>rhs penalty -50.}
+	}
+goal SWPexportpreference {
+	lhs C_CAA003_SWP - C_CAA003_SWP[MONTHLYWEIGHTED]
+	case TDshift {
+	condition TDShiftest > 0.5
+	rhs 0  
+	lhs>rhs penalty -50.}
+	}
+
+!So put a slight penalty on reducing releases from Folsom
+goal CVPstoragepreference {
+	lhs FOLDS[MONTHLYWEIGHTED] - FOLDS
+	case TDshift {
+	condition TDShiftest > 0.5
+	rhs 0  
+	lhs>rhs penalty 10.}
+	}
+
+!Split reduction in TD exports in same proportion as TD exports in cycle before shift
+!Will not change final exports or carriage water benefits, just for accounting, can be over-riden by other capacity limits/rules if necessary
+!Only used if both projects are using the NDD
+define SWPshareshift {
+	case SWPshift {
+	condition SWPTDShiftSwitch > 0.5 .and. C_CAA003_SWP_TD[MONTHLYWEIGHTED] + C_DMC000_TD[MONTHLYWEIGHTED] > 0.5 .and. TDshift > 0.5
+	value (C_CAA003_SWP_TD[MONTHLYWEIGHTED] * SWPTDShiftSwitch) / (C_CAA003_SWP_TD[MONTHLYWEIGHTED] * SWPTDShiftSwitch + C_DMC000_TD[MONTHLYWEIGHTED] * CVPTDShiftSwitch)
+	}
+	case otherwise {
+	condition always
+	value 0.
+	}
+}
+define CVPshareshift {
+	case CVPshift {
+	condition CVPTDShiftSwitch > 0.5 .and. C_CAA003_SWP_TD[MONTHLYWEIGHTED] + C_DMC000_TD[MONTHLYWEIGHTED] > 0.5 .and. TDshift > 0.5
+	value (C_DMC000_TD[MONTHLYWEIGHTED] * CVPTDShiftSwitch) / (C_CAA003_SWP_TD[MONTHLYWEIGHTED] * SWPTDShiftSwitch + C_DMC000_TD[MONTHLYWEIGHTED] * CVPTDShiftSwitch)
+	}
+	case otherwise {
+	condition always
+	value 0.
+	}
+}
+goal splitshiftSWP {
+	lhs SWPshareshift * (EXPORTACTUALTD[MONTHLYWEIGHTED] - EXPORTACTUALTD) 
+	case splitshift {
+		condition BanksIFSwitch > 0.5 .and. JonesIFSwitch > 0.5 .and. TDshift > 0.5
+	rhs C_CAA003_SWP_TD[MONTHLYWEIGHTED] - C_CAA003_SWP_TD
+	lhs<rhs penalty 100.
+	lhs>rhs penalty 100.
+}}
+goal splitshiftCVP {
+	lhs CVPshareshift * (EXPORTACTUALTD[MONTHLYWEIGHTED] - EXPORTACTUALTD) 
+	case splitshift {
+		condition BanksIFSwitch > 0.5 .and. JonesIFSwitch > 0.5 .and. TDshift > 0.5
+	rhs C_DMC000[MONTHLYWEIGHTED] - C_DMC000
+	lhs<rhs penalty 100.
+	lhs>rhs penalty 100.
+}}
+
+! Reduce shift if there is an expectation of releases from storage to go through the North Delta Diversion.  
+! Otherwise too much of a shift will prevent the storage release
+! Apply July-Sept only since that is normally when storage releases happen.
+! Removing this since shifting is now a lot less than the original model, and estimate below needs to be re-formulated for this to make sense.
+! May want to reinstate this at some point
+/*define TDshiftlimit {value max(0., nddlimitest - Oro_stor_release_est * SWPTDShiftSwitch - CVP_stor_release_est * CVPTDShiftSwitch) }
+goal Elect_TDND1 {  
+	lhs D_SAC041_ISF001_elect_tdnd
+	case JulSep {
+	  condition month >= Jul .and. month <= Sep
+	  rhs TDshiftlimit
+	  lhs<rhs penalty 0.
+	  lhs>rhs penalty 99999.}}
+*/
+!Estimate of possible shift from Delta to NDD, for checking purposes, needs to be improved
+!define Elect_TDNDest {value min(nddlimitest, C_SAC048[MONTHLYWEIGHTED] - C_SAC048_BYPASS[MONTHLYWEIGHTED], C_CAA003_SWP[MONTHLYWEIGHTED] + C_DMC000[MONTHLYWEIGHTED])}
+!define Elect_TDNDestdv {alias Elect_TDNDest kind 'debug' units 'cfs'}
+
+! Any change in flow at C_SAC048 should be either a reduction due to lower carriage water or
+! TD export that has become ND or an increase due to add'l storage withdrawal.  There
+! should be a direct relationship between change in total storage withdrawal and change
+! in flow at C_SAC048. Both sides in the goal below should be either negative or positive.
+! This goal will also keep other NOD ops from changing.  
+! Have to include stored_fs and stored_ss terms in this cycle to allow for backing up of carriage water benefits classified as unused share
+goal C_SAC048_mod {C_SAC048 - C_SAC048[MONTHLYWEIGHTED] = swpds - swpds[MONTHLYWEIGHTED] + stored_fs[MONTHLYWEIGHTED] - stored_fs 
+	                              + shads - shads[MONTHLYWEIGHTED] + stored_ss_sha[MONTHLYWEIGHTED] - stored_ss_sha
+	                              + folds - folds[MONTHLYWEIGHTED] + stored_ss_fol[MONTHLYWEIGHTED] - stored_ss_fol
+	                              + whssw - whssw[MONTHLYWEIGHTED]
+	                              + SP_SAC083_YBP037 - SP_SAC083_YBP037[MONTHLYWEIGHTED]
+	                              + SP_SAC066_YBP020 - SP_SAC066_YBP020[MONTHLYWEIGHTED]}
+
+! Applying switches to turn on or off different sources
+goal switchC_CAA003_SWP_IF_excess {C_CAA003_SWP_IF_excess < SWPExcessSwitch * 99999.}
+goal switchC_DMC000_IF_excess {C_DMC000_IF_excess < CVPExcessSwitch * 99999.}  
+goal switchC_CAA003_CVP_IF_excess {C_CAA003_CVP_IF_excess = 0.}  !This can happen in the wheeling cycles
+
+goal switchC_CAA003_SWP_IF_ElectT {C_CAA003_SWP_IF_ElectT < SWPTDShiftSwitch * 99999.}
+goal switchC_DMC000_IF_ElectT {C_DMC000_IF_ElectT < CVPTDShiftSwitch * 99999.}  
+
+goal switchC_CAA003_SWP_ElectS {C_CAA003_SWP_IF_ElectS = 0.}  !Storage releases don't happen until the NDD2 cycle  
+goal switchC_DMC000_IF_ElectS {C_DMC000_IF_ElectS  = 0.}  !Storage releases don't happen until the NDD2 cycle  
+goal switchC_CAA003_CVP_IF_ElectS {C_CAA003_CVP_IF_ElectS = 0.}  !This can happen in the wheeling cycles
+
+!Preference for TD pumping up to 3,000 cfs in summer.
+goal PreferTD {
+	lhs C_DMC000_TD + C_CAA003_TD
+	case JulSep {
+		condition month>=JUL .and. month<=SEP
+		rhs min(3000., C_DMC000_TD[MONTHLYWEIGHTED] + C_CAA003_TD[MONTHLYWEIGHTED])
+		lhs<rhs penalty 1002 ! this has to overcome the negative carriage water penalty
+		lhs>rhs penalty 0
+	}
+}
+
+! ********************************************************************
+!Variables for debugging  
+/*
+define C400_chgndd {alias C400[MONTHLYWEIGHTED] - C400 kind 'debug' units 'cfs'}
+define C406_chgndd {alias C406[MONTHLYWEIGHTED] - C406 kind 'debug' units 'cfs'}
+define C407_chgndd {alias C407[MONTHLYWEIGHTED] - C407 kind 'debug' units 'cfs'}
+define C407_ann_chgndd {alias C407_ann[MONTHLYWEIGHTED] - C407_ann kind 'debug' units 'cfs'}
+define C407_cvp_chgndd {alias C407_cvp[MONTHLYWEIGHTED] - C407_cvp kind 'debug' units 'cfs'}
+define C407_swp_chgndd {alias C407_swp[MONTHLYWEIGHTED] - C407_swp kind 'debug' units 'cfs'}
+define C5_chgndd {alias C5[MONTHLYWEIGHTED] - C5 kind 'debug' units 'cfs'}
+define C303_chgndd {alias C303[MONTHLYWEIGHTED] - C303 kind 'debug' units 'cfs'}
+define C9_chgndd {alias C9[MONTHLYWEIGHTED] - C9 kind 'debug' units 'cfs'}
+define C129_chgndd {alias C129[MONTHLYWEIGHTED] - C129 kind 'debug' units 'cfs'}
+define C134_chgndd {alias C134[MONTHLYWEIGHTED] - C134 kind 'debug' units 'cfs'}
+define C184a_chgndd {alias C184a[MONTHLYWEIGHTED] - C184a kind 'debug' units 'cfs'}
+define C184b_chgndd {alias C184b[MONTHLYWEIGHTED] - C184b kind 'debug' units 'cfs'}
+define C156_chgndd {alias C156[MONTHLYWEIGHTED] - C156 kind 'debug' units 'cfs'}
+define C157_chgndd {alias C157[MONTHLYWEIGHTED] - C157 kind 'debug' units 'cfs'}  */
+define C_SAC048_chgndd {alias C_SAC048[MONTHLYWEIGHTED] - C_SAC048 kind 'debug' units 'cfs'}
+
+define nddlimitestdv {alias nddlimitest kind 'debug' units 'cfs'}
+
+! ********************************************************************
+! Control dedicated use of Banks capacity for CVP with delta conveyance
+! Enable use up to specified capacity, but only if Jones is maxed and 
+! there is space in CVPSL to put it.
+! *** Not currently implemented in model
+
+define CVP_BanksMaxND_Est {
+	case DedCapForCVP {
+		condition S_SLUIS_SWPlevel5[MONTHLYWEIGHTED]<S_SLUIS_SWPlevel5-1.
+		value max(0., BanksMaxAllowCVPIF - (4600.-C_DMC000[MONTHLYWEIGHTED]))}
+	case otherwise {
+		condition always
+		value 0. }
+}
+define CVP_BanksMaxND_EstDV {alias CVP_BanksMaxND_Est kind 'ndd-debug' units 'cfs'}
+
+goal BanksDedCapWithNDD1 {C_CAA003_CVPDED_IF < BanksMaxAllowCVPIF}
+goal BanksDedCapWithNDD2 {
+	lhs C_CAA003_CVPDED_IF 
+	rhs CVP_BanksMaxND_Est
+	lhs<rhs penalty 3000
+}
+
+!Fixing some variables that can shift in this cycle
+goal fixNBA {D_BKR004_NBA009 = D_BKR004_NBA009[MONTHLYWEIGHTED]}
+goal fixKESWICKmif2 {C_KSWCK_MIF2 = C_KSWCK_MIF2[MONTHLYWEIGHTED]}

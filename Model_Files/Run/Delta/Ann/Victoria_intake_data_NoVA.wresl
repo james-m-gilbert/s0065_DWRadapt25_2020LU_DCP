@@ -1,0 +1,166 @@
+/*
+
+ARTIFICIAL NEURAL NETWORK IMPLEMENTATION - Victoria Intake (VI)
+
+
+Output only
+
+*/
+
+!****************************************************************************************
+! EC/Salinity output WITHOUT impact of VA is also reported
+
+! calculate previous month's value of salinity
+define VI_EC_Month_sv_NoVA {
+  case lastWaterYear {
+    condition  month == Oct
+      value  AnnEC(C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),EXP_TD_NoDeltaVA(-1),
+               C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-5),DXC(-4),DXC(-3),DXC(-2),DXC(-1),
+               net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),net_DICU(-1),
+               sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),sac_oth_NoVA(-1),
+               exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),exp_oth(-1),
+               SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),SMSCG_OP(-1),
+               int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(monthly_ave),12,(wateryear-1))}
+
+  case others {
+    condition always
+      value  AnnEC(C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),EXP_TD_NoDeltaVA(-1),
+               C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-5),DXC(-4),DXC(-3),DXC(-2),DXC(-1),
+               net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),net_DICU(-1),
+               sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),sac_oth_NoVA(-1),
+               exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),exp_oth(-1),
+               SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),SMSCG_OP(-1),
+               int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(monthly_ave),(month-1),wateryear)}
+}
+
+define VI_EC_Month_NoVA {alias VI_EC_Month_sv_NoVA kind 'SALINITY' units 'UMHOS/CM'}
+
+!get ANN_EC for 2 month earlier 4/14/2005
+define VI_EC_Month_smooth_sv_NoVA {
+  case October {
+    condition  month == Oct
+      value  AnnEC_matchDSM2(
+             C_SAC041_NoVA(-7),C_SAC041_NoVA(-6), C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-6),EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),
+               C_SJR070_NoVA(-7),C_SJR070_NoVA(-6),C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-6),DXC(-5),DXC(-4),DXC(-3),DXC(-2),
+               net_DICU(-6),net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),
+               sac_oth_NoVA(-6),sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),
+               exp_oth(-6),exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),
+               SMSCG_OP(-6),SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),
+               int(daysindv(-7)),int(daysindv(-6)),int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(monthly_ave),11,(wateryear-1))}
+
+  case November {
+    condition  month == Nov
+      value  AnnEC_matchDSM2(
+             C_SAC041_NoVA(-7),C_SAC041_NoVA(-6), C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-6),EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),
+               C_SJR070_NoVA(-7),C_SJR070_NoVA(-6),C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-6),DXC(-5),DXC(-4),DXC(-3),DXC(-2),
+               net_DICU(-6),net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),
+               sac_oth_NoVA(-6),sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),
+               exp_oth(-6),exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),
+               SMSCG_OP(-6),SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),
+               int(daysindv(-7)),int(daysindv(-6)),int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(monthly_ave),12,(wateryear-1))}
+
+  case others {
+    condition always
+      value  AnnEC_matchDSM2(
+             C_SAC041_NoVA(-7),C_SAC041_NoVA(-6), C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-6),EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),
+               C_SJR070_NoVA(-7),C_SJR070_NoVA(-6),C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-6),DXC(-5),DXC(-4),DXC(-3),DXC(-2),
+               net_DICU(-6),net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),
+               sac_oth_NoVA(-6),sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),
+               exp_oth(-6),exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),
+               SMSCG_OP(-6),SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),
+               int(daysindv(-7)),int(daysindv(-6)),int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(monthly_ave),(month-2),wateryear)}
+}
+
+define VI_EC_MonthDSM2_NoVA {alias VI_EC_Month_smooth_sv_NoVA kind 'SALINITY' units 'UMHOS/CM'}
+
+! calculate the maximum 14 day running average
+define VI_EC_Max14Day_sv_NoVA {
+  case lastWaterYear {
+    condition  month == Oct
+      value  AnnEC(C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),EXP_TD_NoDeltaVA(-1),
+               C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-5),DXC(-4),DXC(-3),DXC(-2),DXC(-1),
+               net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),net_DICU(-1),
+               sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),sac_oth_NoVA(-1),
+               exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),exp_oth(-1),
+               SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),SMSCG_OP(-1),
+               int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(max_14day_running_ave),12,(wateryear-1))}
+
+  case others {
+    condition always
+      value  AnnEC(C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),EXP_TD_NoDeltaVA(-1),
+               C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-5),DXC(-4),DXC(-3),DXC(-2),DXC(-1),
+               net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),net_DICU(-1),
+               sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),sac_oth_NoVA(-1),
+               exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),exp_oth(-1),
+               SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),SMSCG_OP(-1),
+               int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(max_14day_running_ave),(month-1),wateryear)}
+}
+define VI_EC_Max14Day_NoVA {alias VI_EC_Max14Day_sv_NoVA kind 'SALINITY' units 'UMHOS/CM'}
+
+!get ANN_EC for 2 month earlier
+define VI_EC_Max14day_smooth_sv_NoVA {
+  case October {
+    condition  month == Oct
+      value  AnnEC_matchDSM2(
+             C_SAC041_NoVA(-7),C_SAC041_NoVA(-6), C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-6),EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),
+               C_SJR070_NoVA(-7),C_SJR070_NoVA(-6),C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-6),DXC(-5),DXC(-4),DXC(-3),DXC(-2),
+               net_DICU(-6),net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),
+               sac_oth_NoVA(-6),sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),
+               exp_oth(-6),exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),
+               SMSCG_OP(-6),SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),
+               int(daysindv(-7)),int(daysindv(-6)),int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(max_14day_running_ave),11,(wateryear-1))}
+
+  case November {
+    condition  month == Nov
+      value  AnnEC_matchDSM2(
+             C_SAC041_NoVA(-7),C_SAC041_NoVA(-6), C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-6),EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),
+               C_SJR070_NoVA(-7),C_SJR070_NoVA(-6),C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-6),DXC(-5),DXC(-4),DXC(-3),DXC(-2),
+               net_DICU(-6),net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),
+               sac_oth_NoVA(-6),sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),
+               exp_oth(-6),exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),
+               SMSCG_OP(-6),SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),
+               int(daysindv(-7)),int(daysindv(-6)),int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(max_14day_running_ave),12,(wateryear-1))}
+
+  case others {
+    condition always
+      value  AnnEC_matchDSM2(
+             C_SAC041_NoVA(-7),C_SAC041_NoVA(-6), C_SAC041_NoVA(-5),C_SAC041_NoVA(-4),C_SAC041_NoVA(-3),C_SAC041_NoVA(-2),C_SAC041_NoFallow(-1),
+               EXP_TD_NoVA(-6),EXP_TD_NoVA(-5),EXP_TD_NoVA(-4),EXP_TD_NoVA(-3),EXP_TD_NoVA(-2),
+               C_SJR070_NoVA(-7),C_SJR070_NoVA(-6),C_SJR070_NoVA(-5),C_SJR070_NoVA(-4),C_SJR070_NoVA(-3),C_SJR070_NoVA(-2),C_SJR070_NoVA(-1),
+               DXC(-6),DXC(-5),DXC(-4),DXC(-3),DXC(-2),
+               net_DICU(-6),net_DICU(-5),net_DICU(-4),net_DICU(-3),net_DICU(-2),
+               sac_oth_NoVA(-6),sac_oth_NoVA(-5),sac_oth_NoVA(-4),sac_oth_NoVA(-3),sac_oth_NoVA(-2),
+               exp_oth(-6),exp_oth(-5),exp_oth(-4),exp_oth(-3),exp_oth(-2),
+               SMSCG_OP(-6),SMSCG_OP(-5),SMSCG_OP(-4),SMSCG_OP(-3),SMSCG_OP(-2),
+               int(daysindv(-7)),int(daysindv(-6)),int(daysindv(-5)),int(daysindv(-4)),int(daysindv(-3)),int(daysindv(-2)),int(daysindv(-1)),
+               int(VI),int(max_14day_running_ave),(month-2),wateryear)}
+}
+
+define VI_EC_Max14_DSM2_NoVA {alias VI_EC_Max14day_smooth_sv_NoVA kind 'SALINITY' units 'UMHOS/CM'}

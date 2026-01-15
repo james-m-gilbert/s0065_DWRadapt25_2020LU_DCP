@@ -1,0 +1,752 @@
+! A. Dev 10/19/99
+/* 
+* This file splits any SWP Demand arc (ie. MI, PAG, PLS or PIN) PINo separate 
+* sub-arcs to ensure the proper delivery pattern. The file 'swp_deliveries' 
+* actually applies the proper bounds. The weights for the sub-arcs are 
+* specified in the Weights-table.xPLS file. In general, 'PLS' sub-arcs should 
+* have a weight greater than the 'MI' or 'PAG' sub-arc, and 'PIN' sub-arcs have 
+* small weights to ensure that water is only delivered from excess supply in 
+* the Delta and not from storPAGe.  This helps to ensure that losses are always 
+* met and that MI and PAG demands are met before any PINerruptible water.
+*
+* Note:
+* Atypical naming convention of "C_CAA###_##_PA", refer to memo "CalSim 3 
+* Modifications for CASP" Bill SMith Stantec Jan 25 2024. "PA" is used where 
+* typically "PAG" is used.
+* 
+* INCLUDE:
+* 	- '\CASP_swp_deliveryperc.wresl'
+*/
+
+/* SECTION ====================================================================
+* DEMANDS FOR TERMINAL RESERVOIRS 
+* 
+* Naming scheme: 
+* 	- D_{agency}_{reservoir}_{demand type}
+* Demands defined:
+* 	- Crestline - Lake Arrowhead WA
+* 	- Metropolitan - Lake Perris
+* 	- Ventura County - Pyramid Lake
+* 	- Ventura County - Castaic Lake
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands = PMI + PIN + PCO (These don't have Ag demands)
+*/
+
+! Crestline - Lake Arrowhead WA -----------------------------------------------
+define D_SVRWD_CSTLN_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SVRWD_CSTLN_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+! No Article 21 Demands
+define D_SVRWD_CSTLN_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_SVRWD_CSTLN     { D_SVRWD_CSTLN = D_SVRWD_CSTLN_PRJ }
+goal totalD_SVRWD_CSTLN_prj { 
+	D_SVRWD_CSTLN_prj = D_SVRWD_CSTLN_PMI + D_SVRWD_CSTLN_PCO
+}
+
+! Metropolitan Water District Southern CA - Lake Perris -----------------------
+define D_PRRIS_MWDSC_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_PRRIS_MWDSC_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_PRRIS_MWDSC_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_PRRIS_MWDSC_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_PRRIS_MWDSC     { D_PRRIS_MWDSC = D_PRRIS_MWDSC_PRJ }
+goal totalD_PRRIS_MWDSC_prj { 
+	D_PRRIS_MWDSC_PRJ = 
+	D_PRRIS_MWDSC_PMI + D_PRRIS_MWDSC_PIN + D_PRRIS_MWDSC_PCO
+}
+
+! Ventura County - Pyramid Lake -----------------------------------------------
+define D_PYRMD_VNTRA_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_PYRMD_VNTRA_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+! No Article 21 Demands
+define D_PYRMD_VNTRA_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_PYRMD_VNTRA     { D_PYRMD_VNTRA = D_PYRMD_VNTRA_PRJ }
+goal totalD_PYRMD_VNTRA_prj { 
+	D_PYRMD_VNTRA_PRJ = D_PYRMD_VNTRA_PMI + D_PYRMD_VNTRA_PCO
+}
+
+! Ventura County - Castaic Lake -----------------------------------------------
+define D_CSTIC_VNTRA_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSTIC_VNTRA_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSTIC_VNTRA_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSTIC_VNTRA_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CSTIC_VNTRA     { D_CSTIC_VNTRA = D_CSTIC_VNTRA_PRJ }
+goal totalD_CSTIC_VNTRA_prj { 
+	D_CSTIC_VNTRA_PRJ = 
+	D_CSTIC_VNTRA_PMI + D_CSTIC_VNTRA_PCO + D_CSTIC_VNTRA_PIN
+}
+
+/* SECTION ====================================================================
+* DEMANDS FOR SAN JOAQUIN CONTRACTORS
+* 
+* Naming scheme: 
+* 	- D_{aqueduct}{location, may contain addn. '_'}_{demand type}
+* Demands for:
+* 	- Oak Flat Water District
+* 	- Empire West Side WD
+* 	- Kings County
+* 	- Tulare Lake Bed WSD
+* 	- Dudley Ridge WD
+* 	- Kern County
+* 	- Devils Den Water District
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands = PAG + PIN + PCO (These don't have M&I demands)
+*/
+
+! Oak Flat Water District
+define D_CAA046_71_PA7_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA046_71_PA7_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA046_71_PA7_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA046_71_PA7_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA046_71_PA7     { D_CAA046_71_PA7 = D_CAA046_71_PA7_PRJ }
+goal totalD_CAA046_71_PA7_prj { 
+	D_CAA046_71_PA7_PRJ = 
+	D_CAA046_71_PA7_PAG + D_CAA046_71_PA7_PIN + D_CAA046_71_PA7_PCO
+}
+
+! Empire West Side Water District
+!     Formerly, these were defined using the name "D846", split during CASP
+define D_CAA185_EMPIRE_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA185_EMPIRE_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA185_EMPIRE_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA185_EMPIRE_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA185_EMPIRE     { D_CAA185_EMPIRE = D_CAA185_EMPIRE_PRJ }
+goal totalD_CAA185_EMPIRE_prj { 
+	D_CAA185_EMPIRE_PRJ = D_CAA185_EMPIRE_PAG + D_CAA185_EMPIRE_PIN + D_CAA185_EMPIRE_PCO
+}
+
+! County of Kings
+!     Formerly, these were defined using the name "D847", split during CASP
+define D_CAA185_KINGS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA185_KINGS_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+! No Article 21
+define D_CAA185_KINGS_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' } 
+define D_CAA185_KINGS_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA185_KINGS     { D_CAA185_KINGS = D_CAA185_KINGS_PRJ }
+goal totalD_CAA185_KINGS_prj { 
+	D_CAA185_KINGS_PRJ = D_CAA185_KINGS_PAG + D_CAA185_KINGS_PCO + D_CAA185_KINGS_PIN
+}
+
+! Tulare Lake Bed Water Service District
+!     Formerly, these were defined using the name "D848", split during CASP
+define D_CAA185_TULARE_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA185_TULARE_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA185_TULARE_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA185_TULARE_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA185_TULARE     { D_CAA185_TULARE = D_CAA185_TULARE_PRJ }
+goal totalD_CAA185_TULARE_prj { 
+	D_CAA185_TULARE_PRJ = D_CAA185_TULARE_PAG + D_CAA185_TULARE_PIN + D_CAA185_TULARE_PCO
+}
+
+! Dudley Ridge Water District
+!     Formerly, these were defined using the name "D846", split during CASP
+define D_CAA185_DUDLEY_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA185_DUDLEY_PAG    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA185_DUDLEY_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA185_DUDLEY_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA185_DUDLEY     { D_CAA185_DUDLEY = D_CAA185_DUDLEY_PRJ }
+goal totalD_CAA185_DUDLEY_prj { 
+	D_CAA185_DUDLEY_PRJ = D_CAA185_DUDLEY_PAG + D_CAA185_DUDLEY_PIN + D_CAA185_DUDLEY_PCO
+}
+
+! Kern County
+define D_CSB015_KERN_BMWD_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB015_KERN_BMWD_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+! No Article 21
+define D_CSB015_KERN_BMWD_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CSB015_KERN_BMWD     { 
+	D_CSB015_KERN_BMWD = D_CSB015_KERN_BMWD_PRJ
+}
+goal totalD_CSB015_KERN_BMWD_prj { 
+	D_CSB015_KERN_BMWD_PRJ = D_CSB015_KERN_BMWD_PAG + D_CSB015_KERN_BMWD_PCO
+}
+
+! Devils Den Water District
+define D_CSB009_CLRTA1_DDWD_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB009_CLRTA1_DDWD_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB009_CLRTA1_DDWD_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB009_CLRTA1_DDWD_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CSB009_CLRTA1_DDWD     { 
+	D_CSB009_CLRTA1_DDWD = D_CSB009_CLRTA1_DDWD_PRJ
+}
+goal totalD_CSB009_CLRTA1_DDWD_prj { 
+	D_CSB009_CLRTA1_DDWD_PRJ = 
+	D_CSB009_CLRTA1_DDWD_PAG 
+	+ D_CSB009_CLRTA1_DDWD_PIN 
+	+ D_CSB009_CLRTA1_DDWD_PCO
+}
+
+/* SECTION ====================================================================
+* DEMANDS FOR COASTAL CONTRACTORS
+* 
+* Naming scheme: 
+* 	- D_{aqueduct}{location, may contain addn. '_'}_{demand type}
+* Demands for:
+* 	- San Luis Obispo FCWCD
+* 	- Santa Barbara FCWCD
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands = PMI + PIN + PCO (These don't have Ag demands)
+*/
+
+! San Luis Obispo Flood Control and Water Conservation District
+define D_CSB038_OBISPO_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB038_OBISPO_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB038_OBISPO_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB038_OBISPO_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CSB038_OBISPO     { D_CSB038_OBISPO = D_CSB038_OBISPO_PRJ }
+goal totalD_CSB038_OBISPO_prj { 
+	D_CSB038_OBISPO_PRJ = 
+	D_CSB038_OBISPO_PMI + D_CSB038_OBISPO_PIN + D_CSB038_OBISPO_PCO
+}
+
+! Santa Barbara Flood Control and Water Conservation District
+define D_CSB103_BRBRA_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB103_BRBRA_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB103_BRBRA_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CSB103_BRBRA_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CSB103_BRBRA     { D_CSB103_BRBRA = D_CSB103_BRBRA_PRJ }
+goal totalD_CSB103_BRBRA_prj { 
+	D_CSB103_BRBRA_PRJ = 
+	D_CSB103_BRBRA_PMI + D_CSB103_BRBRA_PCO + D_CSB103_BRBRA_PIN
+}
+
+/* SECTION ====================================================================
+* DEMANDS FOR KERN CO SWP AG TABLE A, AND ART. 56 (INTEGRATES CASP)
+* FORMERLY DIVERSION D851, or D_CAA194_KERN, D_CAA242_Kern, D_CAA279_Kern
+* 
+* Naming scheme: 
+* 	- D_{aqueduct}{location, may contain addn. '_'}_{demand type}
+* Demands for:
+* 	- Pools 23 to 30, corresponding to Mile Posts 197 to 251
+*  	- Agriculture Demands (Table A and Article 56)
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands = PAG + PCO (These don't have M&I, Art. 21 demands)
+*/
+
+! CAA Pool 23
+define D_CAA197_16_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA197_16_PAG	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA197_16_PCO	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA197_16     { D_CAA197_16 = D_CAA197_16_PRJ }
+goal totalD_CAA197_16_prj { D_CAA197_16_PRJ = D_CAA197_16_PAG + D_CAA197_16_PCO}
+
+! CAA Pool 24
+define D_CAA208_16_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA208_16_PAG	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA208_16_PCO	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA208_16     { D_CAA208_16 = D_CAA208_16_PRJ }
+goal totalD_CAA208_16_prj { D_CAA208_16_PRJ = D_CAA208_16_PAG + D_CAA208_16_PCO}
+
+! CAA Pool 25
+define D_CAA217_16_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA217_16_PAG	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA217_16_PCO	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA217_16     { D_CAA217_16 = D_CAA217_16_PRJ }
+goal totalD_CAA217_16_prj { D_CAA217_16_PRJ = D_CAA217_16_PAG + D_CAA217_16_PCO}
+
+! CAA Pool 26
+define D_CAA225_16_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA225_16_PAG	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA225_16_PCO	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA225_16     { D_CAA225_16 = D_CAA225_16_PRJ }
+goal totalD_CAA225_16_prj { D_CAA225_16_PRJ = D_CAA225_16_PAG + D_CAA225_16_PCO}
+
+! CAA Pool 27
+define D_CAA232_16_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA232_16_PAG	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA232_16_PCO	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA232_16     { D_CAA232_16 = D_CAA232_16_PRJ }
+goal totalD_CAA232_16_prj { D_CAA232_16_PRJ = D_CAA232_16_PAG + D_CAA232_16_PCO}
+
+! CAA Pool 28
+define D_CAA238_16_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA238_16_PAG	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA238_16_PCO	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA238_16     { D_CAA238_16 = D_CAA238_16_PRJ }
+goal totalD_CAA238_16_prj { D_CAA238_16_PRJ = D_CAA238_16_PAG + D_CAA238_16_PCO}
+
+! CAA Pool 29
+define D_CAA244_16_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA244_16_PAG	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA244_16_PCO	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA244_16     { D_CAA244_16 = D_CAA244_16_PRJ }
+goal totalD_CAA244_16_prj { D_CAA244_16_PRJ = D_CAA244_16_PAG + D_CAA244_16_PCO}
+
+! CAA Pool 30
+define D_CAA251_16_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA251_16_PAG	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA251_16_PCO	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA251_16     { D_CAA251_16 = D_CAA251_16_PRJ }
+goal totalD_CAA251_16_prj { D_CAA251_16_PRJ = D_CAA251_16_PAG + D_CAA251_16_PCO}
+
+/* SECTION ====================================================================
+* DEMANDS FOR KERN CO SWP M&I TABLA A, CAA POOL 23 TO 30 (INTEGRATES CASP) 
+* FORMERLY DIVERSION D851, or D_CAA194_KERN, D_CAA242_Kern, D_CAA279_Kern
+* 
+* Naming scheme: 
+* 	- D_{aqueduct}{location, may contain addn. '_'}_{demand type}
+* Demands for:
+* 	- Pools 23 to 30, corresponding to Mile Post 197 to 251
+* 	- M&I Table A Demands
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands = PU 
+*/
+! TODO: figure out what PU is
+
+! Pool 23
+define D_CAA197_15_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA197_15_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA197_15     { D_CAA197_15 = D_CAA197_15_PRJ }
+goal totalD_CAA197_15_prj { D_CAA197_15_PRJ = D_CAA197_15_PU}
+
+! Pool 24
+define D_CAA208_15_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA208_15_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA208_15     { D_CAA208_15 = D_CAA208_15_PRJ }
+goal totalD_CAA208_15_prj { D_CAA208_15_PRJ = D_CAA208_15_PU}
+
+! Pool 25
+define D_CAA217_15_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA217_15_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA217_15     { D_CAA217_15 = D_CAA217_15_PRJ }
+goal totalD_CAA217_15_prj { D_CAA217_15_PRJ = D_CAA217_15_PU}
+
+! Pool 26
+define D_CAA225_15_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA225_15_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA225_15     { D_CAA225_15 = D_CAA225_15_PRJ }
+goal totalD_CAA225_15_prj { D_CAA225_15_PRJ = D_CAA225_15_PU}
+
+! Pool 27
+define D_CAA232_15_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA232_15_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA232_15     { D_CAA232_15 = D_CAA232_15_PRJ }
+goal totalD_CAA232_15_prj { D_CAA232_15_PRJ = D_CAA232_15_PU}
+
+! Pool 28
+define D_CAA238_15_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA238_15_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA238_15     { D_CAA238_15 = D_CAA238_15_PRJ }
+goal totalD_CAA238_15_prj { D_CAA238_15_PRJ = D_CAA238_15_PU}
+
+! Pool 29 
+define D_CAA244_15_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA244_15_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA244_15     { D_CAA244_15 = D_CAA244_15_PRJ }
+goal totalD_CAA244_15_prj { D_CAA244_15_PRJ = D_CAA244_15_PU}
+
+! Pool 30
+define D_CAA251_15_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA251_15_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA251_15     { D_CAA251_15 = D_CAA251_15_PRJ }
+goal totalD_CAA251_15_prj { D_CAA251_15_PRJ = D_CAA251_15_PU}
+
+
+/* SECTION ====================================================================
+* DEMANDS FOR KERN CO SWP AG TABLE A MWD, CAA POOL 23 TO 30 (INTEGRATES CASP) 
+* FORMERLY DIVERSION D851, or D_CAA194_KERN, D_CAA242_Kern, D_CAA279_Kern
+* 
+* Naming scheme: 
+* 	- D_{aqueduct}{location, may contain addn. '_'}_{demand type}
+* Demands for:
+* 	- Pool 29, kept separate from section above because of historical 
+* 	  naming scheme differences from the other Ag Table A demands.
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands = PU 
+*/
+
+! Pool 29 
+define D_CAA244_22_PRJ	{std kind 'FLOW-DELIVERY' units 'CFS'  } !MWD M&I
+define D_CAA244_22_PU	{std kind 'FLOW-DELIVERY' units 'CFS'  }
+goal totalD_CAA244_22     { D_CAA244_22 = D_CAA244_22_PRJ }	!MWD M&I
+goal totalD_CAA244_22_prj { D_CAA244_22_PRJ = D_CAA244_22_PU}
+
+/* SECTION ====================================================================
+* SPILL VOLUMES AT POOL 30 (BUENA VISTA PUMPING PLANT)
+* 
+* Naming scheme: 
+* 	- D_{aqueduct}{location}_SPILL
+* 	- trigger_{pool}_SPILL
+* Flows:
+* 	- D_CAA251_SPILL
+* Goals: 
+* 	- SWP Spill = Pool 30 spill volume * (
+* 		1 if I_CAA245 is greater than 75% of pool 
+* 	  	capacity
+* 		0 otherwise
+* 	  )
+*/
+
+!Pool 30 Spill Trigger
+define trigger_P30_SPILL {
+	case on {
+		condition I_CAA245 > CAA_P30_cap*0.75
+		value 1
+	}
+	case otherwise {
+		condition always
+		value 0
+	}
+}
+define D_CAA251_SPILL {
+	lower 0. 
+	upper I_CAA245 
+	kind 'FLOW-DELIVERY' units 'CFS'
+}
+goal total_D_CAA251_SPILL {
+	D_CAA251_SPILL_SWP = D_CAA251_SPILL*trigger_P30_SPILL
+}
+
+/* SECTION ====================================================================
+* SWP CONVEYANCE LOSSES (INTEGRATES CASP)
+* FORMERLY LOSSES FOR D854
+* 
+* Naming scheme:
+* 	- D_{aqueduct}{location}_{aqueduct}LOS_{project}
+* Losses for:
+* 	- Pools 22 - 30
+*/
+
+define D_CAA185_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 22
+define D_CAA197_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 23
+define D_CAA208_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 24
+define D_CAA217_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 25
+define D_CAA225_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 26
+define D_CAA232_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 27
+define D_CAA238_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 28
+define D_CAA244_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 29
+define D_CAA251_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 30
+
+/* SECTION ====================================================================
+* DEMANDS FOR KERN COSWP AG (TBL A, ART. 21, 56) (INTEGRATES CASP) 
+* FORMERLY DIVERSION D859, or D_CAA194_KERN, D_CAA242_Kern, D_CAA279_Kern
+* 
+* Naming scheme: 
+* 	- D_{aqueduct}{location, may contain addn. '_'}_{demand type}
+* Demands for:
+* 	- Pools 31 to 35, corresponding to Mile Post 256 to 278
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands = PA + PIN + PCO
+*/
+
+! Pool 31
+define D_CAA256_17_PAG    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA256_17_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA256_17_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA256_17     { D_CAA256_17 = D_CAA256_17_PRJ + D_CAA256_GWRECHARGE}
+goal totalD_CAA256_17_prj { 
+	D_CAA256_17_PRJ = D_CAA256_17_PAG + D_CAA256_17_PIN + D_CAA256_17_PCO
+}
+
+! Pool 32
+define D_CAA262_17_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA262_17_PAG    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA262_17_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA262_17_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA262_17     { D_CAA262_17 = D_CAA262_17_PRJ }
+goal totalD_CAA262_17_prj { 
+	D_CAA262_17_PRJ = D_CAA262_17_PAG + D_CAA262_17_PIN + D_CAA262_17_PCO
+}
+
+! Pool 33
+define D_CAA267_17_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA267_17_PAG    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA267_17_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA267_17_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA267_17     { D_CAA267_17 = D_CAA267_17_PRJ }
+goal totalD_CAA267_17_prj { 
+	D_CAA267_17_PRJ = D_CAA267_17_PAG + D_CAA267_17_PIN + D_CAA267_17_PCO
+}
+
+! Pool 34
+define D_CAA271_17_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA271_17_PAG    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA271_17_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA271_17_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA271_17     { D_CAA271_17 = D_CAA271_17_PRJ }
+goal totalD_CAA271_17_prj { 
+	D_CAA271_17_PRJ = D_CAA271_17_PAG + D_CAA271_17_PIN + D_CAA271_17_PCO
+}
+
+! Pool 35
+define D_CAA278_17_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA278_17_PAG    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_CAA278_17_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA278_17_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA278_17     { D_CAA278_17 = D_CAA278_17_PRJ }
+goal totalD_CAA278_17_prj { 
+	D_CAA278_17_PRJ = D_CAA278_17_PAG + D_CAA278_17_PIN + D_CAA278_17_PCO
+}
+
+/* SECTION ====================================================================
+* SWP CONVEYANCE LOSSES (INTEGRATES CASP)
+* FORMERLY LOSSES FOR D862
+* 
+* Naming scheme:
+* 	- D_{aqueduct}{location}_{aqueduct}LOS_{project}
+* Losses for:
+* 	- Pools 31 - 35
+*/
+
+define D_CAA256_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 31
+define D_CAA262_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 32
+define D_CAA267_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 33
+define D_CAA271_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 34
+define D_CAA278_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 35
+
+/* SECTION ====================================================================
+* DEMANDS FOR KERN CO SWP AG (TBL A, ART. 56) (INTEGRATES CASP) 
+* FORMERLY DIVERSION D861
+* 
+* Naming scheme: 
+* 	- D_{aqueduct}{location, may contain addn. '_'}_{demand type}
+* Demands for:
+* 	- Pools 36 to 40, corresponding to Mile Post 280 to 293
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands = PA + PCO
+*/
+
+! Pool 36
+define D_CAA280_18_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA280_18_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA280_18_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA280_18     { D_CAA280_18 = D_CAA280_18_PRJ }
+goal totalD_CAA280_18_prj { D_CAA280_18_PRJ = D_CAA280_18_PAG + D_CAA280_18_PCO}
+
+! Pool 37
+define D_CAA283_18_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA283_18_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA283_18_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA283_18     { D_CAA283_18 = D_CAA283_18_PRJ }
+goal totalD_CAA283_18_prj { D_CAA283_18_PRJ = D_CAA283_18_PAG + D_CAA283_18_PCO}
+
+! Pool 38
+define D_CAA287_18_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA287_18_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA287_18_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA287_18     { D_CAA287_18 = D_CAA287_18_PRJ }
+goal totalD_CAA287_18_prj { D_CAA287_18_PRJ = D_CAA287_18_PAG + D_CAA287_18_PCO}
+
+! Pool 39
+define D_CAA291_18_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA291_18_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA291_18_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA291_18     { D_CAA291_18 = D_CAA291_18_PRJ }
+goal totalD_CAA291_18_prj { D_CAA291_18_PRJ = D_CAA291_18_PAG + D_CAA291_18_PCO}
+
+! Pool 40
+define D_CAA293_18_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA293_18_PAG    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA293_18_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA293_18     { D_CAA293_18 = D_CAA293_18_PRJ }
+goal totalD_CAA293_18_prj { D_CAA293_18_PRJ = D_CAA293_18_PAG + D_CAA293_18_PCO}
+
+/* SECTION ====================================================================
+* SWP CONVEYANCE LOSSES (INTEGRATES CASP)
+* FORMERLY LOSSES FOR D864
+* 
+* Naming scheme:
+* 	- D_{aqueduct}{location}_{aqueduct}LOS_{project}
+* Losses for:
+* 	- Pools 36 - 40
+*/
+
+define D_CAA280_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 36
+define D_CAA283_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 37
+define D_CAA287_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 38
+define D_CAA291_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 39
+define D_CAA293_CAALOS_SWP    {std kind 'FLOW-DELIVERY' units 'CFS' } ! Pool 40
+
+
+define D_CAA220_CAALOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA220_CAALOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA220_CAALOS     { D_CAA220_CAALOS = D_CAA220_CAALOS_PRJ }
+goal totalD_CAA220_CAALOS_prj { D_CAA220_CAALOS_PRJ = D_CAA220_CAALOS_PLS }
+
+define D_CAA278_CAALOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA278_CAALOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA278_CAALOS     { D_CAA278_CAALOS = D_CAA278_CAALOS_PRJ }
+goal totalD_CAA278_CAALOS_prj { D_CAA278_CAALOS_PRJ = D_CAA278_CAALOS_PLS }
+
+define D_CAA280_CAALOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_CAA280_CAALOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_CAA280_CAALOS     { D_CAA280_CAALOS = D_CAA280_CAALOS_PRJ }
+goal totalD_CAA280_CAALOS_prj { D_CAA280_CAALOS_PRJ = D_CAA280_CAALOS_PLS }
+
+/* SECTION ====================================================================
+* DEMANDS FOR SWP
+* 
+* Naming scheme: 
+* 	- D{location}_{demand type}
+* Goals:
+* 	- Total demands = Project Demands
+* 	- Project demands (= PMI + PIN + PCO) or (= PLS)
+*/
+
+
+define D_ESB324_AVEK_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_ESB324_AVEK_PMI    {std kind 'FLOW-DELIVERY' units 'CFS'  }
+define D_ESB324_AVEK_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB324_AVEK_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB324_AVEK     { D_ESB324_AVEK = D_ESB324_AVEK_PRJ }
+goal totalD_ESB324_AVEK_prj { D_ESB324_AVEK_PRJ = D_ESB324_AVEK_PMI + D_ESB324_AVEK_PIN + D_ESB324_AVEK_PCO}
+
+define D_ESB347_PLMDL_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB347_PLMDL_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB347_PLMDL_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB347_PLMDL_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB347_PLMDL     { D_ESB347_PLMDL = D_ESB347_PLMDL_PRJ }
+goal totalD_ESB347_PLMDL_prj { D_ESB347_PLMDL_PRJ = D_ESB347_PLMDL_PMI + D_ESB347_PLMDL_PIN + D_ESB347_PLMDL_PCO}
+
+define D_ESB355_LROCK_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB355_LROCK_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB355_LROCK_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB355_LROCK_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB355_LROCK     { D_ESB355_LROCK = D_ESB355_LROCK_PRJ }
+goal totalD_ESB355_LROCK_prj { D_ESB355_LROCK_PRJ = D_ESB355_LROCK_PMI + D_ESB355_LROCK_PIN + D_ESB355_LROCK_PCO}
+
+define D_ESB361_ESBLOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB361_ESBLOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB361_ESBLOS     { D_ESB361_ESBLOS = D_ESB361_ESBLOS_PRJ }
+goal totalD_ESB361_ESBLOS_prj { D_ESB361_ESBLOS_PRJ = D_ESB361_ESBLOS_PLS }
+
+define D_ESB403_MOJVE_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB403_MOJVE_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB403_MOJVE_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB403_MOJVE_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB403_MOJVE     { D_ESB403_MOJVE = D_ESB403_MOJVE_PRJ }
+goal totalD_ESB403_MOJVE_prj { D_ESB403_MOJVE_PRJ = D_ESB403_MOJVE_PMI + D_ESB403_MOJVE_PIN + D_ESB403_MOJVE_PCO}
+
+define D_ESB406_ESBLOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB406_ESBLOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB406_ESBLOS     { D_ESB406_ESBLOS = D_ESB406_ESBLOS_PRJ }
+goal totalD_ESB406_ESBLOS_prj { D_ESB406_ESBLOS_PRJ = D_ESB406_ESBLOS_PLS }
+
+define D_ESB407_CCHLA_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB407_CCHLA_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB407_CCHLA_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB407_CCHLA_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB407_CCHLA     { D_ESB407_CCHLA = D_ESB407_CCHLA_PRJ }
+goal totalD_ESB407_CCHLA_prj { D_ESB407_CCHLA_PRJ = D_ESB407_CCHLA_PMI + D_ESB407_CCHLA_PIN + D_ESB407_CCHLA_PCO}
+
+define D_ESB408_DESRT_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB408_DESRT_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB408_DESRT_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB408_DESRT_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB408_DESRT     { D_ESB408_DESRT = D_ESB408_DESRT_PRJ }
+goal totalD_ESB408_DESRT_prj { D_ESB408_DESRT_PRJ = D_ESB408_DESRT_PMI + D_ESB408_DESRT_PIN + D_ESB408_DESRT_PCO}
+
+define D_ESB413_MWDSC_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB413_MWDSC_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB413_MWDSC_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB413_MWDSC_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB413_MWDSC     { D_ESB413_MWDSC = D_ESB413_MWDSC_PRJ }
+goal totalD_ESB413_MWDSC_prj { D_ESB413_MWDSC_PRJ = D_ESB413_MWDSC_PMI + D_ESB413_MWDSC_PIN + D_ESB413_MWDSC_PCO}
+
+define D_ESB414_BRDNO_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB414_BRDNO_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB414_BRDNO_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB414_BRDNO_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB414_BRDNO     { D_ESB414_BRDNO = D_ESB414_BRDNO_PRJ }
+goal totalD_ESB414_BRDNO_prj { D_ESB414_BRDNO_PRJ = D_ESB414_BRDNO_PMI + D_ESB414_BRDNO_PIN + D_ESB414_BRDNO_PCO}
+
+define D_ESB415_GABRL_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB415_GABRL_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB415_GABRL_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' } ! New Article 21 demands. 1/2/2020
+define D_ESB415_GABRL_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB415_GABRL     { D_ESB415_GABRL = D_ESB415_GABRL_PRJ }
+goal totalD_ESB415_GABRL_prj { D_ESB415_GABRL_PRJ = D_ESB415_GABRL_PMI + D_ESB415_GABRL_PCO + D_ESB415_GABRL_PIN}
+
+define D_ESB420_GRGNO_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB420_GRGNO_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB420_GRGNO_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB420_GRGNO_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB420_GRGNO     { D_ESB420_GRGNO = D_ESB420_GRGNO_PRJ }
+goal totalD_ESB420_GRGNO_prj { D_ESB420_GRGNO_PRJ = D_ESB420_GRGNO_PMI + D_ESB420_GRGNO_PIN + D_ESB420_GRGNO_PCO}
+
+define D_ESB425_ESBLOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB425_ESBLOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB425_ESBLOS     { D_ESB425_ESBLOS = D_ESB425_ESBLOS_PRJ }
+goal totalD_ESB425_ESBLOS_prj { D_ESB425_ESBLOS_PRJ = D_ESB425_ESBLOS_PLS }
+
+define D_ESB433_MWDSC_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB433_MWDSC_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB433_MWDSC_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_ESB433_MWDSC_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_ESB433_MWDSC     { D_ESB433_MWDSC = D_ESB433_MWDSC_PRJ }
+goal totalD_ESB433_MWDSC_prj { D_ESB433_MWDSC_PRJ = D_ESB433_MWDSC_PMI + D_ESB433_MWDSC_PIN + D_ESB433_MWDSC_PCO}
+
+define D_WSB006_WSBLOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_WSB006_WSBLOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_WSB006_WSBLOS     { D_WSB006_WSBLOS = D_WSB006_WSBLOS_PRJ }
+goal totalD_WSB006_WSBLOS_prj { D_WSB006_WSBLOS_PRJ = D_WSB006_WSBLOS_PLS }
+
+define D_WSB026_WSBLOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_WSB026_WSBLOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_WSB026_WSBLOS     { D_WSB026_WSBLOS = D_WSB026_WSBLOS_PRJ }
+goal totalD_WSB026_WSBLOS_prj { D_WSB026_WSBLOS_PRJ = D_WSB026_WSBLOS_PLS }
+
+define D_WSB027_WSBLOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_WSB027_WSBLOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_WSB027_WSBLOS     { D_WSB027_WSBLOS = D_WSB027_WSBLOS_PRJ }
+goal totalD_WSB027_WSBLOS_prj { D_WSB027_WSBLOS_PRJ = D_WSB027_WSBLOS_PLS }
+
+define D_WSB031_MWDSC_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_WSB031_MWDSC_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_WSB031_MWDSC_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_WSB031_MWDSC_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_WSB031_MWDSC     { D_WSB031_MWDSC = D_WSB031_MWDSC_PRJ }
+goal totalD_WSB031_MWDSC_prj { D_WSB031_MWDSC_PRJ = D_WSB031_MWDSC_PMI + D_WSB031_MWDSC_PIN + D_WSB031_MWDSC_PCO}
+
+define D_WSB032_CLRTA2_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_WSB032_CLRTA2_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_WSB032_CLRTA2_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_WSB032_CLRTA2     { D_WSB032_CLRTA2 = D_WSB032_CLRTA2_PRJ }
+goal totalD_WSB032_CLRTA2_prj { D_WSB032_CLRTA2_PRJ = D_WSB032_CLRTA2_PMI + D_WSB032_CLRTA2_PCO}
+
+define D_SBA009_ACFC_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA009_ACFC_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA009_ACFC_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA009_ACFC_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_SBA009_ACFC     { D_SBA009_ACFC = D_SBA009_ACFC_PRJ }
+goal totalD_SBA009_ACFC_prj { D_SBA009_ACFC_PRJ = D_SBA009_ACFC_PMI + D_SBA009_ACFC_PIN + D_SBA009_ACFC_PCO}
+
+define D_SBA020_ACFC_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA020_ACFC_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA020_ACFC_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_SBA020_ACFC     { D_SBA020_ACFC = D_SBA020_ACFC_PRJ }
+goal totalD_SBA020_ACFC_prj { D_SBA020_ACFC_PRJ = D_SBA020_ACFC_PMI + D_SBA020_ACFC_PCO}
+
+define D_SBA029_ACWD_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA029_ACWD_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA029_ACWD_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA029_ACWD_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_SBA029_ACWD     { D_SBA029_ACWD = D_SBA029_ACWD_PRJ }
+goal totalD_SBA029_ACWD_prj { D_SBA029_ACWD_PRJ = D_SBA029_ACWD_PMI + D_SBA029_ACWD_PIN + D_SBA029_ACWD_PCO}
+
+define D_SBA036_SCVWD_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA036_SCVWD_PMI    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA036_SCVWD_PIN    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA036_SCVWD_PCO    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_SBA036_SCVWD     { D_SBA036_SCVWD = D_SBA036_SCVWD_PRJ }
+goal totalD_SBA036_SCVWD_prj { D_SBA036_SCVWD_PRJ = D_SBA036_SCVWD_PMI + D_SBA036_SCVWD_PIN + D_SBA036_SCVWD_PCO}
+
+define D_SBA042_SBALOS_PRJ    {std kind 'FLOW-DELIVERY' units 'CFS' }
+define D_SBA042_SBALOS_PLS    {std kind 'FLOW-DELIVERY' units 'CFS' }
+goal totalD_SBA042_SBALOS     { D_SBA042_SBALOS = D_SBA042_SBALOS_PRJ }
+goal totalD_SBA042_SBALOS_prj { D_SBA042_SBALOS_PRJ = D_SBA042_SBALOS_PLS }
+
+/* INCLUDE ====================================================================
+* LOGIC FOR REDUCTIONS TO M&I AND AG DELIVERIES
+* 
+* Logic in the included file ensures equal reductions to M&I and Ag deliveries 
+* when water supply to meet full contract amounts is not available.
+*/
+
+include '\CASP_swp_deliveryperc.wresl'

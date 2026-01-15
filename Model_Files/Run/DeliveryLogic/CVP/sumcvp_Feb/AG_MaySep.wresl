@@ -1,0 +1,97 @@
+! AG DEMANDS *********************************************
+
+define MaySep_AW_02_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}  
+define MaySep_AW_02_PA {
+    case Feb { 
+        condition month == Feb
+        sum(i=May-month,Sep-month,1) (AWR_02_PA(i)*(1+ RPF_02_PA - RUFr5_TS(i)) 
+                                    + AWO_02_PA(i)*(1+ RPF_02_PA - RUFo_02_PA))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_02_PAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_02_PAdv {MaySep_AW_02_PAdv = MaySep_AW_02_PA}
+
+define MaySep_AW_03_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'}  
+define MaySep_AW_03_PA {
+    case Feb { 
+        condition month == Feb
+        sum(i=May-month,Sep-month,1) (AWR_03_PA(i)*(1+ RPF_03_PA - RUFr5_TS(i)) 
+                                    + AWO_03_PA(i)*(1+ RPF_03_PA - RUFo_03_PA))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_03_PAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_03_PAdv {MaySep_AW_03_PAdv = MaySep_AW_03_PA}
+
+define MaySep_AW_04_PA1dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define MaySep_AW_04_PA1 {
+    case Feb { 
+        condition month == Feb
+        sum(i=May-month,Sep-month,1) (AWR_04_PA1(i)*(1+ RPF_04_PA1 - RUFr5_TS(i)) 
+                                    + AWO_04_PA1(i)*(1+ RPF_04_PA1 - RUFo_04_PA1))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_04_PA1dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_04_PA1dv {MaySep_AW_04_PA1dv = MaySep_AW_04_PA1}
+
+define MaySep_AW_04_PA2dv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define MaySep_AW_04_PA2 {
+    case Feb { 
+        condition month == Feb
+        sum(i=May-month,Sep-month,1) (AWR_04_PA2(i)*(1+ RPF_04_PA2 - RUFr5_TS(i)) 
+                                    + AWO_04_PA2(i)*(1+ RPF_04_PA2 - RUFo_04_PA2))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_04_PA2dv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_04_PA2dv {MaySep_AW_04_PA2dv = MaySep_AW_04_PA2}
+
+define MaySep_AW_07N_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define MaySep_AW_07N_PA {
+    case Feb { 
+        condition month == Feb
+        sum(i=May-month,Sep-month,1) (AWR_07N_PA(i)*(1+ RPF_07N_PA - RUFr5_TS(i)) 
+                                    + AWO_07N_PA(i)*(1+ RPF_07N_PA - RUFo_07N_PA))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_07N_PAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_07N_PAdv {MaySep_AW_07N_PAdv = MaySep_AW_07N_PA}
+
+define MaySep_AW_07S_PAdv {std kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+define MaySep_AW_07S_PA {
+    case Feb { 
+        condition month == Feb
+        sum(i=May-month,Sep-month,1) (AWR_07S_PA(i)*(1+ RPF_07S_PA - RUFr5_TS(i)) 
+                                    + AWO_07S_PA(i)*(1+ RPF_07S_PA - RUFo_07S_PA))
+                                    * cfs_taf(i)}
+    case MarMay {
+        condition month >= Mar .and. month <= May 
+        value MaySep_AW_07S_PAdv(-1) }
+    case otherwise {
+        condition always
+        value 0 }
+}
+goal setMaySep_AW_07S_PAdv {MaySep_AW_07S_PAdv = MaySep_AW_07S_PA}

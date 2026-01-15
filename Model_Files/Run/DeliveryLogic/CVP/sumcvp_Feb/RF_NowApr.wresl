@@ -1,0 +1,53 @@
+! REFUGE DEMANDS *********************************************
+
+define NowApr_AW_08N_PR1 {
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        sum(i=0,Apr-month,1) (AWR_08N_PR1(i)*(1+ RPF_08N_PR1 - RUFr5_TS(i)) 
+                            + AWO_08N_PR1(i)*(1+ RPF_08N_PR1 - RUFo_08N_PR1)
+                            + AWW_08N_PR1(i)*(1+ RPF_08N_PR1 - RUFw_08N_PR1))
+                            * cfs_taf(i)}
+    case otherwise {
+        condition always
+        value 0 }
+}
+define NowApr_AW_08N_PR1dv {alias NowApr_AW_08N_PR1 kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+
+define NowApr_AW_08N_PR2 {
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        sum(i=0,Apr-month,1) (AWR_08N_PR2(i)*(1+ RPF_08N_PR2 - RUFr5_TS(i)) 
+                            + AWO_08N_PR2(i)*(1+ RPF_08N_PR2 - RUFo_08N_PR2)
+                            + AWW_08N_PR2(i)*(1+ RPF_08N_PR2 - RUFw_08N_PR2))
+                            * cfs_taf(i)}
+    case otherwise {
+        condition always
+        value 0 }
+}
+define NowApr_AW_08N_PR2dv {alias NowApr_AW_08N_PR2 kind 'ANNUAL-APPLIED-WATER' units 'taf'}    
+
+define NowApr_AW_08S_PR {
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        sum(i=0,Apr-month,1) (AWR_08S_PR(i)*(1+ RPF_08S_PR - RUFr5_TS(i)) 
+                            + AWO_08S_PR(i)*(1+ RPF_08S_PR - RUFo_08S_PR)
+                            + AWW_08S_PR(i)*(1+ RPF_08S_PR - RUFw_08S_PR))
+                            * cfs_taf(i)}
+    case otherwise {
+        condition always
+        value 0 }
+}
+define NowApr_AW_08S_PRdv {alias NowApr_AW_08S_PR kind 'ANNUAL-APPLIED-WATER' units 'taf'} 
+
+define NowApr_AW_17N_PR {
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        sum(i=0,Apr-month,1) (AWR_17N_PR(i)*(1+ RPF_17N_PR - RUFr5_TS(i)) 
+                            + AWO_17N_PR(i)*(1+ RPF_17N_PR - RUFo_17N_PR)
+                            + AWW_17N_PR(i)*(1+ RPF_17N_PR - RUFw_17N_PR))
+                            * cfs_taf(i)}
+    case otherwise {
+        condition always
+        value 0 }
+}
+define NowApr_AW_17N_PRdv {alias NowApr_AW_17N_PR kind 'ANNUAL-APPLIED-WATER' units 'taf'} 

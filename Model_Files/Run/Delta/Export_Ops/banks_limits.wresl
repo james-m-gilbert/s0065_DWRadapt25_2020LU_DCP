@@ -1,0 +1,23 @@
+!    E. Reyes 7/13/98
+!    A. Munevar 11/13/99
+
+! This is the permit export and physical capacity for Banks.
+
+! Banks Permitted Pumping Amount
+!define BanksCapPermit {select PermitCap1 from BanksLimits where month=month}
+
+! Banks Permitted Pumping Amount 
+define BanksCapPermit1 {select PermitCap1 from BanksLimits where month=month}
+define BanksCapPermit2 {select PermitCap2 from BanksLimits where month=month}
+define ReservedCap {select ReservedCap from BanksLimits where month=month}
+
+define BanksCapPermit {value min(BanksCapPermit1, BanksCapPermit2 - ReservedCap) }
+
+! Banks Physical Capactiy
+define BanksCapPhys {select PhysCap from BanksLimits where month=month }
+
+! CVP dedicated capacity
+define BanksMaxAllowCVPTD {select CVPDedCapTD from BanksLimits where month=month}
+define BanksMaxAllowCVPIF {select CVPDedCapND from BanksLimits where month=month}
+define BanksMaxCVPTDdv {alias BanksMaxAllowCVPTD kind 'flow' units 'CFS'}
+define BanksMaxCVPIFdv {alias BanksMaxAllowCVPIF kind 'flow' units 'CFS'}

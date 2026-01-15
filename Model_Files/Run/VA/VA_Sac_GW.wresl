@@ -1,0 +1,65 @@
+! VA_PreOps.wresl
+! nullifying any VA variables and operations in cycles before they're implemented
+! and setting up initial accounting and conditions for comparisons
+
+define SC_LF_Returns {std kind 'VA-cfs' units 'cfs'}		!
+define VA_LF_SC_delivs {std kind 'VA-cfs' units 'cfs'}		!
+
+! *****************************************************************************
+! Water Blocks at Hood and Delta Outflow zeroed out before cycle 13
+! *****************************************************************************
+goal zeroC_SAC041_VA_SacPulse {C_SAC041_VA_SacPulse = 0.}
+!goal zeroC_CSL004a_VA {C_CSL004a_VA = 0.} !DDhillon 2010903
+
+! *****************************************************************************
+! Sacramento River Pulse Flows AN/BN/D
+! *****************************************************************************
+
+define I_SHSTA_VA {std kind 'flow-inflow' units 'cfs'}
+!define S4_VA {lower -1000. kind 'storage' units 'taf'}
+define SP_SHSTA_VAdv {std kind 'volume-spill' units 'taf'} 
+
+! Do not yet release VA water to Delta Outflow
+goal zeroI_SHSTA_VA    {I_SHSTA_VA = 0.}
+goal zeroC_KSWCK_VA    {C_KSWCK_VA = 0.}
+goal setS_SHSTA_VA     {S_SHSTA_VA = S_SHSTA_VA(-1)} 
+goal setSP_SHSTA_VAdv  {SP_SHSTA_VAdv = 0.} 
+                              
+goal setVA_LF_SC_delivs {
+    lhs VA_LF_SC_delivs
+    rhs D_SAC178_08N_SA1
+    + D_SAC159_08N_SA1
+    !+ D_CBD049_08N_SA1
+    + D_GCC027_08N_SA2
+    + D_SAC159_08S_SA1
+    !+ D_CBD041_08S_SA1
+    + D_GCC056_08S_SA2
+    !+ D_CBD041_08S_SA2
+    + D_SAC109_08S_SA3
+    + D_SAC121_08S_SA3
+    !+ D_CBD028_08S_SA3
+	+   D_SAC122_19_SA
+	+   D_SAC115_19_SA
+	+   D_SAC109_19_SA
+	+   D_SAC099_19_SA
+	+   D_SAC091_19_SA
+	+   D_SAC074_21_SA
+	+   D_SAC083_21_SA
+	+   D_YBP023_21_SA
+    }
+
+goal setSC_LF_Returns {
+    lhs SC_LF_Returns
+    rhs R_08N_SA1_CBD044
+    + R_08N_SA2_CBD049
+    + R_08S_SA1_CBD031
+    + R_08S_SA2_CBD037
+    + R_08S_SA3_RFS8S
+	+ R_19_SA_RD1500
+	+ R_21_SA_YBP020}
+    
+define NDOI_ADD_SACVA {alias C_SAC041_VA_SacPulse kind 'FLOW-VA' units 'cfs'}
+
+define NetDelivRed_notbackedup {std kind 'VA-cfs' units 'cfs'}		!
+goal setNetDelivRed_notbackedup {NetDelivRed_notbackedup = 0.}
+

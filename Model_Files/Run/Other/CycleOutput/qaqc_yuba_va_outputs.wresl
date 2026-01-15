@@ -1,0 +1,74 @@
+define EI_Control_CYCDEL {alias EI_Control[DELTA] kind 'YUBAVA-QAQC' units 'cfs'}
+define EI_Control_CYCTRANS {alias EI_Control[TRANSFERS_STAGE1] kind 'YUBAVA-QAQC' units 'cfs'}
+define EI_Control_CYCCVC {alias EI_Control[WHEELCVC] kind 'YUBAVA-QAQC' units 'cfs'}
+define EI_Control_CYCJPOD {alias EI_Control[WHEELJPOD] kind 'YUBAVA-QAQC' units 'cfs'}
+
+define RuleCVControl_CYCDEL {alias RuleCVControl[DELTA] kind 'YUBAVA-QAQC' units 'cfs'}
+define RuleCVControl_CYCTRANS {alias RuleCVControl[TRANSFERS_STAGE1] kind 'YUBAVA-QAQC' units 'cfs'}
+define RuleCVControl_CYCCVC {alias RuleCVControl[WHEELCVC] kind 'YUBAVA-QAQC' units 'cfs'}
+define RuleCVControl_CYCJPOD {alias RuleCVControl[WHEELJPOD] kind 'YUBAVA-QAQC' units 'cfs'}
+
+define EI_Balanced_CYCDEL {alias EI_Balanced[DELTA] kind 'YUBAVA-QAQC' units 'cfs'}
+define EI_Balanced_CYCTRANS {alias EI_Balanced[TRANSFERS_STAGE1] kind 'YUBAVA-QAQC' units 'cfs'}
+define EI_Balanced_CYCCVC {alias EI_Balanced[WHEELCVC] kind 'YUBAVA-QAQC' units 'cfs'}
+define EI_Balanced_CYCJPOD {alias EI_Balanced[WHEELJPOD] kind 'YUBAVA-QAQC' units 'cfs'}
+
+define YWA_VA_Transfer_VA_CYCGWINIT {alias YWA_VA_Transfer_VA[GW_INITIAL] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCGW1 {alias YWA_VA_Transfer_VA[GW_FIRST] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCGW2 {alias YWA_VA_Transfer_VA[GW_SECOND] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCGW3 {alias YWA_VA_Transfer_VA[GW_THIRD] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCGW4 {alias YWA_VA_Transfer_VA[GW_FOURTH] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCPRE {alias YWA_VA_Transfer_VA[PRESETUP] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCSET {alias YWA_VA_Transfer_VA[SETUP] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCMON {alias YWA_VA_Transfer_VA[MONTHLYWEIGHTED] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCUP {alias YWA_VA_Transfer_VA[UPSTREAM] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCDELS {alias YWA_VA_Transfer_VA[DELTA_SRPLS] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCDEL {alias YWA_VA_Transfer_VA[DELTA] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCTRANS {alias YWA_VA_Transfer_VA[TRANSFERS_STAGE1] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCCVC {alias YWA_VA_Transfer_VA[WHEELCVC] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_VA_CYCJPOD {alias YWA_VA_Transfer_VA[WHEELJPOD] kind 'YUBAVA-QAQC' units 'cfs'}
+
+define YWA_VA_Transfer_LYRA_CYCGWINIT {alias YWA_VA_Transfer_LYRA[GW_INITIAL] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCGW1 {alias YWA_VA_Transfer_LYRA[GW_FIRST] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCGW2 {alias YWA_VA_Transfer_LYRA[GW_SECOND] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCGW3 {alias YWA_VA_Transfer_LYRA[GW_THIRD] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCGW4 {alias YWA_VA_Transfer_LYRA[GW_FOURTH] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCPRE {alias YWA_VA_Transfer_LYRA[PRESETUP] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCSET {alias YWA_VA_Transfer_LYRA[SETUP] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCMON {alias YWA_VA_Transfer_LYRA[MONTHLYWEIGHTED] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCUP {alias YWA_VA_Transfer_LYRA[UPSTREAM] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCDELS {alias YWA_VA_Transfer_LYRA[DELTA_SRPLS] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCDEL {alias YWA_VA_Transfer_LYRA[DELTA] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCTRANS {alias YWA_VA_Transfer_LYRA[TRANSFERS_STAGE1] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCCVC {alias YWA_VA_Transfer_LYRA[WHEELCVC] kind 'YUBAVA-QAQC' units 'cfs'}
+define YWA_VA_Transfer_LYRA_CYCJPOD {alias YWA_VA_Transfer_LYRA[WHEELJPOD] kind 'YUBAVA-QAQC' units 'cfs'}
+
+define Yuba_VA_Remove_dv_CYCGWINIT {alias Yuba_VA_Remove_dv[GW_INITIAL] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCGW1 {alias Yuba_VA_Remove_dv[GW_FIRST] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCGW2 {alias Yuba_VA_Remove_dv[GW_SECOND] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCGW3 {alias Yuba_VA_Remove_dv[GW_THIRD] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCGW4 {alias Yuba_VA_Remove_dv[GW_FOURTH] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCPRE {alias Yuba_VA_Remove_dv[PRESETUP] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCSET {alias Yuba_VA_Remove_dv[SETUP] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCMON {alias Yuba_VA_Remove_dv[MONTHLYWEIGHTED] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCUP {alias Yuba_VA_Remove_dv[UPSTREAM] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCDELS {alias Yuba_VA_Remove_dv[DELTA_SRPLS] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCDEL {alias Yuba_VA_Remove_dv[DELTA] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCTRANS {alias Yuba_VA_Remove_dv[TRANSFERS_STAGE1] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCCVC {alias Yuba_VA_Remove_dv[WHEELCVC] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Remove_dv_CYCJPOD {alias Yuba_VA_Remove_dv[WHEELJPOD] kind 'YUBAVA-QAQC' units 'cfs'}
+
+define Yuba_VA_Add_dv_CYCGWINIT {alias Yuba_VA_Add_dv[GW_INITIAL] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCGW1 {alias Yuba_VA_Add_dv[GW_FIRST] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCGW2 {alias Yuba_VA_Add_dv[GW_SECOND] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCGW3 {alias Yuba_VA_Add_dv[GW_THIRD] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCGW4 {alias Yuba_VA_Add_dv[GW_FOURTH] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCPRE {alias Yuba_VA_Add_dv[PRESETUP] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCSET {alias Yuba_VA_Add_dv[SETUP] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCMON {alias Yuba_VA_Add_dv[MONTHLYWEIGHTED] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCUP {alias Yuba_VA_Add_dv[UPSTREAM] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCDELS {alias Yuba_VA_Add_dv[DELTA_SRPLS] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCDEL {alias Yuba_VA_Add_dv[DELTA] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCTRANS {alias Yuba_VA_Add_dv[TRANSFERS_STAGE1] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCCVC {alias Yuba_VA_Add_dv[WHEELCVC] kind 'YUBAVA-QAQC' units 'cfs'}
+define Yuba_VA_Add_dv_CYCJPOD {alias Yuba_VA_Add_dv[WHEELJPOD] kind 'YUBAVA-QAQC' units 'cfs'}

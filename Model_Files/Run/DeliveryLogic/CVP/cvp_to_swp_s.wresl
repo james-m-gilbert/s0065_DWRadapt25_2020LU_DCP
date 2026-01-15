@@ -1,0 +1,253 @@
+! This code Bounds the Non-Wheeling interconnections between SWP and CVP.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! (Constrain CVP and SWP water in CAA/JUB)
+
+! CVP water balance @ CAA067 (inflow to ONFB)
+! CVP water equals inflows minus diversions (no losses!) OVERCON?
+goal setC_CAA067_CVP    { C_CAA067_CVP = C_CAA003_CVP + D_DMC007_CAA009 - D_CAA012_71_PU1 - D_CAA066_71_PU2}
+!goal setC_CAA067_SWP    { C_CAA067_SWP = C_CAA003     - C_CAA003_CVP    - D_CAA005_SBA000 - D_CAA046_71_PA7 + CAALOSS_SWP_Upper} !- SG_R1R2_SWP}
+goal setC_CAA067_TOT    { C_CAA067     = C_CAA067_CVP + C_CAA067_SWP}
+goal zeroIntRev2     {D_CAA009_DMC007 < 0.}  ! reverse intertie
+
+! CVP water balance @ CAA069 (outflow from ONFB to JUB)
+! CVP water equals inflows minus diversions since CAA067 (no losses up to this point!)   OVERCON?
+! CVP water limited to diversions+losses+CVC on JUB
+goal setC_CAA069_CVPsup { C_CAA069_CVP = C_CAA067_CVP + C_SLUIS_CVP     + D_DMC070_CAA069 - D_CAA069_SLUIS_F - D_CAA069_DMC070}
+/*goal setC_CAA069_CVPdem { C_CAA069_CVP < D_CAA087_73_PA1  + D_CAA095_73_PA3 + D_CAA109_73_PA3 
+									   + D_CAA095_90_PA1 + D_CAA109_90_PA1 + D_CAA122_90_PA1 + D_CAA133_90_PA1                   ! (CVP deliveries + CVC)
+                                       + D_CAA143_90_PA1 + D_CAA155_90_PA1 + D_CAA165_90_PA1 + D_CAA172_90_PA1
+                                       + D_CAA095_90_PA2 + D_CAA109_90_PA2 + D_CAA122_90_PA2 + D_CAA133_90_PA2
+                                       + D_CAA143_90_PA2 + D_CAA155_90_PA2 + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                       + D_CAA143_90_PU 
+                                       + D_CAA165_90_PU  + D_CAA172_90_PU  + C_CAA172_CVP 
+                                       - D_CAA071_CAALOS_CVP - D_CAA087_CAALOS_CVP - D_CAA095_CAALOS_CVP - D_CAA109_CAALOS_CVP   ! (CVP losses)
+                                       - D_CAA143_CAALOS_CVP - D_CAA155_CAALOS_CVP - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 
+                                       - D_CAA172_CAALOS_CVP}*/
+
+!goal setC_CAA069_SWPsup { C_CAA069_SWP = C_CAA067_SWP + C_SLUIS_SWP     - D_CAA069_SLUIS_S}
+/*goal setC_CAA069_SWPdem { C_CAA069_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA071_CAALOS_SWP - D_CAA087_CAALOS_SWP - D_CAA095_CAALOS_SWP - D_CAA109_CAALOS_SWP   ! (SWP losses)
+                                       - D_CAA143_CAALOS_SWP - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setC_CAA069_TOT    { C_CAA069     = C_CAA069_CVP + C_CAA069_SWP}
+ 
+!add terms for proposed SOD Storage Reservoir JByers 5/3/24
+goal setC_CAA071_SWPsup { C_CAA071_SWP = C_CAA069_SWP}
+goal setC_CAA071_SWPdem { C_CAA071_SWP < C_CAA172 - C_CAA172_CVP + D_CAA079_SODSE_S - C_SODSE_SWP                                                                ! (SWP outflow from JUB) !SODSE terms added JByers 5/3/24
+                                       - D_CAA087_CAALOS_SWP - D_CAA095_CAALOS_SWP - D_CAA109_CAALOS_SWP   ! (SWP losses)
+                                       - D_CAA143_CAALOS_SWP - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 
+                                       - D_CAA172_CAALOS_SWP }
+goal setC_CAA071_REM	{ C_CAA071_REM = C_CAA069_CVP}
+goal setC_CAA071_TOT    { C_CAA071     = C_CAA071_SWP + C_CAA071_REM} !Split arc into SWP portion and Remaining portion (REM)
+
+
+goal setC_CAA079_SWPsup { C_CAA079_SWP = C_CAA071_SWP + C_SODSE_SWP - D_CAA079_SODSE_S } !SODSE terms added JByers 5/3/24
+goal setC_CAA079_SWPdem { C_CAA079_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA087_CAALOS_SWP - D_CAA095_CAALOS_SWP - D_CAA109_CAALOS_SWP   ! (SWP losses)
+                                       - D_CAA143_CAALOS_SWP - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 
+                                       - D_CAA172_CAALOS_SWP }
+goal setC_CAA079_REM	{ C_CAA079_REM = C_CAA071_REM}
+goal setC_CAA079_TOT    { C_CAA079     = C_CAA079_SWP + C_CAA079_REM} !Split arc into SWP portion and Remaining portion (REM)
+
+! CVP water balance @ CAA069 (flow at Dos Amigos)
+! CVP water equals inflows minus diversions minus losses since CAA069   OVERCON?
+! CVP water limited to diversions+losses+CVC on remainder of JUB
+goal setC_CAA087_CVPsup { C_CAA087_CVP = C_CAA069_CVP + D_CAA071_CAALOS_CVP + D_CAA087_CAALOS_CVP - D_CAA087_73_PA1}
+/*goal setC_CAA087_CVPdem { C_CAA087_CVP < D_CAA095_73_PA3 + D_CAA109_73_PA3
+									   + D_CAA095_90_PA1 + D_CAA109_90_PA1 + D_CAA122_90_PA1 + D_CAA133_90_PA1                   ! (CVP deliveries + CVC)
+                                       + D_CAA143_90_PA1 + D_CAA155_90_PA1 + D_CAA165_90_PA1 + D_CAA172_90_PA1
+                                       + D_CAA095_90_PA2 + D_CAA109_90_PA2 + D_CAA122_90_PA2 + D_CAA133_90_PA2
+                                       + D_CAA143_90_PA2 + D_CAA155_90_PA2 + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                       + D_CAA143_90_PU  
+                                       + D_CAA165_90_PU  + D_CAA172_90_PU  + C_CAA172_CVP
+                                       - D_CAA095_CAALOS_CVP - D_CAA109_CAALOS_CVP - D_CAA143_CAALOS_CVP                         ! (CVP losses)
+                                       - D_CAA155_CAALOS_CVP - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 
+                                       - D_CAA172_CAALOS_CVP }*/
+/*goal setC_CAA087_SWPsup { C_CAA087_SWP = C_CAA069_SWP + D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP}
+goal setC_CAA087_SWPdem { C_CAA087_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA095_CAALOS_SWP - D_CAA109_CAALOS_SWP - D_CAA143_CAALOS_SWP                         ! (SWP losses)
+                                       - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setCAA087_TOT      { C_CAA087     = C_CAA087_CVP + C_CAA087_SWP}
+
+! CVP water balance @ CAA095 (Check 14)
+! CVP water equals inflows minus diversions minus losses since CAA095     OVERCON?
+! CVP water limited to diversions+losses+CVC on remainder of JUB
+goal setC_CAA095_CVPsup { C_CAA095_CVP = C_CAA087_CVP 																			 ! (inflow to Check)
+									   /*+ D_CAA071_CAALOS_CVP + D_CAA087_CAALOS_CVP*/ + D_CAA095_CAALOS_CVP                         ! (CVP losses)
+									   - D_CAA095_73_PA3 - D_CAA095_90_PA1 - D_CAA095_90_PA2}									 ! (CVP deliveries at Check)
+/*goal setC_CAA095_CVPdem { C_CAA095_CVP < D_CAA109_73_PA3                   									 					 ! (CVP deliveries downstream of Check, including CVC)
+									   + D_CAA109_90_PA1 + D_CAA122_90_PA1 + D_CAA133_90_PA1
+                                       + D_CAA143_90_PA1 + D_CAA155_90_PA1 + D_CAA165_90_PA1 + D_CAA172_90_PA1
+                                       + D_CAA109_90_PA2 + D_CAA122_90_PA2 + D_CAA133_90_PA2
+                                       + D_CAA143_90_PA2 + D_CAA155_90_PA2 + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                       + D_CAA143_90_PU  
+                                       + D_CAA165_90_PU  + D_CAA172_90_PU  + C_CAA172_CVP
+                                       - D_CAA109_CAALOS_CVP - D_CAA143_CAALOS_CVP                         						 ! (CVP losses)
+                                       - D_CAA155_CAALOS_CVP - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 
+                                       - D_CAA172_CAALOS_CVP }*/
+!goal setC_CAA095_SWPsup { C_CAA095_SWP = C_CAA087_SWP /*+ D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP*/ + D_CAA095_CAALOS_SWP}
+/*goal setC_CAA095_SWPdem { C_CAA095_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA109_CAALOS_SWP - D_CAA143_CAALOS_SWP                         						 ! (SWP losses)
+                                       - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setCAA095_TOT      { C_CAA095     = C_CAA095_CVP + C_CAA095_SWP}
+
+
+! CVP water balance @ CAA109 (Check 15)
+! CVP water equals inflows minus diversions minus losses since CAA109   OVERCON?
+! CVP water limited to diversions+losses+CVC on remainder of JUB
+goal setC_CAA109_CVPsup { C_CAA109_CVP = C_CAA095_CVP 																			 ! (inflow to Check)
+									   /*+ D_CAA071_CAALOS_CVP + D_CAA087_CAALOS_CVP + D_CAA095_CAALOS_CVP*/ + D_CAA109_CAALOS_CVP   ! (CVP losses)
+									    - D_CAA109_73_PA3 - D_CAA109_90_PA1 - D_CAA109_90_PA2}									 ! (CVP deliveries at Check)
+/*goal setC_CAA109_CVPdem { C_CAA109_CVP < D_CAA122_90_PA1 + D_CAA133_90_PA1 									 					 ! (CVP deliveries downstream of Check, including CVC)
+                                       + D_CAA143_90_PA1 + D_CAA155_90_PA1 + D_CAA165_90_PA1 + D_CAA172_90_PA1
+                                       + D_CAA122_90_PA2 + D_CAA133_90_PA2
+                                       + D_CAA143_90_PA2 + D_CAA155_90_PA2 + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                       + D_CAA143_90_PU  
+                                       + D_CAA165_90_PU  + D_CAA172_90_PU  + C_CAA172_CVP
+                                       - D_CAA143_CAALOS_CVP                         						 					 ! (CVP losses)
+                                       - D_CAA155_CAALOS_CVP - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 
+                                       - D_CAA172_CAALOS_CVP }*/
+!goal setC_CAA109_SWPsup { C_CAA109_SWP = C_CAA095_SWP 
+!									   /*+ D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP + D_CAA095_CAALOS_SWP*/ + D_CAA109_CAALOS_SWP}
+/*goal setC_CAA109_SWPdem { C_CAA109_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA143_CAALOS_SWP                         						 					 ! (SWP losses)
+                                       - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setCAA109_TOT      { C_CAA109     = C_CAA109_CVP + C_CAA109_SWP}
+
+
+! CVP water balance @ CAA122 (Check 16)
+! CVP water equals inflows minus diversions minus losses since CAA122    OVERCON?
+! CVP water limited to diversions+losses+CVC on remainder of JUB
+goal setC_CAA122_CVPsup { C_CAA122_CVP = C_CAA109_CVP 																			 ! (inflow to Check)
+									   /*+ D_CAA071_CAALOS_CVP + D_CAA087_CAALOS_CVP + D_CAA095_CAALOS_CVP + D_CAA109_CAALOS_CVP*/   ! (CVP losses)   
+									   - D_CAA122_90_PA1 - D_CAA122_90_PA2}									 					 ! (CVP deliveries at Check)
+/*goal setC_CAA122_CVPdem { C_CAA122_CVP < D_CAA133_90_PA1 									 					 ! (CVP deliveries downstream of Check, including CVC)
+                                       + D_CAA143_90_PA1 + D_CAA155_90_PA1 + D_CAA165_90_PA1 + D_CAA172_90_PA1
+                                       + D_CAA133_90_PA2
+                                       + D_CAA143_90_PA2 + D_CAA155_90_PA2 + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                       + D_CAA143_90_PU  
+                                       + D_CAA165_90_PU  + D_CAA172_90_PU  + C_CAA172_CVP
+                                       - D_CAA143_CAALOS_CVP                         						 					 ! (CVP losses)
+                                       - D_CAA155_CAALOS_CVP - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 
+                                       - D_CAA172_CAALOS_CVP }*/
+!goal setC_CAA122_SWPsup { C_CAA122_SWP = C_CAA109_SWP 
+!									   /*+ D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP + D_CAA095_CAALOS_SWP + D_CAA109_CAALOS_SWP*/}
+/*goal setC_CAA122_SWPdem { C_CAA122_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA143_CAALOS_SWP                         						 					 ! (SWP losses)
+                                       - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setCAA122_TOT      { C_CAA122     = C_CAA122_CVP + C_CAA122_SWP}
+
+
+! CVP water balance @ CAA133 (Check 17)
+! CVP water equals inflows minus diversions minus losses since CAA133    OVERCON?
+! CVP water limited to diversions+losses+CVC on remainder of JUB
+goal setC_CAA133_CVPsup { C_CAA133_CVP = C_CAA122_CVP 																			 ! (inflow to Check)
+									   /*+ D_CAA071_CAALOS_CVP + D_CAA087_CAALOS_CVP + D_CAA095_CAALOS_CVP + D_CAA109_CAALOS_CVP*/   ! (CVP losses)   
+									   - D_CAA133_90_PA1 - D_CAA133_90_PA2}									 					 ! (CVP deliveries at Check)
+/*goal setC_CAA133_CVPdem { C_CAA133_CVP < D_CAA143_90_PA1 + D_CAA155_90_PA1 + D_CAA165_90_PA1 + D_CAA172_90_PA1                   ! (CVP deliveries downstream of Check, including CVC)
+                                       + D_CAA143_90_PA2 + D_CAA155_90_PA2 + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                       + D_CAA143_90_PU  
+                                       + D_CAA165_90_PU  + D_CAA172_90_PU  + C_CAA172_CVP
+                                       - D_CAA143_CAALOS_CVP                         						 					 ! (CVP losses)
+                                       - D_CAA155_CAALOS_CVP - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 
+                                       - D_CAA172_CAALOS_CVP }*/
+!goal setC_CAA133_SWPsup { C_CAA133_SWP = C_CAA122_SWP 
+!									   /*+ D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP + D_CAA095_CAALOS_SWP + D_CAA109_CAALOS_SWP*/}
+/*goal setC_CAA133_SWPdem { C_CAA133_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA143_CAALOS_SWP                         						 					 ! (SWP losses)
+                                       - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setCAA133_TOT      { C_CAA133     = C_CAA133_CVP + C_CAA133_SWP}
+
+
+! CVP water balance @ CAA143 (Check 18)
+! CVP water equals inflows minus diversions minus losses since CAA143   OVERCON?
+! CVP water limited to diversions+losses+CVC on remainder of JUB
+goal setC_CAA143_CVPsup { C_CAA143_CVP = C_CAA133_CVP 																			 ! (inflow to Check)
+									   /*+ D_CAA071_CAALOS_CVP + D_CAA087_CAALOS_CVP + D_CAA095_CAALOS_CVP + D_CAA109_CAALOS_CVP*/   ! (CVP losses)
+									   + D_CAA143_CAALOS_CVP   
+									   - D_CAA143_90_PA1 - D_CAA143_90_PA2 -  D_CAA143_90_PU }				 					 ! (CVP deliveries at Check)
+/*goal setC_CAA143_CVPdem { C_CAA143_CVP < D_CAA155_90_PA1 + D_CAA165_90_PA1 + D_CAA172_90_PA1                   					 ! (CVP deliveries downstream of Check, including CVC)
+                                       + D_CAA155_90_PA2 + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                       + D_CAA165_90_PU  + D_CAA172_90_PU  + C_CAA172_CVP
+                                       - D_CAA155_CAALOS_CVP - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 						 ! (CVP losses)
+                                       - D_CAA172_CAALOS_CVP }*/
+!goal setC_CAA143_SWPsup { C_CAA143_SWP = C_CAA133_SWP 
+!									   /*+ D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP + D_CAA095_CAALOS_SWP + D_CAA109_CAALOS_SWP*/
+!									   + D_CAA143_CAALOS_SWP}
+/*goal setC_CAA143_SWPdem { C_CAA143_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 						 ! (SWP losses)
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setCAA143_TOT      { C_CAA143     = C_CAA143_CVP + C_CAA143_SWP}
+
+
+! CVP water balance @ CAA155 (Check 19)
+! CVP water equals inflows minus diversions minus losses since CAA155   OVERCON?
+! CVP water limited to diversions+losses+CVC on remainder of JUB
+goal setC_CAA155_CVPsup { C_CAA155_CVP = C_CAA143_CVP 																			 ! (inflow to Check)
+									   /*+ D_CAA071_CAALOS_CVP + D_CAA087_CAALOS_CVP + D_CAA095_CAALOS_CVP + D_CAA109_CAALOS_CVP   ! (CVP losses)
+									   + D_CAA143_CAALOS_CVP*/ + D_CAA155_CAALOS_CVP   
+									   - D_CAA155_90_PA1 - D_CAA155_90_PA2 }				 					                 ! (CVP deliveries at Check)
+/*goal setC_CAA155_CVPdem { C_CAA155_CVP < D_CAA165_90_PA1 + D_CAA172_90_PA1                   					 				 ! (CVP deliveries downstream of Check, including CVC)
+                                       + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                       + D_CAA165_90_PU  + D_CAA172_90_PU  + C_CAA172_CVP
+                                       - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 							    				 ! (CVP losses)
+                                       - D_CAA172_CAALOS_CVP }*/
+!goal setC_CAA155_SWPsup { C_CAA155_SWP = C_CAA143_SWP 
+!									   /*+ D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP + D_CAA095_CAALOS_SWP + D_CAA109_CAALOS_SWP
+!									   + D_CAA143_CAALOS_SWP*/ + D_CAA155_CAALOS_SWP}
+/*goal setC_CAA155_SWPdem { C_CAA155_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA155_CAALOS_SWP - D_CAA156_CAALOS_SWP - D_CAA165_CAALOS_SWP 						 ! (SWP losses)
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setCAA155_TOT      { C_CAA155     = C_CAA155_CVP + C_CAA155_SWP}
+
+! CVP water balance @ CAA165 (Check 20)
+! CVP water equals inflows minus diversions minus losses since CAA165   OVERCON?
+! CVP water limited to diversions+losses+CVC on remainder of JUB
+goal setC_CAA165_CVPsup { C_CAA165_CVP = C_CAA155_CVP 																			 ! (inflow to Check)
+									   /* + D_CAA071_CAALOS_CVP + D_CAA087_CAALOS_CVP + D_CAA095_CAALOS_CVP + D_CAA109_CAALOS_CVP   ! (CVP losses)
+									   + D_CAA143_CAALOS_CVP + D_CAA155_CAALOS_CVP*/ + D_CAA156_CAALOS_CVP + D_CAA165_CAALOS_CVP
+									   - D_CAA165_90_PA1 - D_CAA165_90_PA2 - D_CAA165_90_PU}	    			                 ! (CVP deliveries at Check)
+/*goal setC_CAA165_CVPdem { C_CAA165_CVP < D_CAA172_90_PA1                   					 				 					 ! (CVP deliveries downstream of Check, including CVC)
+                                       + D_CAA172_90_PA2 + D_CAA172_90_PU
+                                       + C_CAA172_CVP                             							    				 ! (CVP losses)
+                                       - D_CAA172_CAALOS_CVP }*/
+!goal setC_CAA165_SWPsup { C_CAA165_SWP = C_CAA155_SWP 
+!									   /*+ D_CAA071_CAALOS_SWP + D_CAA087_CAALOS_SWP + D_CAA095_CAALOS_SWP + D_CAA109_CAALOS_SWP
+!									   + D_CAA143_CAALOS_SWP + D_CAA155_CAALOS_SWP*/+ D_CAA156_CAALOS_SWP + D_CAA165_CAALOS_SWP}  
+/*goal setC_CAA165_SWPdem { C_CAA165_SWP < C_CAA172 - C_CAA172_CVP                                                                 ! (SWP outflow from JUB)
+                                       - D_CAA165_CAALOS_SWP 						 											 ! (SWP losses)
+                                       - D_CAA172_CAALOS_SWP }*/
+goal setCAA165_TOT      { C_CAA165     = C_CAA165_CVP + C_CAA165_SWP}
+
+! CVP water balance @ CAA172 (end of JUB)
+! CVP water equals inflows minus diversions minus losses since CAA087   OVERCON?
+! CVP water also equals CVC flow
+goal setC_CAA172_CVPsup       {C_CAA172_CVP = C_CAA165_CVP - D_CAA172_90_PA1 - D_CAA172_90_PU  - D_CAA172_90_PA2 + D_CAA172_CAALOS}
+/*goal setC_CAA172_SWP    { C_CAA172_SWP = C_CAA087_SWP        + D_CAA095_CAALOS_SWP + D_CAA109_CAALOS_SWP + D_CAA143_CAALOS_SWP
+                                       + D_CAA155_CAALOS_SWP + D_CAA156_CAALOS_SWP + D_CAA165_CAALOS_SWP + D_CAA172_CAALOS_SWP}*/                     
+goal setC_CAA172_CVP    { C_CAA172_CVP = D_CAA238_CVPCV + D_CAA244_CVPRF}
+goal setCAA172_TOT      { C_CAA172     = C_CAA172_CVP + C_CAA172_SWP}
+
+! sum of cvp joint use branch deliveries (INCLUDE CVP LOSSES!)
+define CVP_JUB_delivs   { std kind 'delivery' units 'cfs' }
+goal setCVP_JUB_delivs  { CVP_JUB_delivs = D_CAA087_73_PA1  + D_CAA095_73_PA3 + D_CAA109_73_PA3
+									     + D_CAA095_90_PA1 + D_CAA109_90_PA1 + D_CAA122_90_PA1 + D_CAA133_90_PA1                   ! (CVP deliveries + CVC)
+                                         + D_CAA143_90_PA1 + D_CAA155_90_PA1 + D_CAA165_90_PA1 + D_CAA172_90_PA1
+                                         + D_CAA095_90_PA2 + D_CAA109_90_PA2 + D_CAA122_90_PA2 + D_CAA133_90_PA2
+                                       	 + D_CAA143_90_PA2 + D_CAA155_90_PA2 + D_CAA165_90_PA2 + D_CAA172_90_PA2
+                                         + D_CAA143_90_PU 
+                                         + D_CAA165_90_PU  + D_CAA172_90_PU
+                                         - D_CAA071_CAALOS_CVP - D_CAA087_CAALOS_CVP - D_CAA095_CAALOS_CVP - D_CAA109_CAALOS_CVP   ! (CVP losses)
+                                         - D_CAA143_CAALOS_CVP - D_CAA155_CAALOS_CVP - D_CAA156_CAALOS_CVP - D_CAA165_CAALOS_CVP 
+                                         - D_CAA172_CAALOS_CVP}
+
+! aliases...
+! sum of all cvp inflows/outflows to CAA
+define caa_cvp_INFLOWS  { alias C_CAA003_CVP+D_DMC007_CAA009+D_DMC070_CAA069+C_SLUIS_CVP                                                     kind 'TESTING' units 'CFS' }
+define caa_cvp_OUTFLOWS { alias D_CAA012_71_PU1+D_CAA066_71_PU2+D_CAA069_SLUIS_F+D_CAA069_DMC070+CVP_JUB_delivs+C_CAA172_CVP kind 'TESTING' units 'CFS' }                      

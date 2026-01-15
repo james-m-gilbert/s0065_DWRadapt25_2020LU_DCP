@@ -1,0 +1,241 @@
+! VA_Delta.wresl
+! This files applies the discretionary export reduction needed to achieve the Delta VA target.
+
+/*
+Methodology for computing Delta Exporter contributions to VA outflows
+COS - i.e. under operations including full RPA's
+identify potential for export reduction when the system is in excess under D1641 standards
+All reductions happen only if system is in excess conditions
+March 16-31 
+    AN - no reduction
+    BN - reduce exports to 5000 cfs for this portion of the month
+    Dry - reduce exports to 3000 cfs for this portion of the month
+April/May 
+    identify whether the system was in excess conditions under D1641
+    if it was, and exports can be reduced further than already under IE (down to 1500 cfs), then do that
+    up to what is necessary to accomplish the full 300 taf reduction
+June
+    if there is still a deficit relative to 300 taf, and if D1641 operations were in excess conditions, 
+    make further reductions to accomplish the 300 taf, down to 4000 cfs
+
+*/
+
+!Variables used in the Delta VA logic
+define ExpRed_VAincr {std kind 'FLOW-VA' units 'TAF'}
+define ExpRed_CVPJones {std kind 'FLOW-VA' units 'TAF'}
+define ExpRed_CVPBanks {std kind 'FLOW-VA' units 'TAF'}
+define ExpRed_SWPBanks {std kind 'FLOW-VA' units 'TAF'}
+define ExpRed_VAincr_TD {std kind 'FLOW-VA' units 'TAF'}
+
+! Calculate how much the exports were already reduced relative to D1641 standards based on 
+! any criteria implemented in the DELTA cycles.  Only count the export reduction to the point
+! where it resulted in increased delta outflow - i.e. don't count what backed up into storage
+define Export_Red_Mon {value 0.}
+define Export_Red_Mon_ {alias Export_Red_Mon kind 'VA-VOLUME' units 'taf' }
+define Export_Red_UpsDlt {value 0.}
+define Delta_Incr_UpsDlt {value 0.}
+
+
+! Starting in March for BN and D, in April for AN water years,
+! set the amount of export reduction that still needs to happen
+define DeltaVARemain_SWP {std kind 'VA-VOLUME' units 'taf'}
+define DeltaVARemain_SWP_calc {value 0.}
+goal setDeltaVARemain_SWP {DeltaVARemain_SWP = DeltaVARemain_SWP_calc}
+
+! Starting in March for BN/D/C, in April for AN/W water years,
+! set the amount of export reduction that still needs to happen
+define DeltaVARemain_CVP {std kind 'VA-VOLUME' units 'taf'}
+define DeltaVARemain_CVP_calc {value 0.}
+goal setDeltaVARemain_CVP {DeltaVARemain_CVP = DeltaVARemain_CVP_calc}
+
+! Calculate the amount of storage in San Luis that can be called on to make up any
+! additional cuts to exports due to this action
+define SL_Avail_VA_SWP {value 0.}
+define SL_Avail_VA_SWP_ {alias SL_Avail_VA_SWP kind 'VA-VOLUME' units 'taf' }
+define SL_Avail_VA_CVP {value 0.}
+define SL_Avail_VA_CVP_ {alias SL_Avail_VA_CVP kind 'VA-VOLUME' units 'taf' }
+
+! Calculate by how much more exports can be reduced this month
+! Depends on what month and year type it is and whether it's excess conditions
+!   (1) do not exceed the discretionary action
+!   (2) do not exceed the export available for reduction (defined as exports above 1500 cfs during Excess months)
+!   (3) can be supported by San Luis storage; the ultimate source of water for the discretionary actions is San Luis storage
+define MarchBN_DeltaVA {value 3000.}
+define MarchDryCritical_DeltaVA {value 3000.}
+!define MarchAN_DeltaVA_SWP {value max(600., 21./31.*C_CAA003_SWP[DELTA] + 10./31.*600.)}
+!define MarchBN_DeltaVA_SWP {value max(600., 10./31.*C_CAA003_SWP[DELTA] + 21./31.*600.)}
+!define MarchDryCritical_DeltaVA_SWP {value max(600., 10./31.*C_CAA003_SWP[DELTA] + 21./31.*600.)}
+!define MarchBN_DeltaVA_SWP {value 600.}
+!define MarchDryCritical_DeltaVA_SWP {value 600.}
+!define MarchBN_DeltaVA_CVP {value max(900., 9./31.*C_DMC000_CVP[DELTA] + 22./31.*900.)}
+!define MarchDryCritical_DeltaVA_CVP {value max(900., 9./31.*C_DMC000_CVP[DELTA] + 22./31.*900.)}
+define AprilANBN_DeltaVA_SWP {value 600.}
+define AprilANBN_DeltaVA_CVP {value 900.}
+define AprilDryCritical_DeltaVA_SWP {value 600.} !
+define AprilDryCritical_DeltaVA_CVP {value 900.}
+define MayANBN_DeltaVA_SWP {value 600.}  ! cut down to the minimum here if needed
+define MayANBN_DeltaVA_CVP {value 900.}  ! cut down to the minimum here if needed
+define MayDryCritical_DeltaVA_SWP {value 600.}  ! mostly balance conditions here
+define MayDryCritical_DeltaVA_CVP {value 900.}  ! mostly balance conditions here
+define June_DeltaVA {value 4000.}
+define MarchBN_MaxExportCut {value 125.}
+define MarchD_MaxExportCut {value 125.}
+define MarchBN_MaxExportCut_SWP {value 50.0}
+define MarchD_MaxExportCut_SWP {value 50.0}
+define MarchBN_MaxExportCut_CVP {value 9999.}!62.5}
+define MarchD_MaxExportCut_CVP {value 9999.}!62.5}
+define MarchAN_MaxExportCut_SWP {value 50.0}
+
+define D409_ExpRedAvail_SWP {value 0.}
+define D409_ExpRedAvail_SWP_ {alias D409_ExpRedAvail_SWP kind 'FLOW-VA' units 'TAF'}
+define D409_ExpRedAvail_CVP {value 0.}
+define D409_ExpRedAvail_CVP_ {alias D409_ExpRedAvail_CVP kind 'FLOW-VA' units 'TAF'}
+
+
+define DeltaVA_SWP_MarMay_Frac {value 0.}
+define DeltaVA_SWP_MarMay_Fracdv  {alias DeltaVA_SWP_MarMay_Frac kind 'percentage' units 'none'}
+
+define DeltaVA_CVP_MarMay_Frac {value 0.}
+define DeltaVA_CVP_MarMay_Fracdv  {alias DeltaVA_CVP_MarMay_Frac kind 'percentage' units 'none'}
+define DeltaVA_Ops_onoff {value 0.}
+define DeltaVA_Ops_onoff_ {alias DeltaVA_Ops_onoff kind 'FLOW-VA' units 'none'}
+
+/* 
+define NDO_DeltaVA {lower unbounded kind 'FLOW-NDO' units 'CFS'}
+goal setNDO_DeltaVA { NDO_DeltaVA =0.}
+
+define EXP_TD_DeltaVA {std kind 'flow-delivery' units 'CFS'}
+goal setEXP_TD_DeltaVA {EXP_TD_DeltaVA = 0.}
+*/
+ 
+
+!Distribute the discretionary action among CVP and SWP South Delta exports.
+!Based on the proportional pumping rate.
+!Does not include export of Water Transfers.  
+define ratio_CVPJones {value 0.}
+define ratio_CVPBanks {value 0.}
+define ratio_SWPBanks {value 0.}
+
+goal CVPJonesExpRed { ExpRed_CVPJones = 0.}
+goal CVPBanksExpRed {ExpRed_CVPBanks = 0.}
+goal SWPBanksExpRed {ExpRed_SWPBanks = 0.}
+
+
+!ExpRed_Tot - total South Delta export reduction/ Delta discretionary action
+goal TotExpDecrease {ExpRed_VAincr = 0.}
+!    lhs<rhs penalty 999999  ! needs a weight of 20540 to work
+!    lhs>rhs penalty 999999 }
+goal TotExpDecreaseTD {ExpRed_VAincr_TD = 0.}
+
+define NDOI_ADD_DELTAVASV {value 0.}
+define NDOI_ADD_DELTAVA {alias NDOI_ADD_DELTAVASV kind 'VA-VOLUME' units 'CFS'}
+define PrjExp_RedSV {value 0.}
+define PrjExp_Red {alias PrjExp_RedSV kind 'VA-VOLUME' units 'taf'}
+define Delta_IncrSV {value 0.}
+define Delta_Incr {alias Delta_IncrSV kind 'VA-VOLUME' units 'taf'}
+
+define ExpRed_SWPBanksTD {value 0.}
+define ExpRed_SWPBanksIF {value 0.}
+
+!For IF part now need to apportion between surplus, shift from Delta, and storage withdrawal (in that order).  Just for accounting purposes, will not affect overall results.
+define ExpRed_SWPBanksIFex {value 0.}
+define ExpRed_SWPBanksIFtdnd {value 0.}
+define ExpRed_SWPBanksIFstor {value 0.}
+
+!!!!!General export cuts!!!
+define General_Delivery_Cut_CVP {value 0.}
+	
+define PWA_Purch_CVP_SOD_Delivery_Cut_CVP {value 0.}
+	
+define PWA_Purch_Add_CVP_SOD_Delivery_Cut_CVP {value 0.}
+	
+define PWA_Purch_WWD_SOD_Delivery_Cut_CVP {value 0.}
+define General_cut_50_PA1 {value 0.}
+define General_cut_71_PA1 {value 0.}
+define General_cut_71_PA2 {value 0.}
+define General_cut_71_PA3 {value 0.}
+define General_cut_71_PA4 {value 0.}
+define General_cut_71_PA5 {value 0.}
+define General_cut_71_PA6 {value 0.}
+define General_cut_71_PA8 {value 0.}
+define General_cut_73_PA1 {value 0.}
+define General_cut_73_PA2 {value 0.}
+define General_cut_73_PA3 {value 0.}
+define General_cut_90_PA1 {value 0.}
+define General_cut_D_CAA095_90_PA2 {value 0.}
+define General_cut_D_CAA109_90_PA2 {value 0.}
+define General_cut_D_CAA122_90_PA2 {value 0.}
+define General_cut_D_CAA133_90_PA2 {value 0.}
+define General_cut_D_CAA143_90_PA2 {value 0.}
+define General_cut_D_CAA155_90_PA2 {value 0.}
+define General_cut_D_CAA165_90_PA2 {value 0.}
+define General_cut_D_CAA172_90_PA2 {value 0.}
+define General_cut_91_PA {value 0.}
+define General_cut_72_PA {value 0.}
+define General_cut_SCVWD_PA {value 0.}
+define General_cut_SBCWD_PA {value 0.}
+
+define General_cut_D_CAA087_73_PA1 {value 0.}
+define General_cut_D_CAA095_73_PA3 {value 0.}
+define General_cut_D_CAA109_73_PA3 {value 0.}
+
+define General_cut_D_CAA095_90_PA1 {value 0.}
+define General_cut_D_CAA109_90_PA1 {value 0.}
+define General_cut_D_CAA122_90_PA1 {value 0.}
+define General_cut_D_CAA133_90_PA1 {value 0.}
+define General_cut_D_CAA143_90_PA1 {value 0.}
+define General_cut_D_CAA155_90_PA1 {value 0.}
+define General_cut_D_CAA165_90_PA1 {value 0.}
+define General_cut_D_CAA172_90_PA1 {value 0.}
+
+
+
+define PWA_Purch_CVP_SOD_cut_50_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_71_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_71_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_71_PA3 {value 0.}
+define PWA_Purch_CVP_SOD_cut_71_PA4 {value 0.}
+define PWA_Purch_CVP_SOD_cut_71_PA5 {value 0.}
+define PWA_Purch_CVP_SOD_cut_71_PA6 {value 0.}
+define PWA_Purch_CVP_SOD_cut_71_PA8 {value 0.}
+define PWA_Purch_CVP_SOD_cut_73_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA087_73_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_73_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_73_PA3 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA095_73_PA3 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA109_73_PA3 {value 0.}
+define PWA_Purch_CVP_SOD_cut_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA1 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA095_90_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA109_90_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA122_90_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA133_90_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA143_90_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA155_90_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA165_90_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_D_CAA172_90_PA2 {value 0.}
+define PWA_Purch_CVP_SOD_cut_91_PA {value 0.}
+define PWA_Purch_CVP_SOD_cut_72_PA {value 0.}
+define PWA_Purch_CVP_SOD_cut_SCVWD_PA {value 0.}
+define PWA_Purch_CVP_SOD_cut_SBCWD_PA {value 0.}
+
+
+define PWA_Purch_Add_CVP_SOD_cut_71_PA5 {value 0.}
+
+define PWA_Purch_WWD_SOD_cut_D_CAA095_90_PA1 {value 0.}
+define PWA_Purch_WWD_SOD_cut_D_CAA109_90_PA1 {value 0.}
+define PWA_Purch_WWD_SOD_cut_D_CAA122_90_PA1 {value 0.}
+define PWA_Purch_WWD_SOD_cut_D_CAA133_90_PA1 {value 0.}
+define PWA_Purch_WWD_SOD_cut_D_CAA143_90_PA1 {value 0.}
+define PWA_Purch_WWD_SOD_cut_D_CAA155_90_PA1 {value 0.}
+define PWA_Purch_WWD_SOD_cut_D_CAA165_90_PA1 {value 0.}
+define PWA_Purch_WWD_SOD_cut_D_CAA172_90_PA1 {value 0.}
+
+

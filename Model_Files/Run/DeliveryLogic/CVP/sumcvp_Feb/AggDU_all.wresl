@@ -1,0 +1,168 @@
+! AggDU_all.wresl
+! For each type of CVP demand, aggregate all the demands served by Shasta and calculate
+! 1 - the fraction of the contract obligation which occurs now through april (NowApr/Annual) times the Contract = total obligation now-april
+! 2 - the fraction of the contract obligation which occurs May through Sept (MaySep/Annual) times the Contract = total obligation may-Sep
+
+! Ag DEMANDS *********************************************
+! Compile and calculate for all demand units
+define NowApr_cvpdem_pag_n {   
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        value NowApr_AW_02_PA  / (AWRyear_FebCalc_02_PA  + AWOyear_FebCalc_02_PA ) * CLann_WTPCSD_02_PA
+            + NowApr_AW_03_PA  / (AWRyear_FebCalc_03_PA  + AWOyear_FebCalc_03_PA ) * CLann_SAC294_03_PA
+            + NowApr_AW_04_PA1 / (AWRyear_FebCalc_04_PA1 + AWOyear_FebCalc_04_PA1) * CLann_CCL005_04_PA1
+            + NowApr_AW_04_PA2 / (AWRyear_FebCalc_04_PA2 + AWOyear_FebCalc_04_PA2) * CLann_TCC022_04_PA2
+            + NowApr_AW_07N_PA / (AWRyear_FebCalc_07N_PA + AWOyear_FebCalc_07N_PA) * CLann_TCC036_07N_PA
+            + NowApr_AW_07S_PA / (AWRyear_FebCalc_07S_PA + AWOyear_FebCalc_07S_PA) * CLann_TCC081_07S_PA
+            + NowApr_AW_07S_PA / (AWRyear_FebCalc_07S_PA + AWOyear_FebCalc_07S_PA) * CLann_TCC111_07S_PA}
+    case otherwise {
+        condition always
+        value 1. }
+}
+define NowApr_cvpdem_pag_ndv {alias NowApr_cvpdem_pag_n kind 'demand-annual' units 'taf'}
+
+define MaySep_cvpdem_pag_n {   
+    case FebMay { 
+        condition month >= Feb .and. month <= May 
+        value MaySep_AW_02_PA  / (AWRyear_FebCalc_02_PA  + AWOyear_FebCalc_02_PA ) * CLann_WTPCSD_02_PA
+            + MaySep_AW_03_PA  / (AWRyear_FebCalc_03_PA  + AWOyear_FebCalc_03_PA ) * CLann_SAC294_03_PA
+            + MaySep_AW_04_PA1 / (AWRyear_FebCalc_04_PA1 + AWOyear_FebCalc_04_PA1) * CLann_CCL005_04_PA1
+            + MaySep_AW_04_PA2 / (AWRyear_FebCalc_04_PA2 + AWOyear_FebCalc_04_PA2) * CLann_TCC022_04_PA2
+            + MaySep_AW_07N_PA / (AWRyear_FebCalc_07N_PA + AWOyear_FebCalc_07N_PA) * CLann_TCC036_07N_PA
+            + MaySep_AW_07S_PA / (AWRyear_FebCalc_07S_PA + AWOyear_FebCalc_07S_PA) * CLann_TCC081_07S_PA
+            + MaySep_AW_07S_PA / (AWRyear_FebCalc_07S_PA + AWOyear_FebCalc_07S_PA) * CLann_TCC111_07S_PA}
+    case otherwise {
+        condition always
+        value 1. }
+}
+define MaySep_cvpdem_pag_ndv {alias MaySep_cvpdem_pag_n kind 'demand-annual' units 'taf'}
+
+! MI DEMANDS *********************************************
+! Compile and calculate for all demand units 
+define NowApr_cvpdem_pmi_n {   
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr
+        value NowApr_UD_02_PU  / UDann_FebCalc_02_PU  * CLann_WTPCSD_02_PU   !UDann_02_PU also updated in march
+            + NowApr_UD_02_PU  / UDann_FebCalc_02_PU  * CLann_WKYTN_02_PU
+            + NowApr_UD_03_PU1 / UDann_FebCalc_03_PU1 * CLann_SHSTA_03_PU1
+            + NowApr_UD_03_PU2 / UDann_FebCalc_03_PU2 * CLann_WTPBLV_03_PU2}
+    case otherwise {
+        condition always
+        value 1. }
+}
+define NowApr_cvpdem_pmi_ndv {alias NowApr_cvpdem_pmi_n kind 'demand-annual' units 'taf'}
+
+define MaySep_cvpdem_pmi_n {   
+    case FebMay { 
+        condition month >= Feb .and. month <= May 
+        value MaySep_UD_02_PU  / UDann_FebCalc_02_PU  * CLann_WTPCSD_02_PU   !UDann_02_PU also updated in march
+            + MaySep_UD_02_PU  / UDann_FebCalc_02_PU  * CLann_WKYTN_02_PU
+            + MaySep_UD_03_PU1 / UDann_FebCalc_03_PU1 * CLann_SHSTA_03_PU1
+            + MaySep_UD_03_PU2 / UDann_FebCalc_03_PU2 * CLann_WTPBLV_03_PU2}
+    case otherwise {
+        condition always
+        value 1. }
+}
+define MaySep_cvpdem_pmi_ndv {alias MaySep_cvpdem_pmi_n kind 'demand-annual' units 'taf'}
+
+! SETTLEMENT CONTRACT DEMANDS *********************************************
+! Compile and calculate for all demand units
+! All except SU = (non-peak demand for Apr) / (total non-peak Apr-Oct) * non-peak CL 
+! SU = (non-peak demand from now to Apr) / (total non-peak Mar-Oct) * non-peak CL 
+! No peak demand from Feb-Apr. 
+define NowApr_cvpdem_psc_n {   
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr 
+        value Apr_AW_02_SA   / (SumAW_FebCalc_02_SA_sv   - PeakAW_FebCalc_02_SA_sv  ) * CLN_SAC296_02_SA
+            + Apr_AW_03_SA   / (SumAW_FebCalc_03_SA_sv   - PeakAW_FebCalc_03_SA_sv  ) * CLN_SAC289_03_SA   
+         + NowApr_UD_03_SU   / (SumUD_FebCalc_03_SU_sv   - PeakUD_FebCalc_03_SU_sv  ) * CLN_WTPFTH_03_SU
+         + NowApr_UD_02_SU   / (SumUD_FebCalc_02_SU_sv   - PeakUD_FebCalc_02_SU_sv  ) * CLN_WTPFTH_02_SU
+            + Apr_AW_08N_SA1 / (SumAW_FebCalc_08N_SA1_sv - PeakAW_FebCalc_08N_SA1_sv) * CLN_SAC178_08N_SA1
+            + Apr_AW_08N_SA1 / (SumAW_FebCalc_08N_SA1_sv - PeakAW_FebCalc_08N_SA1_sv) * CLN_SAC159_08N_SA1
+            + Apr_AW_08N_SA2 / (SumAW_FebCalc_08N_SA2_sv - PeakAW_FebCalc_08N_SA2_sv) * CLN_GCC027_08N_SA2
+            + Apr_AW_08S_SA1 / (SumAW_FebCalc_08S_SA1_sv - PeakAW_FebCalc_08S_SA1_sv) * CLN_SAC159_08S_SA1
+            + Apr_AW_08S_SA2 / (SumAW_FebCalc_08S_SA2_sv - PeakAW_FebCalc_08S_SA2_sv) * CLN_GCC056_08S_SA2
+            + Apr_AW_08S_SA3 / (SumAW_FebCalc_08S_SA3_sv - PeakAW_FebCalc_08S_SA3_sv) * CLN_SAC121_08S_SA3
+            + Apr_AW_08S_SA3 / (SumAW_FebCalc_08S_SA3_sv - PeakAW_FebCalc_08S_SA3_sv) * CLN_SAC109_08S_SA3
+            + Apr_AW_09_SA1  / (SumAW_FebCalc_09_SA1_sv  - PeakAW_FebCalc_09_SA1_sv ) * CLN_MTC000_09_SA1
+            + Apr_AW_09_SA2  / (SumAW_FebCalc_09_SA2_sv  - PeakAW_FebCalc_09_SA2_sv ) * CLN_SAC162_09_SA2
+            + Apr_AW_18_SA   / (SumAW_FebCalc_18_SA_sv   - PeakAW_FebCalc_18_SA_sv  ) * CLN_SAC136_18_SA
+            + Apr_AW_19_SA   / (SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  ) * CLN_SAC122_19_SA
+            + Apr_AW_19_SA   / (SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  ) * CLN_SAC115_19_SA
+            + Apr_AW_19_SA   / (SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  ) * CLN_SAC099_19_SA 
+            + Apr_AW_19_SA   / (SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  ) * CLN_SAC091_19_SA 
+            + Apr_AW_21_SA   / (SumAW_FebCalc_21_SA_sv   - PeakAW_FebCalc_21_SA_sv  ) * CLN_SAC083_21_SA
+            + Apr_AW_21_SA   / (SumAW_FebCalc_21_SA_sv   - PeakAW_FebCalc_21_SA_sv  ) * CLN_SAC074_21_SA
+            + Apr_AW_22_SA1  / (SumAW_FebCalc_22_SA1_sv  - PeakAW_FebCalc_22_SA1_sv ) * CLN_SAC082_22_SA1
+            + Apr_AW_22_SA1  / (SumAW_FebCalc_22_SA1_sv  - PeakAW_FebCalc_22_SA1_sv ) * CLN_SAC078_22_SA1}
+    case otherwise {
+        condition always
+        value 1. }
+}
+define NowApr_cvpdem_psc_ndv {alias NowApr_cvpdem_psc_n kind 'demand-annual' units 'taf'}
+
+! 100% Peak CL + (non-peak demand for May, Jun, Sep) / (total non-peak Apr-Oct) * non-peak CL   
+! CLP + AW(may,jun,sep)/AW(apr, may, jun, sep, oct) * CLN  
+! need to know by March: used in define perdel_cvpsc_sys in cvpcut.wresl
+define MaySep_cvpdem_psc_n {   
+    case FebMay { 
+        condition month >= Feb .and. month <= May 
+        value CLP_SAC296_02_SA   + (MaySep_AW_02_SA   - PeakAW_FebCalc_02_SA_sv  ) / (SumAW_FebCalc_02_SA_sv   - PeakAW_FebCalc_02_SA_sv  ) * CLN_SAC296_02_SA
+            + CLP_SAC289_03_SA   + (MaySep_AW_03_SA   - PeakAW_FebCalc_03_SA_sv  ) / (SumAW_FebCalc_03_SA_sv   - PeakAW_FebCalc_03_SA_sv  ) * CLN_SAC289_03_SA   
+            + CLP_WTPFTH_03_SU   + (MaySep_UD_03_SU   - PeakUD_FebCalc_03_SU_sv  ) / (SumUD_FebCalc_03_SU_sv   - PeakUD_FebCalc_03_SU_sv  ) * CLN_WTPFTH_03_SU
+            + CLP_WTPFTH_02_SU   + (MaySep_UD_02_SU   - PeakUD_FebCalc_02_SU_sv  ) / (SumUD_FebCalc_02_SU_sv   - PeakUD_FebCalc_02_SU_sv  ) * CLN_WTPFTH_02_SU
+            + CLP_SAC178_08N_SA1 + (MaySep_AW_08N_SA1 - PeakAW_FebCalc_08N_SA1_sv) / (SumAW_FebCalc_08N_SA1_sv - PeakAW_FebCalc_08N_SA1_sv) * CLN_SAC178_08N_SA1
+            + CLP_SAC159_08N_SA1 + (MaySep_AW_08N_SA1 - PeakAW_FebCalc_08N_SA1_sv) / (SumAW_FebCalc_08N_SA1_sv - PeakAW_FebCalc_08N_SA1_sv) * CLN_SAC159_08N_SA1
+            + CLP_GCC027_08N_SA2 + (MaySep_AW_08N_SA2 - PeakAW_FebCalc_08N_SA2_sv) / (SumAW_FebCalc_08N_SA2_sv - PeakAW_FebCalc_08N_SA2_sv) * CLN_GCC027_08N_SA2
+            + CLP_SAC159_08S_SA1 + (MaySep_AW_08S_SA1 - PeakAW_FebCalc_08S_SA1_sv) / (SumAW_FebCalc_08S_SA1_sv - PeakAW_FebCalc_08S_SA1_sv) * CLN_SAC159_08S_SA1
+            + CLP_GCC056_08S_SA2 + (MaySep_AW_08S_SA2 - PeakAW_FebCalc_08S_SA2_sv) / (SumAW_FebCalc_08S_SA2_sv - PeakAW_FebCalc_08S_SA2_sv) * CLN_GCC056_08S_SA2
+            + CLP_SAC121_08S_SA3 + (MaySep_AW_08S_SA3 - PeakAW_FebCalc_08S_SA3_sv) / (SumAW_FebCalc_08S_SA3_sv - PeakAW_FebCalc_08S_SA3_sv) * CLN_SAC121_08S_SA3
+            + CLP_SAC109_08S_SA3 + (MaySep_AW_08S_SA3 - PeakAW_FebCalc_08S_SA3_sv) / (SumAW_FebCalc_08S_SA3_sv - PeakAW_FebCalc_08S_SA3_sv) * CLN_SAC109_08S_SA3
+            + CLP_MTC000_09_SA1  + (MaySep_AW_09_SA1  - PeakAW_FebCalc_09_SA1_sv ) / (SumAW_FebCalc_09_SA1_sv  - PeakAW_FebCalc_09_SA1_sv ) * CLN_MTC000_09_SA1
+            + CLP_SAC162_09_SA2  + (MaySep_AW_09_SA2  - PeakAW_FebCalc_09_SA2_sv ) / (SumAW_FebCalc_09_SA2_sv  - PeakAW_FebCalc_09_SA2_sv ) * CLN_SAC162_09_SA2
+            + CLP_SAC136_18_SA   + (MaySep_AW_18_SA   - PeakAW_FebCalc_18_SA_sv  ) / (SumAW_FebCalc_18_SA_sv   - PeakAW_FebCalc_18_SA_sv  ) * CLN_SAC136_18_SA
+            + CLP_SAC122_19_SA   + (MaySep_AW_19_SA   - PeakAW_FebCalc_19_SA_sv  ) / (SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  ) * CLN_SAC122_19_SA
+            + CLP_SAC115_19_SA   + (MaySep_AW_19_SA   - PeakAW_FebCalc_19_SA_sv  ) / (SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  ) * CLN_SAC115_19_SA
+            + CLP_SAC099_19_SA   + (MaySep_AW_19_SA   - PeakAW_FebCalc_19_SA_sv  ) / (SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  ) * CLN_SAC099_19_SA 
+            + CLP_SAC091_19_SA   + (MaySep_AW_19_SA   - PeakAW_FebCalc_19_SA_sv  ) / (SumAW_FebCalc_19_SA_sv   - PeakAW_FebCalc_19_SA_sv  ) * CLN_SAC091_19_SA 
+            + CLP_SAC083_21_SA   + (MaySep_AW_21_SA   - PeakAW_FebCalc_21_SA_sv  ) / (SumAW_FebCalc_21_SA_sv   - PeakAW_FebCalc_21_SA_sv  ) * CLN_SAC083_21_SA
+            + CLP_SAC074_21_SA   + (MaySep_AW_21_SA   - PeakAW_FebCalc_21_SA_sv  ) / (SumAW_FebCalc_21_SA_sv   - PeakAW_FebCalc_21_SA_sv  ) * CLN_SAC074_21_SA
+            + CLP_SAC082_22_SA1  + (MaySep_AW_22_SA1  - PeakAW_FebCalc_22_SA1_sv ) / (SumAW_FebCalc_22_SA1_sv  - PeakAW_FebCalc_22_SA1_sv ) * CLN_SAC082_22_SA1
+            + CLP_SAC078_22_SA1  + (MaySep_AW_22_SA1  - PeakAW_FebCalc_22_SA1_sv ) / (SumAW_FebCalc_22_SA1_sv  - PeakAW_FebCalc_22_SA1_sv ) * CLN_SAC078_22_SA1}
+    case otherwise {
+        condition always
+        value 1. }
+}
+define MaySep_cvpdem_psc_ndv {alias MaySep_cvpdem_psc_n kind 'demand-annual' units 'taf'}
+
+! REFUGE DEMANDS *********************************************
+! Compile and calculate for all demand units
+! need to be valid after May for each year
+
+define NowApr_cvpdem_prf_n {   
+    case FebApr { 
+        condition month >= Feb .and. month <= Apr
+        value NowApr_AW_08N_PR1 / (AWRyear_FebCalc_08N_PR1 + AWOyear_FebCalc_08N_PR1 + AWWyear_FebCalc_08N_PR1) * CLann_GCC027_08N_PR1
+            + NowApr_AW_08N_PR2 / (AWRyear_FebCalc_08N_PR2 + AWOyear_FebCalc_08N_PR2 + AWWyear_FebCalc_08N_PR2) * CLann_GCC039_08N_PR2
+            + NowApr_AW_08S_PR  / (AWRyear_FebCalc_08S_PR  + AWOyear_FebCalc_08S_PR  + AWWyear_FebCalc_08S_PR ) * CLann_GCC056_08S_PR
+            + NowApr_AW_08S_PR  / (AWRyear_FebCalc_08S_PR  + AWOyear_FebCalc_08S_PR  + AWWyear_FebCalc_08S_PR ) * CLann_CBD037_08S_PR
+            + NowApr_AW_17N_PR  / (AWRyear_FebCalc_17N_PR  + AWOyear_FebCalc_17N_PR  + AWWyear_FebCalc_17N_PR ) * CLann_JBC002_17N_PR}
+    case otherwise {     ! not used
+        condition always
+        value 1. }
+}
+define NowApr_cvpdem_prf_ndv {alias NowApr_cvpdem_prf_n kind 'demand-annual' units 'taf'}
+
+define MaySep_cvpdem_prf_n {   
+    case FebMay { 
+        condition month >= Feb .and. month <= May
+        value MaySep_AW_08N_PR1 / (AWRyear_FebCalc_08N_PR1 + AWOyear_FebCalc_08N_PR1 + AWWyear_FebCalc_08N_PR1) * CLann_GCC027_08N_PR1
+            + MaySep_AW_08N_PR2 / (AWRyear_FebCalc_08N_PR2 + AWOyear_FebCalc_08N_PR2 + AWWyear_FebCalc_08N_PR2) * CLann_GCC039_08N_PR2
+            + MaySep_AW_08S_PR  / (AWRyear_FebCalc_08S_PR  + AWOyear_FebCalc_08S_PR  + AWWyear_FebCalc_08S_PR ) * CLann_GCC056_08S_PR
+            + MaySep_AW_08S_PR  / (AWRyear_FebCalc_08S_PR  + AWOyear_FebCalc_08S_PR  + AWWyear_FebCalc_08S_PR ) * CLann_CBD037_08S_PR
+            + MaySep_AW_17N_PR  / (AWRyear_FebCalc_17N_PR  + AWOyear_FebCalc_17N_PR  + AWWyear_FebCalc_17N_PR ) * CLann_JBC002_17N_PR}
+    case otherwise {     ! not used
+        condition always
+        value 1. }
+}
+define MaySep_cvpdem_prf_ndv {alias MaySep_cvpdem_prf_n kind 'demand-annual' units 'taf'}

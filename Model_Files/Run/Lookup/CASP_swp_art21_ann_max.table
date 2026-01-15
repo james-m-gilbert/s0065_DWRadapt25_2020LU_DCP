@@ -1,0 +1,16 @@
+! source spreadsheet: SWP_DELIVERY_ANALYSIS_CS3_August2020.xlsm			
+! Annual Article 21 demands were calculated by using 2 data sources:			
+! 1) Article 21 historical deliveries 2005-2018 - take annual maximum delivery for each contractor			
+! 2) Article 21 historical requests 2011,2017,2019 - take annual maximum request for each contractor			
+! 3) Take the maximum of 1) and 2)			
+! 4) Scale up the annual demand from historical delivery or request by 20% to act as a buffer in future studies where more article 21 opportunities
+! Split from swp_art21_ann_max			
+! TODO: 2024-04-09 change these to design capacities
+CASP_swp_art21_ann_max	
+contractor	Art21AnnualMax
+17.31	17.94
+17.32	66.87
+17.33	146.25
+17.34	140.27
+17.35	172.35
+
