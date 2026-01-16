@@ -7,6 +7,6 @@ Action	Switch
 4	0	 !	FIRO & WCM_(D)
 5	0	 !	Asset Management_(E)
 6	0	 !	Ops Strategies_(F)
-7	0	 !	TUCP, urban Conservation, CVPSWP export limits_(G)
-8	1	!	SLR
-9	1	!	LODFlag
+7	1	 !	TUCP, urban Conservation, CVPSWP export limits_(G)
+8	0	!	SLR
+9	0	!	LODFlag

@@ -164,7 +164,7 @@ define SHRTG_26N_NU2   {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26N_NU3   {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26N_NU4   {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26N_NU5    {std kind 'SHORTAGE' units 'CFS'}
-define SHRTG_26N_PU1   {std kind 'SHORTAGE' units 'CFS'}
+
 define SHRTG_26N_PU2   {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26N_PU3   {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26S_NA    {std kind 'SHORTAGE' units 'CFS'}
@@ -175,7 +175,7 @@ define SHRTG_26S_NU4    {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26S_PU1   {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26S_PU2   {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26S_PU3   {std kind 'SHORTAGE' units 'CFS'}
-define SHRTG_26S_PU4   {std kind 'SHORTAGE' units 'CFS'}
+
 define SHRTG_26S_PU5   {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_26S_PU6    {std kind 'SHORTAGE' units 'CFS'}
 define SHRTG_60N_NA2    {std kind 'SHORTAGE' units 'CFS'}  !@jmg 2017v13 - not sure if used in merged model
@@ -184,6 +184,9 @@ define SHRTG_60N_PU   {std kind 'SHORTAGE' units 'CFS'}    !@jmg 2017v13 - not s
 define SHRTG_60S_NU    {std kind 'SHORTAGE' units 'CFS'}   !@jmg 2017v13 - not sure if used in merged model
 define SHRTG_EBMUD   {std kind 'SHORTAGE' units 'CFS'}     !@jmg 2017v13 - not sure if used in merged model
 */
+
+define SHRTG_26S_PU4   {lower -50 upper 99999 kind 'SHORTAGE' units 'CFS'} !std kind 'SHORTAGE' units 'CFS'}
+define SHRTG_26N_PU1   {lower -50 upper 99999 kind 'SHORTAGE' units 'CFS' }!std kind 'SHORTAGE' units 'CFS'}
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!! WBA 1      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

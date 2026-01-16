@@ -1433,7 +1433,7 @@ goal setDG_26N_PU1  {DG_26N_PU1 = D_WTPRSV_26N_PU1}
 ! net surface delivery = surface diversion - conveyance losses
 goal setDN_26N_PU1  {DN_26N_PU1 = DG_26N_PU1 - DL_26N_PU1}
 ! Total Applied Water = net surface delivery + groundwater pumping
-goal setUD_26N_PU1  {UrbanConservation2*UD_26N_PU1 = DN_26N_PU1 + GP_26N_PU1 } ! + SHRTG_26N_PU1 }
+goal setUD_26N_PU1  {UrbanConservation2*UD_26N_PU1 = DN_26N_PU1 + GP_26N_PU1  + SHRTG_26N_PU1 }
 
 ! gross surface water diversions
 goal setDG_26N_PU2  {DG_26N_PU2 = D_WTPSJP_26N_PU2}
@@ -1520,7 +1520,7 @@ goal setDG_26S_PU4  {DG_26S_PU4 = D_WTPVNY_26S_PU4 + D_WTPSAC_26S_PU4}
 ! net surface delivery = surface diversion - conveyance losses
 goal setDN_26S_PU4  {DN_26S_PU4 = DG_26S_PU4 - DL_26S_PU4}
 ! Total Applied Water = net surface delivery + groundwater pumping
-goal setUD_26S_PU4  {UrbanConservation2*UD_26S_PU4 = DN_26S_PU4 + GP_26S_PU4 } ! + SHRTG_26S_PU4 }
+goal setUD_26S_PU4  {UrbanConservation2*UD_26S_PU4 = DN_26S_PU4 + GP_26S_PU4  + SHRTG_26S_PU4 }
 
 ! gross surface water diversions
 goal setDG_26S_NU2  {DG_26S_NU2 = D_WTPFBN_26S_NU2}
